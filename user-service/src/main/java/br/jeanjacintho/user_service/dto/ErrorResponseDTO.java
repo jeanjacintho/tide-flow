@@ -3,7 +3,7 @@ package br.jeanjacintho.user_service.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class ErrorResponse {
+public class ErrorResponseDTO {
     
     private LocalDateTime timestamp;
     private int status;
@@ -12,11 +12,11 @@ public class ErrorResponse {
     private String path;
     private List<String> errors;
     
-    public ErrorResponse() {
+    public ErrorResponseDTO() {
         this.timestamp = LocalDateTime.now();
     }
     
-    public ErrorResponse(int status, String error, String message, String path) {
+    public ErrorResponseDTO(int status, String error, String message, String path) {
         this();
         this.status = status;
         this.error = error;
@@ -24,7 +24,7 @@ public class ErrorResponse {
         this.path = path;
     }
     
-    public ErrorResponse(int status, String error, String message, String path, List<String> errors) {
+    public ErrorResponseDTO(int status, String error, String message, String path, List<String> errors) {
         this(status, error, message, path);
         this.errors = errors;
     }
