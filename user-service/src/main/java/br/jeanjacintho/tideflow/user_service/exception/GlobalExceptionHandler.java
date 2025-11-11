@@ -1,4 +1,4 @@
-package br.jeanjacintho.user_service.exception;
+package br.jeanjacintho.tideflow.user_service.exception;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import br.jeanjacintho.user_service.dto.ErrorResponseDTO;
+import br.jeanjacintho.tideflow.user_service.dto.response.ErrorResponseDTO;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

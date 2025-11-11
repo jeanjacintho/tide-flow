@@ -1,4 +1,4 @@
-package br.jeanjacintho.user_service.config;
+package br.jeanjacintho.tideflow.user_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

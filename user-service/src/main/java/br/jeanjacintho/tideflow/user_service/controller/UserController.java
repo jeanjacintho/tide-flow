@@ -1,4 +1,4 @@
-package br.jeanjacintho.user_service.controller;
+package br.jeanjacintho.tideflow.user_service.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.jeanjacintho.user_service.dto.UserDTO;
-import br.jeanjacintho.user_service.service.UserService;
+import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
+import br.jeanjacintho.tideflow.user_service.service.UserService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -31,26 +33,26 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO userDTO) {
-        UserDTO createdUser = userService.createUser(userDTO);
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody CreateUserRequestDTO requestDTO) {
+        UserResponseDTO createdUser = userService.createUser(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UserDTO> users = userService.findAll();
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        List<UserResponseDTO> users = userService.findAll();
         return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable UUID id) {
-        UserDTO user = userService.findById(id);
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
+        UserResponseDTO user = userService.findById(id);
         return ResponseEntity.ok(user);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody UserDTO userDTO) {
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequestDTO requestDTO) {
+        UserResponseDTO updatedUser = userService.updateUser(id, requestDTO);
         return ResponseEntity.ok(updatedUser);
     }
 

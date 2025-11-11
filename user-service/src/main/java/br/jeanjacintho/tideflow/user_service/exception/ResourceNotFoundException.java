@@ -1,4 +1,4 @@
-package br.jeanjacintho.user_service.exception;
+package br.jeanjacintho.tideflow.user_service.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     

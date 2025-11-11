@@ -1,82 +1,63 @@
-package br.jeanjacintho.user_service.dto;
+package br.jeanjacintho.tideflow.user_service.model;
 
-import br.jeanjacintho.user_service.model.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public class UserDTO {
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(min = 2, max = 100, message = "Nome deve ter entre 2 e 100 caracteres")
+
+    @Column(nullable = false, length = 100)
     private String name;
-    
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email deve ser válido")
+
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
-    
-    @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 8, message = "Senha deve ter pelo menos 8 caracteres")
+
+    @Column(nullable = false)
     @JsonIgnore
     private String password;
-    
-    @Size(max = 20, message = "Documento deve ter no máximo 20 caracteres")
+
+    @Column(length = 20)
     private String document;
-    
-    @Size(max = 20, message = "Telefone deve ter no máximo 20 caracteres")
+
+    @Column(length = 20)
     private String phone;
-    
-    @Size(max = 500, message = "URL do avatar deve ter no máximo 500 caracteres")
+
+    @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
-    
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public UserDTO() {}
+    public User() {}
 
-    public UserDTO(UUID id, String name, String email, String document, String phone, String avatarUrl, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
+    public User(String name, String email, String password, String document, String phone, String avatarUrl) {
         this.name = name;
         this.email = email;
+        this.password = password;
         this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
-    public static UserDTO fromEntity(User user) {
-        return new UserDTO(
-            user.getId(),
-            user.getName(),
-            user.getEmail(),
-            user.getDocument(),
-            user.getPhone(),
-            user.getAvatarUrl(),
-            user.getCreatedAt(),
-            user.getUpdatedAt()
-        );
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    public User toEntity() {
-        User user = new User();
-        if (this.id != null) {
-            user.setId(this.id);
-        }
-        user.setName(this.name);
-        user.setEmail(this.email);
-        if (this.password != null) {
-            user.setPassword(this.password);
-        }
-        user.setDocument(this.document);
-        user.setPhone(this.phone);
-        user.setAvatarUrl(this.avatarUrl);
-        return user;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public UUID getId() {

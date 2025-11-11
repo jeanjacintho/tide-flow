@@ -1,63 +1,44 @@
-package br.jeanjacintho.user_service.model;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
+package br.jeanjacintho.tideflow.user_service.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "users")
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+import br.jeanjacintho.tideflow.user_service.model.User;
+
+public class UserResponseDTO {
     private UUID id;
-
-    @Column(nullable = false, length = 100)
     private String name;
-
-    @Column(nullable = false, unique = true, length = 255)
     private String email;
-
-    @Column(nullable = false)
-    @JsonIgnore
-    private String password;
-
-    @Column(length = 20)
     private String document;
-
-    @Column(length = 20)
     private String phone;
-
-    @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public User() {}
+    public UserResponseDTO() {}
 
-    public User(String name, String email, String password, String document, String phone, String avatarUrl) {
+    public UserResponseDTO(UUID id, String name, String email, String document, String phone, String avatarUrl, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
         this.name = name;
         this.email = email;
-        this.password = password;
         this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public static UserResponseDTO fromEntity(User user) {
+        return new UserResponseDTO(
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getDocument(),
+            user.getPhone(),
+            user.getAvatarUrl(),
+            user.getCreatedAt(),
+            user.getUpdatedAt()
+        );
     }
 
     public UUID getId() {
@@ -75,22 +56,13 @@ public class User {
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    @JsonIgnore
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getDocument() {
@@ -100,7 +72,7 @@ public class User {
     public void setDocument(String document) {
         this.document = document;
     }
-
+    
     public String getPhone() {
         return phone;
     }

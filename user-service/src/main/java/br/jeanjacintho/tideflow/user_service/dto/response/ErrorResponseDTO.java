@@ -1,4 +1,4 @@
-package br.jeanjacintho.user_service.dto;
+package br.jeanjacintho.tideflow.user_service.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
