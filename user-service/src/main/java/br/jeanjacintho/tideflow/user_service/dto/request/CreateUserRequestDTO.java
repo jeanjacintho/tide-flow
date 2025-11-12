@@ -26,6 +26,12 @@ public class CreateUserRequestDTO {
     @Size(max = 500, message = "URL do avatar deve ter no máximo 500 caracteres")
     private String avatarUrl;
 
+    @Size(max = 100, message = "Cidade deve ter no máximo 100 caracteres")
+    private String city;
+
+    @Size(max = 2, message = "Estado deve ter no máximo 2 caracteres")
+    private String state;
+
     public CreateUserRequestDTO() {}
 
     public String getName() {
@@ -74,5 +80,21 @@ public class CreateUserRequestDTO {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+    
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

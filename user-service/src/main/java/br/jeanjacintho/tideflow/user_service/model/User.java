@@ -32,6 +32,12 @@ public class User {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 2)
+    private String state;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -40,13 +46,15 @@ public class User {
 
     public User() {}
 
-    public User(String name, String email, String password, String document, String phone, String avatarUrl) {
+    public User(String name, String email, String password, String document, String phone, String avatarUrl, String city, String state) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
+        this.city = city;
+        this.state = state;
     }
 
     @PrePersist
@@ -115,6 +123,22 @@ public class User {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public LocalDateTime getCreatedAt() {

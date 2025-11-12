@@ -6,9 +6,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
@@ -17,6 +21,7 @@ import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
+import br.jeanjacintho.tideflow.user_service.specifiction.UserSpecification;
 
 @Service
 public class UserService {
@@ -54,10 +59,9 @@ public class UserService {
         return UserResponseDTO.fromEntity(user);
     }
 
-    public List<UserResponseDTO> findAll() {
-        return userRepository.findAll().stream()
-                .map(UserResponseDTO::fromEntity)
-                .collect(Collectors.toList());
+    public Page<UserResponseDTO> findAll(@RequestParam(required = false) String name, @RequestParam(required = false) String email, @RequestParam(required = false) String phone, @RequestParam(required = false) String city, @RequestParam(required = false) String state, Pageable pageable) {
+        Specification<User> specification = UserSpecification.withFilters(name, email, phone, city, state);
+        return userRepository.findAll(specification, pageable).map(UserResponseDTO::fromEntity);
     }
 
     @Transactional

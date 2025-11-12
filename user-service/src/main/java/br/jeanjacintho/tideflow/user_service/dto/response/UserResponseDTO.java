@@ -12,18 +12,22 @@ public class UserResponseDTO {
     private String document;
     private String phone;
     private String avatarUrl;
+    private String city;
+    private String state;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String email, String document, String phone, String avatarUrl, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String email, String document, String phone, String avatarUrl, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
+        this.city = city;
+        this.state = state;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -36,6 +40,8 @@ public class UserResponseDTO {
             user.getDocument(),
             user.getPhone(),
             user.getAvatarUrl(),
+            user.getCity(),
+            user.getState(),
             user.getCreatedAt(),
             user.getUpdatedAt()
         );
@@ -103,5 +109,21 @@ public class UserResponseDTO {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }
