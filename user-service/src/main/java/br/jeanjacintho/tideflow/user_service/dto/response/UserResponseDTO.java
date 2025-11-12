@@ -9,7 +9,6 @@ public class UserResponseDTO {
     private UUID id;
     private String name;
     private String email;
-    private String document;
     private String phone;
     private String avatarUrl;
     private String city;
@@ -19,11 +18,10 @@ public class UserResponseDTO {
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String email, String document, String phone, String avatarUrl, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String email, String phone, String avatarUrl, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
         this.city = city;
@@ -37,7 +35,6 @@ public class UserResponseDTO {
             user.getId(),
             user.getName(),
             user.getEmail(),
-            user.getDocument(),
             user.getPhone(),
             user.getAvatarUrl(),
             user.getCity(),
@@ -69,14 +66,6 @@ public class UserResponseDTO {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getDocument() {
-        return document;
-    }
-
-    public void setDocument(String document) {
-        this.document = document;
     }
     
     public String getPhone() {

@@ -24,9 +24,6 @@ public class User {
     private String password;
 
     @Column(length = 20)
-    private String document;
-
-    @Column(length = 20)
     private String phone;
 
     @Column(name = "avatar_url", length = 500)
@@ -46,11 +43,10 @@ public class User {
 
     public User() {}
 
-    public User(String name, String email, String password, String document, String phone, String avatarUrl, String city, String state) {
+    public User(String name, String email, String password, String phone, String avatarUrl, String city, String state) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.document = document;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
         this.city = city;
@@ -99,14 +95,6 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getDocument() {
-        return document;
-    }
-
-    public void setDocument(String document) {
-        this.document = document;
     }
 
     public String getPhone() {

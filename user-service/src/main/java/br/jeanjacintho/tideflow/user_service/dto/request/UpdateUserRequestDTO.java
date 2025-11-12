@@ -16,9 +16,6 @@ public class UpdateUserRequestDTO {
     @Size(min = 8, message = "Senha deve ter pelo menos 8 caracteres")
     private String password;
 
-    @Size(max = 20, message = "Documento deve ter no máximo 20 caracteres")
-    private String document;
-
     @Size(max = 20, message = "Telefone deve ter no máximo 20 caracteres")
     private String phone;
 
@@ -55,14 +52,6 @@ public class UpdateUserRequestDTO {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getDocument() {
-        return document;
-    }
-
-    public void setDocument(String document) {
-        this.document = document;
     }
 
     public String getPhone() {

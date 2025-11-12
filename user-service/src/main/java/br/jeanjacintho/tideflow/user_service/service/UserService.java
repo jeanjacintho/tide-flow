@@ -1,9 +1,7 @@
 package br.jeanjacintho.tideflow.user_service.service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -45,9 +43,10 @@ public class UserService {
         user.setName(requestDTO.getName());
         user.setEmail(requestDTO.getEmail());
         user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
-        user.setDocument(requestDTO.getDocument());
         user.setPhone(requestDTO.getPhone());
         user.setAvatarUrl(requestDTO.getAvatarUrl());
+        user.setCity(requestDTO.getCity());
+        user.setState(requestDTO.getState());
 
         User savedUser = userRepository.save(user);
         return UserResponseDTO.fromEntity(savedUser);
@@ -79,9 +78,10 @@ public class UserService {
         if (requestDTO.getPassword() != null && !requestDTO.getPassword().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
         }
-        existingUser.setDocument(requestDTO.getDocument());
         existingUser.setPhone(requestDTO.getPhone());
         existingUser.setAvatarUrl(requestDTO.getAvatarUrl());
+        existingUser.setCity(requestDTO.getCity());
+        existingUser.setState(requestDTO.getState());
 
         User updatedUser = userRepository.save(existingUser);
         return UserResponseDTO.fromEntity(updatedUser);
