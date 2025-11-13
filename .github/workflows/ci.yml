@@ -25,32 +25,16 @@ jobs:
       working-directory: ./user-service
       run: mvn clean test
 
-    - name: Generate test report
-      if: always()
-      working-directory: ./user-service
-      run: |
-        mkdir -p test-results
-        find target/surefire-reports -name "*.xml" -exec cp {} test-results/ \;
-
-    - name: Publish test results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      with:
-        files: 'user-service/test-results/**/*.xml'
-        check_name: 'Test Results'
-        comment_mode: 'always'
-        report_individual_runs: true
-
     - name: Build application
       working-directory: ./user-service
       run: mvn clean package -DskipTests
 
     - name: Upload test reports
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-reports
-        path: user-service/target/surefire-reports
+        path: user-service/target/surefire-reports/**/*
         retention-days: 30
 
     - name: Upload build artifacts
