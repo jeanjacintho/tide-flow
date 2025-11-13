@@ -3,6 +3,7 @@ package br.jeanjacintho.tideflow.user_service.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.LoginResponseDTO;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,7 +35,7 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody AuthenticationDTO authenticationDTO) {
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody AuthenticationDTO authenticationDTO) {
         var userPassword = new UsernamePasswordAuthenticationToken(authenticationDTO.email(), authenticationDTO.password());
         var auth = authenticationManager.authenticate(userPassword);
         
@@ -46,7 +48,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody RegisterDTO registerDTO) {
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterDTO registerDTO) {
         if (userRepository.findByEmail(registerDTO.email()).isPresent()) {
             return ResponseEntity.badRequest().build();
         }
