@@ -2,7 +2,6 @@ package br.jeanjacintho.tideflow.user_service.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
 import br.jeanjacintho.tideflow.user_service.model.User;
 
 public class UserResponseDTO {

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,24 +42,24 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(@RequestParam(required = false) String name, @RequestParam(required = false) String email, @RequestParam(required = false) String phone, @RequestParam(required = false) String city, @RequestParam(required = false) String state, Pageable pageable) {
+    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(@RequestParam(required = false) String name, @RequestParam(required = false) String email, @RequestParam(required = false) String phone, @RequestParam(required = false) String city, @RequestParam(required = false) String state,@NonNull Pageable pageable) {
         return ResponseEntity.ok(userService.findAll(name, email, phone, city, state, pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id) {
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable @NonNull UUID id) {
         UserResponseDTO user = userService.findById(id);
         return ResponseEntity.ok(user);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequestDTO requestDTO) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable @NonNull UUID id, @Valid @RequestBody UpdateUserRequestDTO requestDTO) {
         UserResponseDTO updatedUser = userService.updateUser(id, requestDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable @NonNull UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }

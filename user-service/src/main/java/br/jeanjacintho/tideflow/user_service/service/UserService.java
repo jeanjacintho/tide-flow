@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
@@ -52,19 +52,19 @@ public class UserService {
         return UserResponseDTO.fromEntity(savedUser);
     }
 
-    public UserResponseDTO findById(UUID id) {
+    public UserResponseDTO findById(@NonNull UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
         return UserResponseDTO.fromEntity(user);
     }
 
-    public Page<UserResponseDTO> findAll(@RequestParam(required = false) String name, @RequestParam(required = false) String email, @RequestParam(required = false) String phone, @RequestParam(required = false) String city, @RequestParam(required = false) String state, Pageable pageable) {
+    public Page<UserResponseDTO> findAll(String name, String email, String phone, String city, String state, @NonNull Pageable pageable) {
         Specification<User> specification = UserSpecification.withFilters(name, email, phone, city, state);
         return userRepository.findAll(specification, pageable).map(UserResponseDTO::fromEntity);
     }
 
     @Transactional
-    public UserResponseDTO updateUser(UUID id, UpdateUserRequestDTO requestDTO) {
+    public UserResponseDTO updateUser(@NonNull UUID id, UpdateUserRequestDTO requestDTO) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
 
@@ -88,7 +88,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(UUID id) {
+    public void deleteUser(@NonNull UUID id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("Usuário", id);
         }
@@ -96,7 +96,6 @@ public class UserService {
     }
 
     public Optional<UserResponseDTO> findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(UserResponseDTO::fromEntity);
+        return userRepository.findByEmail(email).map(UserResponseDTO::fromEntity);
     }
 }

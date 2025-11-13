@@ -35,6 +35,9 @@ public class User {
     @Column(length = 2)
     private String state;
 
+    @Column(nullable = false)
+    private UserRole role;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -43,7 +46,13 @@ public class User {
 
     public User() {}
 
-    public User(String name, String email, String password, String phone, String avatarUrl, String city, String state) {
+    public User(String email, String password, UserRole role) {
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
+
+    public User(String name, String email, String password, String phone, String avatarUrl, String city, String state, UserRole role) {
         this.name = name;
         this.email = email;
         this.password = password;
@@ -51,12 +60,14 @@ public class User {
         this.avatarUrl = avatarUrl;
         this.city = city;
         this.state = state;
+        this.role = role;
     }
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        role = UserRole.USER;
     }
 
     @PreUpdate
@@ -143,5 +154,13 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 }
