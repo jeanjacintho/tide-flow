@@ -38,7 +38,7 @@ jobs:
       with:
         files: 'user-service/test-results/**/*.xml'
         check_name: 'Test Results'
-        comment_mode: 'create new'
+        comment_mode: 'always'
         report_individual_runs: true
 
     - name: Build application
