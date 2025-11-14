@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,14 +33,17 @@ import br.jeanjacintho.tideflow.user_service.config.TokenService;
 import br.jeanjacintho.tideflow.user_service.dto.request.AuthenticationDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.exception.GlobalExceptionHandler;
+import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.model.UserRole;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
+import br.jeanjacintho.tideflow.user_service.service.UserService;
 
 @WebMvcTest(controllers = AuthController.class, excludeAutoConfiguration = {org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class})
 @AutoConfigureMockMvc(addFilters = false)
 @Import({TestSecurityConfig.class, GlobalExceptionHandler.class})
 @DisplayName("AuthController Tests")
+@SuppressWarnings("null")
 class AuthControllerTest {
 
     @Autowired
@@ -49,17 +52,20 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AuthenticationManager authenticationManager;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private TokenService tokenService;
 
-    @MockBean
+    @MockitoBean
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private UserService userService;
 
     private User testUser;
     private String testToken;
@@ -72,6 +78,8 @@ class AuthControllerTest {
         testUser.setPassword("$2a$10$encodedPassword");
         testUser.setRole(UserRole.USER);
         testUser.setName("Test User");
+        testUser.setCreatedAt(java.time.LocalDateTime.now());
+        testUser.setUpdatedAt(java.time.LocalDateTime.now());
 
         testToken = "test-jwt-token-12345";
     }
@@ -149,12 +157,19 @@ class AuthControllerTest {
     void testRegisterSuccess() throws Exception {
         RegisterDTO registerDTO = new RegisterDTO("newuser@example.com", "password123", UserRole.USER);
 
-        when(userRepository.findByEmail("newuser@example.com"))
-                .thenReturn(Optional.empty());
-        when(passwordEncoder.encode("password123"))
-                .thenReturn("$2a$10$encodedPassword");
-        when(userRepository.save(any(User.class)))
-                .thenReturn(testUser);
+        UserResponseDTO mockResponse = new UserResponseDTO(
+                testUser.getId(),
+                testUser.getName(),
+                testUser.getEmail(),
+                testUser.getPhone(),
+                testUser.getAvatarUrl(),
+                testUser.getCity(),
+                testUser.getState(),
+                testUser.getCreatedAt(),
+                testUser.getUpdatedAt()
+        );
+        when(userService.register(any(RegisterDTO.class)))
+                .thenReturn(mockResponse);
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -163,17 +178,17 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /auth/register - Deve retornar 400 com email duplicado")
+    @DisplayName("POST /auth/register - Deve retornar 409 com email duplicado")
     void testRegisterDuplicateEmail() throws Exception {
         RegisterDTO registerDTO = new RegisterDTO("existing@example.com", "password123", UserRole.USER);
 
-        when(userRepository.findByEmail("existing@example.com"))
-                .thenReturn(Optional.of(testUser));
+        when(userService.register(any(RegisterDTO.class)))
+                .thenThrow(new br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException("existing@example.com"));
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerDTO)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -181,12 +196,19 @@ class AuthControllerTest {
     void testRegisterAdminSuccess() throws Exception {
         RegisterDTO registerDTO = new RegisterDTO("admin@example.com", "password123", UserRole.ADMIN);
 
-        when(userRepository.findByEmail("admin@example.com"))
-                .thenReturn(Optional.empty());
-        when(passwordEncoder.encode("password123"))
-                .thenReturn("$2a$10$encodedPassword");
-        when(userRepository.save(any(User.class)))
-                .thenReturn(testUser);
+        UserResponseDTO mockResponse = new UserResponseDTO(
+                testUser.getId(),
+                testUser.getName(),
+                testUser.getEmail(),
+                testUser.getPhone(),
+                testUser.getAvatarUrl(),
+                testUser.getCity(),
+                testUser.getState(),
+                testUser.getCreatedAt(),
+                testUser.getUpdatedAt()
+        );
+        when(userService.register(any(RegisterDTO.class)))
+                .thenReturn(mockResponse);
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -226,8 +248,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /auth/login - Deve retornar 500 quando usuário não encontrado após autenticação")
-    void testLoginUserNotFoundAfterAuth() throws Exception {
+    @DisplayName("POST /auth/login - Deve fazer login com sucesso mesmo sem buscar usuário do repositório")
+    void testLoginSuccessWithoutRepositoryLookup() throws Exception {
         AuthenticationDTO authDTO = new AuthenticationDTO("test@example.com", "password123");
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -235,13 +257,15 @@ class AuthControllerTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(userRepository.findByEmail("test@example.com"))
-                .thenReturn(Optional.empty());
+        when(tokenService.generateToken(any(User.class)))
+                .thenReturn(testToken);
 
         mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authDTO)))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.token").value(testToken));
     }
 
     private UserDetails createUserDetails(User user) {

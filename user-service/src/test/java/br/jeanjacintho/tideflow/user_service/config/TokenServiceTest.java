@@ -11,19 +11,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.model.UserRole;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayName("TokenService Tests")
 class TokenServiceTest {
 
-    @InjectMocks
     private TokenService tokenService;
 
     private User testUser;
@@ -31,6 +26,7 @@ class TokenServiceTest {
 
     @BeforeEach
     void setUp() {
+        tokenService = new TokenService();
         ReflectionTestUtils.setField(tokenService, "secret", TEST_SECRET);
 
         testUser = new User();

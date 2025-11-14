@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+
+import org.mockito.ArgumentMatchers;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +41,7 @@ import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService Tests")
+@SuppressWarnings("null")
 class UserServiceTest {
 
     @Mock
@@ -145,14 +148,14 @@ class UserServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> userPage = new PageImpl<>(java.util.List.of(testUser), pageable, 1);
 
-        when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), eq(pageable))).thenReturn(userPage);
 
         Page<UserResponseDTO> result = userService.findAll(null, null, null, null, null, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(1, result.getContent().size());
-        verify(userRepository).findAll(any(Specification.class), eq(pageable));
+        verify(userRepository).findAll(ArgumentMatchers.<Specification<User>>any(), eq(pageable));
     }
 
     @Test
@@ -161,13 +164,13 @@ class UserServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> userPage = new PageImpl<>(java.util.List.of(testUser), pageable, 1);
 
-        when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(userPage);
+        when(userRepository.findAll(ArgumentMatchers.<Specification<User>>any(), eq(pageable))).thenReturn(userPage);
 
         Page<UserResponseDTO> result = userService.findAll("John", "john@example.com", "1234567890", "São Paulo", "SP", pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        verify(userRepository).findAll(any(Specification.class), eq(pageable));
+        verify(userRepository).findAll(ArgumentMatchers.<Specification<User>>any(), eq(pageable));
     }
 
     @Test

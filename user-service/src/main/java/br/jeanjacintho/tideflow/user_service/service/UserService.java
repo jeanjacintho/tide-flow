@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
@@ -31,6 +32,31 @@ public class UserService {
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    @Transactional
+    public UserResponseDTO register(RegisterDTO registerDTO) {
+        if (userRepository.existsByEmail(registerDTO.email())) {
+            throw new DuplicateEmailException(registerDTO.email());
+        }
+
+        User user = new User();
+        String name = extractNameFromEmail(registerDTO.email());
+        user.setName(name);
+        user.setEmail(registerDTO.email());
+        user.setPassword(passwordEncoder.encode(registerDTO.password()));
+        user.setRole(registerDTO.role());
+
+        User savedUser = userRepository.save(user);
+        return UserResponseDTO.fromEntity(savedUser);
+    }
+
+    private String extractNameFromEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return "Usuário";
+        }
+        String namePart = email.split("@")[0];
+        return namePart.substring(0, Math.min(namePart.length(), 100));
     }
 
     @Transactional

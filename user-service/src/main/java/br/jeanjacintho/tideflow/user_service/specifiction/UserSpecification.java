@@ -14,19 +14,19 @@ public class UserSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             if (name != null && !name.isEmpty()) {
-                predicates.add(cb.equal(cb.lower(root.get("name")), name.toLowerCase()));
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
             }
 
             if (email != null && !email.isEmpty()) {    
-                predicates.add(cb.equal(cb.lower(root.get("email")), email.toLowerCase()));
+                predicates.add(cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%"));
             }
             
             if (phone != null && !phone.isEmpty()) {
-                predicates.add(cb.equal(cb.lower(root.get("phone")), phone.toLowerCase()));
+                predicates.add(cb.like(cb.lower(root.get("phone")), "%" + phone.toLowerCase() + "%"));
             }
 
             if (city != null && !city.isEmpty()) {
-                predicates.add(cb.equal(cb.lower(root.get("city")), city.toLowerCase()));
+                predicates.add(cb.like(cb.lower(root.get("city")), "%" + city.toLowerCase() + "%"));
             }
 
             if (state != null && !state.isEmpty()) {

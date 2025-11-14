@@ -21,6 +21,7 @@ import br.jeanjacintho.tideflow.user_service.model.UserRole;
 
 @DataJpaTest
 @DisplayName("UserRepository Tests")
+@SuppressWarnings("null")
 class UserRepositoryTest {
 
     @Autowired

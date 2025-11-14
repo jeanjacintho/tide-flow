@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 
-@Service
+@Service("userDetailsService")
 public class AuthorizationService implements UserDetailsService {
     private final UserRepository userRepository;
 

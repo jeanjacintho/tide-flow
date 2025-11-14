@@ -28,6 +28,7 @@ import br.jeanjacintho.tideflow.user_service.service.UserService;
 @AutoConfigureMockMvc(addFilters = false)
 @Import({TestSecurityConfig.class, GlobalExceptionHandler.class})
 @DisplayName("GlobalExceptionHandler Tests")
+@SuppressWarnings("null")
 class GlobalExceptionHandlerTest {
 
     @Autowired
@@ -127,9 +128,9 @@ class GlobalExceptionHandlerTest {
     }
 }
 
-// Controller de teste para simular endpoints que lançam exceções
 @org.springframework.web.bind.annotation.RestController
 @org.springframework.web.bind.annotation.RequestMapping("/test")
+@SuppressWarnings("null")
 class TestController {
 
     @org.springframework.beans.factory.annotation.Autowired
