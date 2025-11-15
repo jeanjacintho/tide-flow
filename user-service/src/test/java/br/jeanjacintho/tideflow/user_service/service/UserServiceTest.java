@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 
 import org.mockito.ArgumentMatchers;
@@ -31,8 +32,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
+import br.jeanjacintho.tideflow.user_service.event.UserCreatedEvent;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.User;
@@ -49,6 +52,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private UserEventPublisher eventPublisher;
 
     @InjectMocks
     private UserService userService;
@@ -109,6 +115,7 @@ class UserServiceTest {
         verify(userRepository).existsByEmail(createRequestDTO.getEmail());
         verify(passwordEncoder).encode(createRequestDTO.getPassword());
         verify(userRepository).save(any(User.class));
+        verify(eventPublisher).publishUserCreated(any(UserCreatedEvent.class));
     }
 
     @Test
@@ -320,5 +327,44 @@ class UserServiceTest {
 
         assertTrue(result.isEmpty());
     }
-}
 
+    @Test
+    @DisplayName("register - Deve registrar usuário e publicar evento")
+    void testRegisterSuccess() {
+        RegisterDTO registerDTO = new RegisterDTO("John Doe", "john@example.com", "password123", UserRole.USER);
+        when(userRepository.existsByEmail(registerDTO.email())).thenReturn(false);
+        when(passwordEncoder.encode(registerDTO.password())).thenReturn("$2a$10$encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        UserResponseDTO result = userService.register(registerDTO);
+
+        assertNotNull(result);
+        assertEquals(testUser.getId(), result.getId());
+        assertEquals(testUser.getName(), result.getName());
+        assertEquals(testUser.getEmail(), result.getEmail());
+        verify(userRepository).existsByEmail(registerDTO.email());
+        verify(passwordEncoder).encode(registerDTO.password());
+        verify(userRepository).save(any(User.class));
+        verify(eventPublisher).publishUserCreated(argThat(event -> 
+            event.userId().equals(testUser.getId()) &&
+            event.name().equals(testUser.getName()) &&
+            event.email().equals(testUser.getEmail())
+        ));
+    }
+
+    @Test
+    @DisplayName("createUser - Deve publicar evento com dados corretos")
+    void testCreateUserPublishesEvent() {
+        when(userRepository.existsByEmail(createRequestDTO.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(createRequestDTO.getPassword())).thenReturn("$2a$10$encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        userService.createUser(createRequestDTO);
+
+        verify(eventPublisher).publishUserCreated(argThat(event -> 
+            event.userId().equals(testUser.getId()) &&
+            event.name().equals(testUser.getName()) &&
+            event.email().equals(testUser.getEmail())
+        ));
+    }
+}

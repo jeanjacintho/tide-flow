@@ -121,7 +121,7 @@ class SecurityIntegrationTest {
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"new@example.com\",\"password\":\"password123\",\"role\":\"USER\"}"))
+                .content("{\"name\":\"New User\",\"email\":\"new@example.com\",\"password\":\"password123\",\"role\":\"USER\"}"))
                 .andExpect(status().isOk());
     }
 }
