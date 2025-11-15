@@ -18,6 +18,7 @@ import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
+import br.jeanjacintho.tideflow.user_service.event.UserCreatedEvent;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 import br.jeanjacintho.tideflow.user_service.specifiction.UserSpecification;
@@ -27,11 +28,13 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserEventPublisher eventPublisher;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -41,22 +44,20 @@ public class UserService {
         }
 
         User user = new User();
-        String name = extractNameFromEmail(registerDTO.email());
-        user.setName(name);
+        user.setName(registerDTO.name());
         user.setEmail(registerDTO.email());
         user.setPassword(passwordEncoder.encode(registerDTO.password()));
         user.setRole(registerDTO.role());
 
         User savedUser = userRepository.save(user);
+        
+        eventPublisher.publishUserCreated(new UserCreatedEvent(
+            savedUser.getId(),
+            savedUser.getName(),
+            savedUser.getEmail()
+        ));
+        
         return UserResponseDTO.fromEntity(savedUser);
-    }
-
-    private String extractNameFromEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            return "Usuário";
-        }
-        String namePart = email.split("@")[0];
-        return namePart.substring(0, Math.min(namePart.length(), 100));
     }
 
     @Transactional
@@ -75,6 +76,13 @@ public class UserService {
         user.setState(requestDTO.getState());
 
         User savedUser = userRepository.save(user);
+        
+        eventPublisher.publishUserCreated(new UserCreatedEvent(
+            savedUser.getId(),
+            savedUser.getName(),
+            savedUser.getEmail()
+        ));
+        
         return UserResponseDTO.fromEntity(savedUser);
     }
 
