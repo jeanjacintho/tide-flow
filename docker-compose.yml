@@ -35,6 +35,23 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-ai-service:
+    image: postgres:16-alpine
+    container_name: tideflow-postgres-ai-service
+    environment:
+      POSTGRES_DB: tideflow_db_aiservice
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_ai_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: tideflow-rabbitmq
@@ -65,12 +82,15 @@ services:
         condition: service_healthy
       postgres-notification-service:
         condition: service_healthy
+      postgres-ai-service:
+        condition: service_healthy
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
 volumes:
   postgres_user_data:
   postgres_notification_data:
+  postgres_ai_data:
   rabbitmq_data:
   pgadmin_data:
 
