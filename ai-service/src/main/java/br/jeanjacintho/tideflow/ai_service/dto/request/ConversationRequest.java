@@ -10,14 +10,14 @@ public class ConversationRequest {
     @NotBlank(message = "message é obrigatória")
     private String message;
     
-    private String converationId;
+    private String conversationId;
 
     public ConversationRequest() {}
 
-    public ConversationRequest(String userId, String message, String converationId) {
+    public ConversationRequest(String userId, String message, String conversationId) {
         this.userId = userId;
         this.message = message;
-        this.converationId = converationId;
+        this.conversationId = conversationId;
     }
 
     public String getUserId() {
@@ -36,11 +36,11 @@ public class ConversationRequest {
         this.message = message;
     }
 
-    public String getConverationId() {
-        return converationId;
+    public String getConversationId() {
+        return conversationId;
     }
 
-    public void setConverationId(String converationId) {
-        this.converationId = converationId;
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
     }
 }
