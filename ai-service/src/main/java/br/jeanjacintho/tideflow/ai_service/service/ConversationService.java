@@ -11,7 +11,6 @@ import br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
-import com.felipestanzani.jtoon.JToon;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -49,9 +48,15 @@ public class ConversationService {
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));
 
-        String toonPrompt = buildToonPrompt(history, request.getUserId());
+        String systemPrompt = "Você é uma terapeuta empática e atenciosa. Seu objetivo é entender as emoções da pessoa e fazer perguntas empáticas para ajudá-la. " +
+                "Mantenha o contexto da conversa e faça referência ao que foi discutido anteriormente quando relevante. " +
+                "Seja acolhedora, compreensiva e ajude a pessoa a explorar seus sentimentos.";
 
-        return ollamaClient.generateResponse(toonPrompt)
+        List<Map<String, String>> messagesForOllama = new ArrayList<>();
+        messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
+        messagesForOllama.addAll(history);
+
+        return ollamaClient.chatWithHistory(messagesForOllama)
                 .map(aiResponse -> {
                     ConversationMessage assistantMessage = new ConversationMessage(
                             MessageRole.ASSISTANT,
@@ -90,27 +95,6 @@ public class ConversationService {
     private Conversation createNewConversation(String userId) {
         Conversation conversation = new Conversation(userId);
         return conversationRepository.save(conversation);
-    }
-
-    private String buildToonPrompt(List<Map<String, String>> history, String userId) {
-        Map<String, Object> conversationData = new LinkedHashMap<>();
-        conversationData.put("userId", userId);
-        conversationData.put("role", "terapeuta");
-        conversationData.put("objetivo", "entender emoções e fazer perguntas empáticas");
-        
-        List<Map<String, Object>> messages = new ArrayList<>();
-        for (Map<String, String> msg : history) {
-            Map<String, Object> message = new LinkedHashMap<>();
-            message.put("role", msg.get("role"));
-            message.put("text", msg.get("content"));
-            messages.add(message);
-        }
-        conversationData.put("messages", messages);
-
-        String toon = JToon.encode(conversationData);
-        
-        return "Conversa em TOON:\n" + toon + 
-               "\nResponda como terapeuta empática, fazendo perguntas para entender as emoções.";
     }
 
     private List<Map<String, String>> buildHistoryFromMessages(List<ConversationMessage> messages) {
