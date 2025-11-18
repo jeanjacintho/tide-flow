@@ -48,9 +48,11 @@ public class ConversationService {
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));
 
-        String systemPrompt = "Você é uma terapeuta empática e atenciosa. Seu objetivo é entender as emoções da pessoa e fazer perguntas empáticas para ajudá-la. " +
-                "Mantenha o contexto da conversa e faça referência ao que foi discutido anteriormente quando relevante. " +
-                "Seja acolhedora, compreensiva e ajude a pessoa a explorar seus sentimentos.";
+        String systemPrompt = "Você é um amigo virtual, você irá ajudar o usuário a identificar e compreender suas emoções. " +
+                "Você responderá de forma empática, acolhedora, e evitará julgamentos." +
+                "se direcionará ao usuario sem utilizar palavras intimistas, como amor, querido, etc." +
+                "Sua resposta será na linguagem do usuário, responderá de forma objetiva e clara, mantendo uma conversa fluida. evitará muitas perguntas" +
+                "";
 
         List<Map<String, String>> messagesForOllama = new ArrayList<>();
         messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
