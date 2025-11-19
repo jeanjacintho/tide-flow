@@ -32,22 +32,7 @@ export default function AppLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Navbar será adicionada aqui */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <nav className="container mx-auto px-4 py-4">
-          {/* Navbar content será adicionado depois */}
-          <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold bg-gradient-to-r from-black via-purple-500 to-blue-500 bg-clip-text text-transparent">
-              Tideflow
-            </div>
-            <div>
-              {/* Navbar items serão adicionados aqui */}
-            </div>
-          </div>
-        </nav>
-      </header>
-      
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main className="flex-1">
         {children}
       </main>
     </div>

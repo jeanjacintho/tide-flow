@@ -135,6 +135,109 @@ class ApiService {
       throw new Error('Invalid token format');
     }
   }
+
+  async sendMessage(message: string, conversationId?: string, userId?: string): Promise<ConversationResponse> {
+    if (!userId) {
+      throw new Error('User ID é obrigatório para enviar mensagens');
+    }
+
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/conversations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          conversationId: conversationId || null,
+          userId: userId,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Erro ao enviar mensagem (status: ${response.status})`;
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o serviço está rodando.');
+      }
+      throw error;
+    }
+  }
+
+  async getConversationHistory(conversationId: string, userId: string): Promise<ConversationHistoryResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/conversations/${conversationId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': userId,
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Erro ao buscar histórico (status: ${response.status})`;
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o serviço está rodando.');
+      }
+      throw error;
+    }
+  }
+}
+
+export interface ConversationResponse {
+  response: string;
+  conversationId: string;
+  isComplete: boolean;
+  emotionalAnalysis?: {
+    emotion?: string;
+    intensity?: number;
+    sentiment?: string;
+  };
+}
+
+export interface Message {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  createdAt: string;
+  sequenceNumber: number;
+}
+
+export interface ConversationHistoryResponse {
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Message[];
 }
 
 export const apiService = new ApiService();
