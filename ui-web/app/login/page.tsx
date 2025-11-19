@@ -1,84 +1,145 @@
 'use client';
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Label } from "@radix-ui/react-label";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { z } from "zod";
 
-export default function Login() {
+const loginSchema = z.object({
+    email: z
+        .string()
+        .min(1, 'O email é obrigatório')
+        .email('Email inválido'),
+    password: z
+        .string()
+        .min(1, 'A senha é obrigatória'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function Login(props: React.ComponentProps<typeof Card>) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
+    const [isPending, startTransition] = useTransition();
     const { login } = useAuth();
-    const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const cardProps = Object.fromEntries(
+        Object.entries(props).filter(([key]) => key !== 'params' && key !== 'searchParams')
+    ) as React.ComponentProps<typeof Card>;
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setIsLoading(true);
+        setErrors({});
 
-        try {
-            await login(email, password);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao fazer login. Verifique suas credenciais.');
-        } finally {
-            setIsLoading(false);
+        const formData: LoginFormData = {
+            email,
+            password,
+        };
+
+        const result = loginSchema.safeParse(formData);
+
+        if (!result.success) {
+            const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
+            result.error.issues.forEach((issue) => {
+                const field = issue.path[0] as keyof LoginFormData;
+                if (field) {
+                    fieldErrors[field] = issue.message;
+                }
+            });
+            setErrors(fieldErrors);
+            return;
         }
+
+        startTransition(() => {
+            (async () => {
+                try {
+                    await login(email, password);
+                } catch (err) {
+                    const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer login. Verifique suas credenciais.';
+                    setErrors({ email: errorMessage });
+                }
+            })();
+        });
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen">
-            <div className="flex flex-col w-[400px] bg-white rounded-lg p-4 border border-border gap-4">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-2xl font-bold">Faça login para continuar</h1>
-                    <span className="text-sm text-muted-foreground">Digite seu email e senha para continuar</span>
+        <div className="flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10">
+            <div className="w-full max-w-sm space-y-6">
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold">tideflow</h1>
                 </div>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    {error && (
-                        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                            {error}
-                        </div>
-                    )}
-                    <div className="flex flex-col gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input 
-                            type="email" 
-                            id="email" 
-                            placeholder="Email" 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between">
-                            <Label htmlFor="password">Senha</Label>
-                            <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                                Esqueceu sua senha?
-                            </Link>
-                        </div>
-                        <Input 
-                            type="password" 
-                            id="password" 
-                            placeholder="Senha" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <Button className="w-full" size={"lg"} type="submit" disabled={isLoading}>
-                        {isLoading ? 'Entrando...' : 'Entrar'}
-                    </Button>
-                </form>
-                <span className="text-sm text-muted-foreground text-center">
-                    Não tem uma conta? <Link href="/register" className="text-primary hover:underline">Registre-se</Link>
-                </span>
+                <Card {...cardProps}>
+                    <CardHeader>
+                        <CardTitle>Faça login para continuar</CardTitle>
+                        <CardDescription>
+                            Digite seu email e senha para continuar
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit}>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="joao@exemplo.com"
+                                        value={email}
+                                        onChange={(e) => {
+                                            setEmail(e.target.value);
+                                            if (errors.email) {
+                                                setErrors(prev => ({ ...prev, email: undefined }));
+                                            }
+                                        }}
+                                        required
+                                        disabled={isPending}
+                                        aria-invalid={!!errors.email}
+                                    />
+                                    <FieldError>{errors.email}</FieldError>
+                                </Field>
+                                <Field>
+                                    <div className="flex justify-between items-center">
+                                        <FieldLabel htmlFor="password">Senha</FieldLabel>
+                                        <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                                            Esqueceu sua senha?
+                                        </Link>
+                                    </div>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="Senha"
+                                        value={password}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            if (errors.password) {
+                                                setErrors(prev => ({ ...prev, password: undefined }));
+                                            }
+                                        }}
+                                        required
+                                        disabled={isPending}
+                                        aria-invalid={!!errors.password}
+                                    />
+                                    <FieldError>{errors.password}</FieldError>
+                                </Field>
+                                <FieldGroup>
+                                    <Field>
+                                        <Button type="submit" disabled={isPending} className="w-full">
+                                            {isPending ? 'Entrando...' : 'Entrar'}
+                                        </Button>
+                                        <FieldDescription className="px-6 text-center">
+                                            Não tem uma conta? <Link href="/register" className="text-primary hover:underline">Registre-se</Link>
+                                        </FieldDescription>
+                                    </Field>
+                                </FieldGroup>
+                            </FieldGroup>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
