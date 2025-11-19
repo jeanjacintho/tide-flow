@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,17 +28,7 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    if (conversationId && user?.id) {
-      loadConversationHistory();
-    }
-  }, [conversationId, user?.id]);
-
-  const loadConversationHistory = async () => {
+  const loadConversationHistory = useCallback(async () => {
     if (!conversationId || !user?.id) return;
 
     try {
@@ -48,7 +38,26 @@ export default function Chat() {
     } catch (error) {
       console.error('Error loading conversation history:', error);
     }
-  };
+  }, [conversationId, user]);
+
+  useEffect(() => {
+    // Aguarda um pouco para a animação de expansão acontecer
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  useEffect(() => {
+    if (conversationId && user?.id) {
+      // Usa setTimeout para evitar chamada síncrona de setState
+      const timer = setTimeout(() => {
+        loadConversationHistory();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [conversationId, user?.id, loadConversationHistory]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,22 +124,17 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-yellow-50/20 to-orange-50/30 dark:from-background dark:via-yellow-950/10 dark:to-orange-950/10">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
+      {/* Header - Minimalist */}
+      <header className="absolute top-0 left-0 right-0 z-50">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">tideflow</h1>
-            </div>
-
-            {/* Right side buttons */}
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">tideflow</h1>
             <div className="flex items-center gap-3">
               {user?.name && (
-                <span className="text-sm text-muted-foreground">{user.name}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{user.name}</span>
               )}
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={logout} className="text-gray-600 dark:text-gray-400">
                 Sair
               </Button>
             </div>
@@ -138,104 +142,149 @@ export default function Chat() {
         </div>
       </header>
 
-      {/* Chat Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {messages.length === 0 && showExamples ? (
-          // Initial state with title and examples
-          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-            <div className="w-full max-w-3xl space-y-8">
-              <div className="text-center">
-                <h2 className="text-5xl font-bold mb-4">Como posso ajudar?</h2>
+          // Initial state - centered layout with input
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-20">
+            <div className="w-full max-w-5xl space-y-12">
+              {/* Title Section */}
+              <div className="text-center space-y-3">
+                <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200">
+                  Olá, {user?.name || 'usuário'}
+                </h2>
+                <p className="text-xl md:text-2xl font-medium bg-gradient-to-r from-gray-700 via-gray-600 to-purple-600 dark:from-gray-300 dark:via-gray-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  Como posso ajudar você hoje?
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                  Use uma das perguntas mais comuns abaixo ou escreva sua própria para começar.
+                </p>
               </div>
 
-              {/* Example Queries */}
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground text-center">Exemplos de perguntas:</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {EXAMPLE_QUERIES.map((example, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleExampleClick(example)}
-                      className="flex items-center justify-between p-3 text-left bg-card border rounded-lg hover:bg-accent hover:border-accent-foreground/20 transition-colors group"
-                    >
-                      <span className="text-sm">{example}</span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </button>
-                  ))}
-                </div>
+              {/* Example Cards - Horizontal Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {EXAMPLE_QUERIES.map((example, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleExampleClick(example)}
+                    className="flex flex-col items-start p-5 text-left bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all duration-200 group border border-gray-200 dark:border-gray-700"
+                  >
+                    <span className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">{example}</span>
+                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mt-auto group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
+                      <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Input Area - Centered with examples */}
+              <div className="w-full">
+                <form onSubmit={handleSubmit}>
+                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
+                    {/* Input */}
+                    <Input
+                      type="text"
+                      placeholder="Pergunte qualquer coisa..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={isPending}
+                      className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
+                    />
+
+                    {/* Right side - Character count and send button */}
+                    <div className="flex items-center gap-3 ml-3">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {message.length}/1000
+                      </span>
+                      <Button
+                        type="submit"
+                        size="icon"
+                        disabled={!message.trim() || isPending}
+                        className="h-9 w-9 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-sm"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
         ) : (
-          // Chat messages
-          <div className="flex-1 overflow-y-auto px-4 py-6">
-            <div className="max-w-3xl mx-auto space-y-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex w-full",
-                    msg.role === 'USER' ? 'justify-end' : 'justify-start'
-                  )}
-                >
+          <>
+            {/* Chat messages - animated expansion */}
+            <div className="flex-1 overflow-y-auto px-6 py-8 transition-all duration-500 ease-in-out">
+              <div className="max-w-4xl mx-auto space-y-6">
+                {messages.map((msg) => (
                   <div
+                    key={msg.id}
                     className={cn(
-                      "max-w-[80%] rounded-lg px-4 py-2",
-                      msg.role === 'USER'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card border'
+                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      msg.role === 'USER' ? 'justify-end' : 'justify-start'
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                  </div>
-                </div>
-              ))}
-              {isPending && (
-                <div className="flex justify-start">
-                  <div className="bg-card border rounded-lg px-4 py-2">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className={cn(
+                        "max-w-[75%] rounded-2xl px-5 py-4 shadow-sm",
+                        msg.role === 'USER'
+                          ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
+                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                      )}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                     </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-        )}
-
-        {/* Input Area - Fixed at bottom */}
-        <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container mx-auto px-4 py-4">
-            <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
-              <div className="flex items-center gap-2 p-4 bg-card border rounded-lg shadow-sm">
-                {/* Input */}
-                <Input
-                  type="text"
-                  placeholder="Pergunte qualquer coisa à IA"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  disabled={isPending}
-                  className="flex-1 border-0 shadow-none focus-visible:ring-0 text-lg"
-                />
-
-                {/* Right side icons */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={!message.trim() || isPending}
-                    className="h-8 w-8 bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </Button>
-                </div>
+                ))}
+                {isPending && (
+                  <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4 shadow-sm">
+                      <div className="flex gap-1.5">
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+
+            {/* Input Area - Fixed at bottom when chat is active */}
+            <div className="w-full pb-6 transition-all duration-500 ease-in-out">
+              <div className="max-w-4xl mx-auto px-6">
+                <form onSubmit={handleSubmit}>
+                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
+                    {/* Input */}
+                    <Input
+                      type="text"
+                      placeholder="Pergunte qualquer coisa..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={isPending}
+                      className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
+                    />
+
+                    {/* Right side - Character count and send button */}
+                    <div className="flex items-center gap-3 ml-3">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {message.length}/1000
+                      </span>
+                      <Button
+                        type="submit"
+                        size="icon"
+                        disabled={!message.trim() || isPending}
+                        className="h-9 w-9 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-sm"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
