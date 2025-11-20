@@ -6,11 +6,26 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "emotional_analysis")
+@Table(name = "emotional_analysis", indexes = {
+    @Index(name = "idx_emotional_user_message", columnList = "usuario_id, message_id"),
+    @Index(name = "idx_emotional_conversation", columnList = "conversation_id, sequence_number")
+})
 public class EmotionalAnalysis {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "usuario_id", nullable = false)
+    private String usuarioId;
+
+    @Column(name = "conversation_id")
+    private UUID conversationId;
+
+    @Column(name = "message_id")
+    private UUID messageId;
+
+    @Column(name = "sequence_number")
+    private Integer sequenceNumber;
 
     @Column(name = "primary_emotional", nullable = false, length = 50)
     private String primaryEmotional;
@@ -32,6 +47,20 @@ public class EmotionalAnalysis {
     public EmotionalAnalysis() {}
 
     public EmotionalAnalysis(String primaryEmotional, Integer intensity, List<String> triggers, String context, String suggestion) {
+        this.primaryEmotional = primaryEmotional;
+        this.intensity = intensity;
+        this.triggers = triggers;
+        this.context = context;
+        this.suggestion = suggestion;
+    }
+
+    public EmotionalAnalysis(String usuarioId, UUID conversationId, UUID messageId, Integer sequenceNumber,
+                            String primaryEmotional, Integer intensity, List<String> triggers, 
+                            String context, String suggestion) {
+        this.usuarioId = usuarioId;
+        this.conversationId = conversationId;
+        this.messageId = messageId;
+        this.sequenceNumber = sequenceNumber;
         this.primaryEmotional = primaryEmotional;
         this.intensity = intensity;
         this.triggers = triggers;
@@ -85,5 +114,37 @@ public class EmotionalAnalysis {
 
     public void setSuggestion(String suggestion) {
         this.suggestion = suggestion;
+    }
+
+    public String getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void setUsuarioId(String usuarioId) {
+        this.usuarioId = usuarioId;
+    }
+
+    public UUID getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(UUID conversationId) {
+        this.conversationId = conversationId;
+    }
+
+    public UUID getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(UUID messageId) {
+        this.messageId = messageId;
+    }
+
+    public Integer getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(Integer sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
     }
 }

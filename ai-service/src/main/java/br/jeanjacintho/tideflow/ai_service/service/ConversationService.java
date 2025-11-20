@@ -11,6 +11,7 @@ import br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
+import br.jeanjacintho.tideflow.ai_service.repository.EmotionalAnalysisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,17 +33,20 @@ public class ConversationService {
     private final ConversationMessageRepository conversationMessageRepository;
     private final MemoriaService memoriaService;
     private final ObjectMapper objectMapper;
+    private final EmotionalAnalysisRepository emotionalAnalysisRepository;
 
     public ConversationService(OllamaClient ollamaClient,
                                ConversationRepository conversationRepository,
                                ConversationMessageRepository conversationMessageRepository,
                                MemoriaService memoriaService,
-                               ObjectMapper objectMapper) {
+                               ObjectMapper objectMapper,
+                               EmotionalAnalysisRepository emotionalAnalysisRepository) {
         this.ollamaClient = ollamaClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
         this.memoriaService = memoriaService;
         this.objectMapper = objectMapper;
+        this.emotionalAnalysisRepository = emotionalAnalysisRepository;
     }
 
     @Transactional
@@ -86,6 +90,13 @@ public class ConversationService {
                     // Extrai análise emocional da mensagem do usuário usando IA
                     return extractEmotionalAnalysis(request.getMessage())
                             .map(analysis -> {
+                                // Salva análise emocional associada à mensagem do usuário
+                                analysis.setUsuarioId(request.getUserId());
+                                analysis.setConversationId(conversation.getId());
+                                analysis.setMessageId(userMessage.getId());
+                                analysis.setSequenceNumber(userMessage.getSequenceNumber());
+                                emotionalAnalysisRepository.save(analysis);
+
                                 // Processa extração de memórias de forma assíncrona
                                 memoriaService.processarMensagemParaMemoria(
                                         request.getUserId(),

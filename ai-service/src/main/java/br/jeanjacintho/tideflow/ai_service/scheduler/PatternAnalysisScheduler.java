@@ -2,6 +2,7 @@ package br.jeanjacintho.tideflow.ai_service.scheduler;
 
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
 import br.jeanjacintho.tideflow.ai_service.service.PatternAnalysisService;
+import br.jeanjacintho.tideflow.ai_service.service.TriggerAnalysisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,11 +17,14 @@ public class PatternAnalysisScheduler {
     private static final Logger logger = LoggerFactory.getLogger(PatternAnalysisScheduler.class);
 
     private final PatternAnalysisService patternAnalysisService;
+    private final TriggerAnalysisService triggerAnalysisService;
     private final ConversationRepository conversationRepository;
 
     public PatternAnalysisScheduler(PatternAnalysisService patternAnalysisService,
+                                   TriggerAnalysisService triggerAnalysisService,
                                    ConversationRepository conversationRepository) {
         this.patternAnalysisService = patternAnalysisService;
+        this.triggerAnalysisService = triggerAnalysisService;
         this.conversationRepository = conversationRepository;
     }
 
@@ -44,12 +48,14 @@ public class PatternAnalysisScheduler {
             for (String userId : userIds) {
                 try {
                     patternAnalysisService.analisarPadroesTemporais(userId);
+                    // Também analisa correlação gatilho-emoção
+                    triggerAnalysisService.analisarCorrelacaoGatilhoEmocao(userId);
                 } catch (Exception e) {
-                    logger.error("Erro ao analisar padrões para usuário {}: {}", userId, e.getMessage(), e);
+                    logger.error("Erro ao analisar padrões/gatilhos para usuário {}: {}", userId, e.getMessage(), e);
                 }
             }
 
-            logger.info("Análise diária de padrões temporais concluída");
+            logger.info("Análise diária de padrões temporais e gatilhos concluída");
         } catch (Exception e) {
             logger.error("Erro na análise diária de padrões: {}", e.getMessage(), e);
         }

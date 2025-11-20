@@ -84,9 +84,22 @@ public class OllamaClient {
             "      \"relevancia\": 0-100,\n" +
             "      \"tags\": [\"tag1\", \"tag2\"]\n" +
             "    }\n" +
+            "  ],\n" +
+            "  \"gatilhos\": [\n" +
+            "    {\n" +
+            "      \"tipo\": \"PESSOA|EVENTO|LUGAR|SITUACAO\",\n" +
+            "      \"descricao\": \"descrição clara do gatilho\",\n" +
+            "      \"impacto\": 1-10,\n" +
+            "      \"emocaoAssociada\": \"emoção que o gatilho causa\",\n" +
+            "      \"contexto\": \"contexto onde o gatilho ocorre\",\n" +
+            "      \"positivo\": true/false\n" +
+            "    }\n" +
             "  ]\n" +
             "}\n\n" +
-            "Se não houver informações importantes para lembrar, retorne: {\"memorias\": []}",
+            "Gatilhos são fatores que afetam o estado emocional do usuário. " +
+            "Gatilhos positivos melhoram o humor, gatilhos negativos pioram. " +
+            "Impacto: 1-3 (leve), 4-6 (moderado), 7-10 (forte). " +
+            "Se não houver informações importantes, retorne: {\"memorias\": [], \"gatilhos\": []}",
             userMessage, aiResponse
         );
 

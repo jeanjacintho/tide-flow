@@ -25,11 +25,14 @@ public class MemoriaService {
     private final MemoriaRepository memoriaRepository;
     private final OllamaClient ollamaClient;
     private final ObjectMapper objectMapper;
+    private final TriggerService triggerService;
 
-    public MemoriaService(MemoriaRepository memoriaRepository, OllamaClient ollamaClient, ObjectMapper objectMapper) {
+    public MemoriaService(MemoriaRepository memoriaRepository, OllamaClient ollamaClient, 
+                         ObjectMapper objectMapper, TriggerService triggerService) {
         this.memoriaRepository = memoriaRepository;
         this.ollamaClient = ollamaClient;
         this.objectMapper = objectMapper;
+        this.triggerService = triggerService;
     }
 
     /**
@@ -77,6 +80,9 @@ public class MemoriaService {
                         logger.error("Erro ao salvar memória individual: {}", e.getMessage(), e);
                     }
                 }
+
+                // Processa gatilhos extraídos
+                triggerService.processarGatilhos(usuarioId, responseMap);
 
                 logger.info("Total de memórias salvas: {}", memoriasSalvas);
                 return null;
