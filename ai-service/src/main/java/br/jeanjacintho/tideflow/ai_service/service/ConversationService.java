@@ -93,6 +93,9 @@ public class ConversationService {
                                         aiResponse
                                 );
 
+                                // Analisa padrões temporais de forma assíncrona (após acumular algumas mensagens)
+                                // Será executado periodicamente pelo scheduler, mas também pode ser acionado manualmente
+                                
                                 return new ConversationResponse(
                                         aiResponse,
                                         conversation.getId().toString(),
