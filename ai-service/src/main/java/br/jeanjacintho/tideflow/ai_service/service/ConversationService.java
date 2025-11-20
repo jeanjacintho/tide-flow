@@ -63,19 +63,20 @@ public class ConversationService {
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));
 
-        // Recupera memórias relevantes do usuário
-        String memoriasFormatadas = memoriaService.recuperarMemoriasRelevantes(
+        // Recupera memórias relevantes do usuário de forma assíncrona
+        Mono<String> memoriasMono = memoriaService.recuperarMemoriasRelevantesAsync(
                 request.getUserId(), 
                 request.getMessage()
         );
 
-        String systemPrompt = buildSystemPromptWithMemories(memoriasFormatadas);
+        return memoriasMono.flatMap(memoriasFormatadas -> {
+            String systemPrompt = buildSystemPromptWithMemories(memoriasFormatadas);
 
-        List<Map<String, String>> messagesForOllama = new ArrayList<>();
-        messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
-        messagesForOllama.addAll(history);
+            List<Map<String, String>> messagesForOllama = new ArrayList<>();
+            messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
+            messagesForOllama.addAll(history);
 
-        return ollamaClient.chatWithHistory(messagesForOllama)
+            return ollamaClient.chatWithHistory(messagesForOllama)
                 .flatMap(aiResponse -> {
                     ConversationMessage assistantMessage = new ConversationMessage(
                             MessageRole.ASSISTANT,
@@ -121,6 +122,7 @@ public class ConversationService {
                                     createDefaultEmotionalAnalysis()
                             ));
                 });
+        });
     }
 
     private Conversation getOrCreateConversation(String conversationId, String userId){

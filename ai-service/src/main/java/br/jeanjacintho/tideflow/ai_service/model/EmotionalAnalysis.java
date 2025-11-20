@@ -8,7 +8,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "emotional_analysis", indexes = {
     @Index(name = "idx_emotional_user_message", columnList = "usuario_id, message_id"),
-    @Index(name = "idx_emotional_conversation", columnList = "conversation_id, sequence_number")
+    @Index(name = "idx_emotional_conversation", columnList = "conversation_id, sequence_number"),
+    @Index(name = "idx_emotional_primary", columnList = "primary_emotional"),
+    @Index(name = "idx_emotional_intensity", columnList = "intensity DESC"),
+    @Index(name = "idx_emotional_user_primary", columnList = "usuario_id, primary_emotional")
 })
 public class EmotionalAnalysis {
     @Id

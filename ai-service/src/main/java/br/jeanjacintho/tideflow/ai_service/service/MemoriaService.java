@@ -7,9 +7,13 @@ import br.jeanjacintho.tideflow.ai_service.repository.MemoriaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -84,6 +88,8 @@ public class MemoriaService {
                 if (!memoriasParaSalvar.isEmpty()) {
                     memoriaRepository.saveAll(memoriasParaSalvar);
                     logger.info("Total de memórias salvas: {}", memoriasParaSalvar.size());
+                    // Invalida cache de memórias relevantes para este usuário
+                    invalidarCacheMemorias(usuarioId);
                 }
 
                 // Processa gatilhos extraídos
@@ -99,7 +105,35 @@ public class MemoriaService {
 
     /**
      * Recupera memórias relevantes do usuário para incluir no contexto da conversa.
+     * Usa cache para evitar buscar do banco toda vez.
      */
+    @Cacheable(value = "memoriasRelevantes", key = "#usuarioId", unless = "#result == null || #result.isEmpty()")
+    @Transactional(readOnly = true)
+    public Mono<String> recuperarMemoriasRelevantesAsync(String usuarioId, String mensagemAtual) {
+        return Mono.fromCallable(() -> {
+            List<Memoria> memorias = memoriaRepository.findMemoriasRelevantes(usuarioId);
+            
+            if (memorias.isEmpty()) {
+                return "";
+            }
+
+            // Filtra e limita as mais relevantes
+            List<Memoria> memoriasSelecionadas = memorias.stream()
+                    .limit(MAX_MEMORIAS_RELEVANTES)
+                    .collect(Collectors.toList());
+
+            // Atualiza contadores de referência (assíncrono)
+            atualizarReferencias(memoriasSelecionadas);
+
+            // Formata memórias para o prompt
+            return formatarMemoriasParaPrompt(memoriasSelecionadas);
+        });
+    }
+
+    /**
+     * Versão síncrona mantida para compatibilidade (usa cache).
+     */
+    @Cacheable(value = "memoriasRelevantes", key = "#usuarioId", unless = "#result == null || #result.isEmpty()")
     @Transactional(readOnly = true)
     public String recuperarMemoriasRelevantes(String usuarioId, String mensagemAtual) {
         List<Memoria> memorias = memoriaRepository.findMemoriasRelevantes(usuarioId);
@@ -118,6 +152,14 @@ public class MemoriaService {
 
         // Formata memórias para o prompt
         return formatarMemoriasParaPrompt(memoriasSelecionadas);
+    }
+
+    /**
+     * Invalida o cache de memórias relevantes para um usuário.
+     */
+    @CacheEvict(value = "memoriasRelevantes", key = "#usuarioId")
+    public void invalidarCacheMemorias(String usuarioId) {
+        logger.debug("Cache de memórias invalidado para usuário: {}", usuarioId);
     }
 
     /**

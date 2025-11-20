@@ -7,7 +7,10 @@ import java.time.LocalDateTime;
 @Table(name = "triggers", indexes = {
     @Index(name = "idx_trigger_usuario", columnList = "usuario_id"),
     @Index(name = "idx_trigger_tipo", columnList = "usuario_id, tipo"),
-    @Index(name = "idx_trigger_impacto", columnList = "usuario_id, impacto DESC")
+    @Index(name = "idx_trigger_impacto", columnList = "usuario_id, impacto DESC"),
+    @Index(name = "idx_trigger_ultima_observacao", columnList = "data_ultima_observacao DESC"),
+    @Index(name = "idx_trigger_frequencia", columnList = "usuario_id, frequencia DESC"),
+    @Index(name = "idx_trigger_emocao", columnList = "usuario_id, emocao_associada")
 })
 public class Trigger {
     
