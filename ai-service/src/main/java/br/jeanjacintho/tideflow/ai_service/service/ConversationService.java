@@ -11,6 +11,9 @@ import br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -22,19 +25,24 @@ import java.util.stream.Collectors;
 @Service
 public class ConversationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ConversationService.class);
+
     private final OllamaClient ollamaClient;
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final MemoriaService memoriaService;
+    private final ObjectMapper objectMapper;
 
     public ConversationService(OllamaClient ollamaClient,
                                ConversationRepository conversationRepository,
                                ConversationMessageRepository conversationMessageRepository,
-                               MemoriaService memoriaService) {
+                               MemoriaService memoriaService,
+                               ObjectMapper objectMapper) {
         this.ollamaClient = ollamaClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
         this.memoriaService = memoriaService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -64,7 +72,7 @@ public class ConversationService {
         messagesForOllama.addAll(history);
 
         return ollamaClient.chatWithHistory(messagesForOllama)
-                .map(aiResponse -> {
+                .flatMap(aiResponse -> {
                     ConversationMessage assistantMessage = new ConversationMessage(
                             MessageRole.ASSISTANT,
                             aiResponse,
@@ -75,21 +83,29 @@ public class ConversationService {
 
                     conversationRepository.save(conversation);
 
-                    EmotionalAnalysis analysis = extractEmotionalAnalysis(aiResponse);
+                    // Extrai análise emocional da mensagem do usuário usando IA
+                    return extractEmotionalAnalysis(request.getMessage())
+                            .map(analysis -> {
+                                // Processa extração de memórias de forma assíncrona
+                                memoriaService.processarMensagemParaMemoria(
+                                        request.getUserId(),
+                                        request.getMessage(),
+                                        aiResponse
+                                );
 
-                    // Processa extração de memórias de forma assíncrona
-                    memoriaService.processarMensagemParaMemoria(
-                            request.getUserId(),
-                            request.getMessage(),
-                            aiResponse
-                    );
-
-                    return new ConversationResponse(
-                            aiResponse,
-                            conversation.getId().toString(),
-                            false,
-                            analysis
-                    );
+                                return new ConversationResponse(
+                                        aiResponse,
+                                        conversation.getId().toString(),
+                                        false,
+                                        analysis
+                                );
+                            })
+                            .defaultIfEmpty(new ConversationResponse(
+                                    aiResponse,
+                                    conversation.getId().toString(),
+                                    false,
+                                    createDefaultEmotionalAnalysis()
+                            ));
                 });
     }
 
@@ -146,37 +162,77 @@ public class ConversationService {
         return promptBuilder.toString();
     }
 
-    private EmotionalAnalysis extractEmotionalAnalysis(String aiResponse) {
-        String lowerResponse = aiResponse.toLowerCase();
-        
-        String primaryEmotional = "neutro";
-        if (lowerResponse.contains("triste") || lowerResponse.contains("tristeza")) {
-            primaryEmotional = "tristeza";
-        } else if (lowerResponse.contains("ansioso") || lowerResponse.contains("ansiedade")) {
-            primaryEmotional = "ansiedade";
-        } else if (lowerResponse.contains("feliz") || lowerResponse.contains("alegria")) {
-            primaryEmotional = "alegria";
-        } else if (lowerResponse.contains("raiva") || lowerResponse.contains("irritado")) {
-            primaryEmotional = "raiva";
-        }
+    /**
+     * Extrai análise emocional da mensagem do usuário usando IA.
+     */
+    private Mono<EmotionalAnalysis> extractEmotionalAnalysis(String userMessage) {
+        return ollamaClient.extractEmotionalAnalysis(userMessage)
+                .map(jsonResponse -> {
+                    try {
+                        // Limpa a resposta se vier com markdown
+                        jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
+                        
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> analysisData = objectMapper.readValue(jsonResponse, Map.class);
+                        
+                        String primaryEmotional = (String) analysisData.getOrDefault("primaryEmotional", "neutro");
+                        if (primaryEmotional == null || primaryEmotional.isEmpty()) {
+                            primaryEmotional = "neutro";
+                        }
+                        
+                        Integer intensity = 50; // Default
+                        Object intensityObj = analysisData.get("intensity");
+                        if (intensityObj instanceof Number) {
+                            intensity = ((Number) intensityObj).intValue();
+                            // Garante que está entre 0 e 100
+                            intensity = Math.max(0, Math.min(100, intensity));
+                        }
+                        
+                        @SuppressWarnings("unchecked")
+                        List<String> triggers = (List<String>) analysisData.getOrDefault("triggers", new ArrayList<>());
+                        if (triggers == null) {
+                            triggers = new ArrayList<>();
+                        }
+                        
+                        String context = (String) analysisData.getOrDefault("context", "");
+                        if (context == null) {
+                            context = "";
+                        }
+                        // Limita o tamanho do contexto
+                        if (context.length() > 500) {
+                            context = context.substring(0, 497) + "...";
+                        }
+                        
+                        String suggestion = (String) analysisData.getOrDefault("suggestion", 
+                                "Continue conversando para entender melhor suas emoções.");
+                        if (suggestion == null || suggestion.isEmpty()) {
+                            suggestion = "Continue conversando para entender melhor suas emoções.";
+                        }
+                        
+                        return new EmotionalAnalysis(
+                                primaryEmotional,
+                                intensity,
+                                triggers,
+                                context,
+                                suggestion
+                        );
+                    } catch (Exception e) {
+                        logger.error("Erro ao processar análise emocional: {}", e.getMessage(), e);
+                        return createDefaultEmotionalAnalysis();
+                    }
+                })
+                .onErrorReturn(createDefaultEmotionalAnalysis());
+    }
 
-        int intensity = 5;
-        if (lowerResponse.contains("muito") || lowerResponse.contains("extremamente")) {
-            intensity = 8;
-        } else if (lowerResponse.contains("pouco") || lowerResponse.contains("levemente")) {
-            intensity = 3;
-        }
-
-        List<String> triggers = new ArrayList<>();
-        if (lowerResponse.contains("trabalho")) triggers.add("trabalho");
-        if (lowerResponse.contains("relacionamento")) triggers.add("relacionamento");
-        if (lowerResponse.contains("família")) triggers.add("família");
-
+    /**
+     * Cria uma análise emocional padrão em caso de erro.
+     */
+    private EmotionalAnalysis createDefaultEmotionalAnalysis() {
         return new EmotionalAnalysis(
-                primaryEmotional,
-                intensity,
-                triggers,
-                aiResponse.substring(0, Math.min(200, aiResponse.length())),
+                "neutro",
+                50,
+                new ArrayList<>(),
+                "",
                 "Continue conversando para entender melhor suas emoções."
         );
     }

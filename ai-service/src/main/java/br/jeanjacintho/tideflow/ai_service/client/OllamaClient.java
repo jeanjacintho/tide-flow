@@ -137,5 +137,41 @@ public class OllamaClient {
                 })
                 .onErrorReturn("");
     }
+
+    public Mono<String> extractEmotionalAnalysis(String userMessage) {
+        String prompt = String.format(
+            "Analise a seguinte mensagem do usuário e extraia informações sobre suas emoções.\n\n" +
+            "Mensagem: %s\n\n" +
+            "Retorne APENAS um JSON válido no seguinte formato (sem markdown, sem texto adicional):\n" +
+            "{\n" +
+            "  \"primaryEmotional\": \"tristeza|ansiedade|alegria|raiva|medo|neutro\",\n" +
+            "  \"intensity\": 0-100,\n" +
+            "  \"triggers\": [\"trigger1\", \"trigger2\"],\n" +
+            "  \"context\": \"breve contexto sobre a situação emocional\",\n" +
+            "  \"suggestion\": \"sugestão curta e empática\"\n" +
+            "}\n\n" +
+            "Seja preciso na análise emocional. Considere o tom, palavras-chave e contexto da mensagem.",
+            userMessage
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "model", modelName,
+                "prompt", prompt,
+                "stream", false,
+                "format", "json"
+        );
+
+        return webClient.post()
+                .uri("/api/generate")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofMillis(timeout))
+                .map(response -> {
+                    Object responseObj = response.get("response");
+                    return responseObj != null ? responseObj.toString() : "{}";
+                })
+                .onErrorReturn("{}");
+    }
 }
 
