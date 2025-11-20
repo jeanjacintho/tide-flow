@@ -1,12 +1,10 @@
 package br.jeanjacintho.tideflow.ai_service.service;
 
-import br.jeanjacintho.tideflow.ai_service.model.Conversation;
 import br.jeanjacintho.tideflow.ai_service.model.ConversationMessage;
 import br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.model.Trigger;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
-import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.EmotionalAnalysisRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.TriggerRepository;
 import org.slf4j.Logger;
@@ -30,16 +28,13 @@ public class TriggerAnalysisService {
     private static final int MIN_OBSERVACOES_CORRELACAO = 3;
 
     private final TriggerRepository triggerRepository;
-    private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository messageRepository;
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
 
     public TriggerAnalysisService(TriggerRepository triggerRepository,
-                                 ConversationRepository conversationRepository,
                                  ConversationMessageRepository messageRepository,
                                  EmotionalAnalysisRepository emotionalAnalysisRepository) {
         this.triggerRepository = triggerRepository;
-        this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
     }
@@ -61,28 +56,22 @@ public class TriggerAnalysisService {
                 return;
             }
 
-            // Busca todas as conversas do usuário
-            List<Conversation> conversations = conversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            // Busca todas as mensagens do usuário de uma vez (evita N+1)
+            List<ConversationMessage> userMessages = messageRepository
+                    .findByUserIdAndRoleOrderByCreatedAtAsc(userId, MessageRole.USER);
             
             // Coleta dados de mensagens e emoções
             List<MessageEmotionData> messageEmotions = new ArrayList<>();
-            for (Conversation conv : conversations) {
-                List<ConversationMessage> messages = messageRepository
-                        .findByConversationIdOrderBySequenceNumberAsc(conv.getId());
+            for (ConversationMessage msg : userMessages) {
+                // Busca análise emocional associada à mensagem (feita pela IA)
+                Optional<EmotionalAnalysis> analysis = emotionalAnalysisRepository
+                        .findByMessageId(msg.getId());
                 
-                for (ConversationMessage msg : messages) {
-                    if (msg.getRole() == MessageRole.USER) {
-                        // Busca análise emocional associada à mensagem (feita pela IA)
-                        Optional<EmotionalAnalysis> analysis = emotionalAnalysisRepository
-                                .findByConversationAndSequence(userId, conv.getId(), msg.getSequenceNumber());
-                        
-                        messageEmotions.add(new MessageEmotionData(
-                                msg.getCreatedAt(),
-                                msg.getContent(),
-                                analysis.orElse(null)
-                        ));
-                    }
-                }
+                messageEmotions.add(new MessageEmotionData(
+                        msg.getCreatedAt(),
+                        msg.getContent(),
+                        analysis.orElse(null)
+                ));
             }
 
             // Para cada gatilho, analisa correlação com emoções

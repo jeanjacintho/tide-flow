@@ -68,23 +68,27 @@ public class MemoriaService {
                 }
 
                 String contextoCompleto = String.format("Usuário: %s\nIA: %s", userMessage, aiResponse);
-                int memoriasSalvas = 0;
+                List<Memoria> memoriasParaSalvar = new ArrayList<>();
 
                 for (Map<String, Object> memoriaData : memoriasData) {
                     try {
                         Memoria memoria = criarMemoriaFromData(usuarioId, memoriaData, contextoCompleto);
-                        memoriaRepository.save(memoria);
-                        memoriasSalvas++;
-                        logger.info("Memória salva: {} - {}", memoria.getTipo(), memoria.getConteudo());
+                        memoriasParaSalvar.add(memoria);
+                        logger.info("Memória preparada: {} - {}", memoria.getTipo(), memoria.getConteudo());
                     } catch (Exception e) {
-                        logger.error("Erro ao salvar memória individual: {}", e.getMessage(), e);
+                        logger.error("Erro ao criar memória: {}", e.getMessage(), e);
                     }
+                }
+
+                // Batch save de todas as memórias
+                if (!memoriasParaSalvar.isEmpty()) {
+                    memoriaRepository.saveAll(memoriasParaSalvar);
+                    logger.info("Total de memórias salvas: {}", memoriasParaSalvar.size());
                 }
 
                 // Processa gatilhos extraídos
                 triggerService.processarGatilhos(usuarioId, responseMap);
 
-                logger.info("Total de memórias salvas: {}", memoriasSalvas);
                 return null;
             } catch (Exception e) {
                 logger.error("Erro ao processar memórias: {}", e.getMessage(), e);

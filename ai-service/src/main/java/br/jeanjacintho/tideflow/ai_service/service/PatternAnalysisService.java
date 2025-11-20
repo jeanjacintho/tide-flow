@@ -1,12 +1,10 @@
 package br.jeanjacintho.tideflow.ai_service.service;
 
-import br.jeanjacintho.tideflow.ai_service.model.Conversation;
 import br.jeanjacintho.tideflow.ai_service.model.ConversationMessage;
 import br.jeanjacintho.tideflow.ai_service.model.EmotionalPattern;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.model.TipoPadrao;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
-import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.EmotionalPatternRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +29,11 @@ public class PatternAnalysisService {
     private static final double MIN_CONFIANCA_PADRAO = 50.0; // Confiança mínima (0-100)
 
     private final EmotionalPatternRepository patternRepository;
-    private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository messageRepository;
 
     public PatternAnalysisService(EmotionalPatternRepository patternRepository,
-                                 ConversationRepository conversationRepository,
                                  ConversationMessageRepository messageRepository) {
         this.patternRepository = patternRepository;
-        this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
     }
 
@@ -52,25 +47,19 @@ public class PatternAnalysisService {
         logger.info("Iniciando análise de padrões temporais para usuário: {}", userId);
         
         try {
-            // Busca todas as conversas do usuário
-            List<Conversation> conversations = conversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            // Busca todas as mensagens do usuário de uma vez (evita N+1 queries)
+            List<ConversationMessage> userMessages = messageRepository
+                    .findByUserIdAndRoleOrderByCreatedAtAsc(userId, MessageRole.USER);
             
-            if (conversations.isEmpty()) {
-                logger.info("Nenhuma conversa encontrada para análise de padrões");
+            if (userMessages.isEmpty()) {
+                logger.info("Nenhuma mensagem encontrada para análise de padrões");
                 return;
             }
 
-            // Coleta todas as mensagens do usuário com suas datas
+            // Coleta dados das mensagens
             List<MessageData> messageDataList = new ArrayList<>();
-            for (Conversation conv : conversations) {
-                List<ConversationMessage> messages = messageRepository
-                        .findByConversationIdOrderBySequenceNumberAsc(conv.getId());
-                
-                for (ConversationMessage msg : messages) {
-                    if (msg.getRole() == MessageRole.USER) {
-                        messageDataList.add(new MessageData(msg.getCreatedAt(), msg.getContent()));
-                    }
-                }
+            for (ConversationMessage msg : userMessages) {
+                messageDataList.add(new MessageData(msg.getCreatedAt(), msg.getContent()));
             }
 
             if (messageDataList.size() < MIN_OBSERVACOES_PADRAO) {
@@ -78,17 +67,18 @@ public class PatternAnalysisService {
                 return;
             }
 
-            // Analisa padrões por dia da semana
-            analisarPadroesSemanais(userId, messageDataList);
+            // Analisa padrões e coleta para batch save
+            List<EmotionalPattern> patternsToSave = new ArrayList<>();
+            patternsToSave.addAll(analisarPadroesSemanais(userId, messageDataList));
+            patternsToSave.addAll(analisarPadroesHorarios(userId, messageDataList));
+            patternsToSave.addAll(analisarPadroesMensais(userId, messageDataList));
+            patternsToSave.addAll(analisarPadroesSazonais(userId, messageDataList));
             
-            // Analisa padrões por horário do dia
-            analisarPadroesHorarios(userId, messageDataList);
-            
-            // Analisa padrões mensais
-            analisarPadroesMensais(userId, messageDataList);
-            
-            // Analisa padrões sazonais
-            analisarPadroesSazonais(userId, messageDataList);
+            // Batch save de todos os padrões
+            if (!patternsToSave.isEmpty()) {
+                patternRepository.saveAll(patternsToSave);
+                logger.info("Salvos {} padrões temporais", patternsToSave.size());
+            }
 
             logger.info("Análise de padrões temporais concluída para usuário: {}", userId);
         } catch (Exception e) {
@@ -96,7 +86,8 @@ public class PatternAnalysisService {
         }
     }
 
-    private void analisarPadroesSemanais(String userId, List<MessageData> messages) {
+    private List<EmotionalPattern> analisarPadroesSemanais(String userId, List<MessageData> messages) {
+        List<EmotionalPattern> patternsToSave = new ArrayList<>();
         Map<DayOfWeek, List<MessageData>> porDiaSemana = messages.stream()
                 .collect(Collectors.groupingBy(msg -> msg.data.getDayOfWeek()));
 
@@ -115,25 +106,26 @@ public class PatternAnalysisService {
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
-                        patternRepository.save(pattern);
                     } else {
                         pattern = new EmotionalPattern(
                                 userId,
                                 TipoPadrao.SEMANAL,
                                 nomeDia,
-                                null, // Emoção principal será calculada depois
-                                null, // Intensidade média será calculada depois
+                                null,
+                                null,
                                 confianca,
                                 entry.getValue().size()
                         );
-                        patternRepository.save(pattern);
                     }
+                    patternsToSave.add(pattern);
                 }
             }
         }
+        return patternsToSave;
     }
 
-    private void analisarPadroesHorarios(String userId, List<MessageData> messages) {
+    private List<EmotionalPattern> analisarPadroesHorarios(String userId, List<MessageData> messages) {
+        List<EmotionalPattern> patternsToSave = new ArrayList<>();
         Map<String, List<MessageData>> porHorario = messages.stream()
                 .collect(Collectors.groupingBy(msg -> {
                     int hora = msg.data.getHour();
@@ -155,7 +147,6 @@ public class PatternAnalysisService {
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
-                        patternRepository.save(pattern);
                     } else {
                         pattern = new EmotionalPattern(
                                 userId,
@@ -166,14 +157,16 @@ public class PatternAnalysisService {
                                 confianca,
                                 entry.getValue().size()
                         );
-                        patternRepository.save(pattern);
                     }
+                    patternsToSave.add(pattern);
                 }
             }
         }
+        return patternsToSave;
     }
 
-    private void analisarPadroesMensais(String userId, List<MessageData> messages) {
+    private List<EmotionalPattern> analisarPadroesMensais(String userId, List<MessageData> messages) {
+        List<EmotionalPattern> patternsToSave = new ArrayList<>();
         Map<Month, List<MessageData>> porMes = messages.stream()
                 .collect(Collectors.groupingBy(msg -> msg.data.getMonth()));
 
@@ -190,7 +183,6 @@ public class PatternAnalysisService {
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
-                        patternRepository.save(pattern);
                     } else {
                         pattern = new EmotionalPattern(
                                 userId,
@@ -201,14 +193,16 @@ public class PatternAnalysisService {
                                 confianca,
                                 entry.getValue().size()
                         );
-                        patternRepository.save(pattern);
                     }
+                    patternsToSave.add(pattern);
                 }
             }
         }
+        return patternsToSave;
     }
 
-    private void analisarPadroesSazonais(String userId, List<MessageData> messages) {
+    private List<EmotionalPattern> analisarPadroesSazonais(String userId, List<MessageData> messages) {
+        List<EmotionalPattern> patternsToSave = new ArrayList<>();
         Map<String, List<MessageData>> porEstacao = messages.stream()
                 .collect(Collectors.groupingBy(msg -> {
                     Month mes = msg.data.getMonth();
@@ -235,7 +229,6 @@ public class PatternAnalysisService {
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
-                        patternRepository.save(pattern);
                     } else {
                         pattern = new EmotionalPattern(
                                 userId,
@@ -246,11 +239,12 @@ public class PatternAnalysisService {
                                 confianca,
                                 entry.getValue().size()
                         );
-                        patternRepository.save(pattern);
                     }
+                    patternsToSave.add(pattern);
                 }
             }
         }
+        return patternsToSave;
     }
 
     private double calcularConfianca(int ocorrencias, int total) {

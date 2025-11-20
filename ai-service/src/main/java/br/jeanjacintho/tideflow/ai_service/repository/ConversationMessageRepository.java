@@ -17,4 +17,13 @@ public interface ConversationMessageRepository extends JpaRepository<Conversatio
 
     @Query("SELECT m FROM ConversationMessage m WHERE m.conversation.id = :conversationId ORDER BY m.sequenceNumber DESC")
     List<ConversationMessage> findLastMessageByConversationId(@Param("conversationId") UUID conversationId);
+
+    @Query("SELECT m FROM ConversationMessage m " +
+           "JOIN FETCH m.conversation c " +
+           "WHERE c.userId = :userId AND m.role = :role " +
+           "ORDER BY m.createdAt ASC")
+    List<ConversationMessage> findByUserIdAndRoleOrderByCreatedAtAsc(
+        @Param("userId") String userId,
+        @Param("role") br.jeanjacintho.tideflow.ai_service.model.MessageRole role
+    );
 }

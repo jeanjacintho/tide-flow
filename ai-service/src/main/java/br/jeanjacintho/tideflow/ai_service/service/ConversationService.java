@@ -278,31 +278,34 @@ public class ConversationService {
 
     @Transactional(readOnly = true)
     public Flux<ConversationSummaryResponse> getUserConversations(String userId) {
-        return Flux.fromIterable(conversationRepository.findByUserIdOrderByCreatedAtDesc(userId))
-                .map(conversation -> {
-                    Long messageCount = conversationMessageRepository.countByConversationId(conversation.getId());
-                    
-                    String lastMessagePreview = conversationMessageRepository
-                            .findLastMessageByConversationId(conversation.getId())
-                            .stream()
-                            .findFirst()
-                            .map(msg -> {
-                                String content = msg.getContent();
-                                return content.length() > 100 
-                                        ? content.substring(0, 100) + "..." 
-                                        : content;
-                            })
-                            .orElse("");
-                    
-                    return new ConversationSummaryResponse(
-                            conversation.getId(),
-                            conversation.getUserId(),
-                            conversation.getCreatedAt(),
-                            conversation.getUpdatedAt(),
-                            messageCount,
-                            lastMessagePreview
-                    );
-                });
+        List<Conversation> conversations = conversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        
+        // Busca todas as contagens e últimas mensagens de uma vez (evita N+1)
+        Map<UUID, Long> messageCounts = new HashMap<>();
+        Map<UUID, String> lastMessages = new HashMap<>();
+        
+        for (Conversation conv : conversations) {
+            messageCounts.put(conv.getId(), conversationMessageRepository.countByConversationId(conv.getId()));
+            
+            conversationMessageRepository.findLastMessageByConversationId(conv.getId())
+                    .stream()
+                    .findFirst()
+                    .ifPresent(msg -> {
+                        String content = msg.getContent();
+                        lastMessages.put(conv.getId(), 
+                                content.length() > 100 ? content.substring(0, 100) + "..." : content);
+                    });
+        }
+        
+        return Flux.fromIterable(conversations)
+                .map(conversation -> new ConversationSummaryResponse(
+                        conversation.getId(),
+                        conversation.getUserId(),
+                        conversation.getCreatedAt(),
+                        conversation.getUpdatedAt(),
+                        messageCounts.getOrDefault(conversation.getId(), 0L),
+                        lastMessages.getOrDefault(conversation.getId(), "")
+                ));
     }
 }
 
