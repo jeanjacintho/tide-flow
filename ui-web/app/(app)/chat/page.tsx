@@ -24,6 +24,7 @@ export default function Chat() {
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isAiThinking, setIsAiThinking] = useState(false);
   const [showExamples, setShowExamples] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -165,7 +166,7 @@ export default function Chat() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isPending) return;
+    if (!message.trim() || isPending || isAiThinking) return;
 
     const currentMessage = message;
     setMessage('');
@@ -185,6 +186,9 @@ export default function Chat() {
       sequenceNumber: messages.length + 1,
     };
     setMessages(prev => [...prev, userMessage]);
+
+    // Mostra spinner da IA imediatamente
+    setIsAiThinking(true);
 
     startTransition(() => {
       (async () => {
@@ -218,6 +222,9 @@ export default function Chat() {
           // Remove mensagem temporária do usuário em caso de erro
           setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
           alert(error instanceof Error ? error.message : 'Erro ao enviar mensagem. Tente novamente.');
+        } finally {
+          // Remove spinner da IA
+          setIsAiThinking(false);
         }
       })();
     });
@@ -292,7 +299,7 @@ export default function Chat() {
                       placeholder="Pergunte qualquer coisa..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      disabled={isPending}
+                      disabled={isPending || isAiThinking}
                       className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
                     />
 
@@ -303,14 +310,14 @@ export default function Chat() {
                       </span>
                       <SpeechInput 
                         onTranscriptChange={(transcript) => setMessage(transcript)}
-                        disabled={isPending}
+                        disabled={isPending || isAiThinking}
                         conversationId={conversationId}
                         userId={user?.id}
                       />
                       <Button
                         type="submit"
                         size="icon"
-                        disabled={!message.trim() || isPending}
+                        disabled={!message.trim() || isPending || isAiThinking}
                         className="h-9 w-9 bg-primary text-white rounded-lg"
                       >
                         <ArrowUp className="w-4 h-4" />
@@ -367,13 +374,19 @@ export default function Chat() {
                     )}
                   </div>
                 ))}
-                {isPending && (
-                  <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4">
-                      <div className="flex gap-1.5">
-                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                {isAiThinking && (
+                  <div
+                    className={cn(
+                      "flex w-full animate-in gap-2 fade-in slide-in-from-bottom-2 duration-300 justify-start"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                      <BotIcon className="w-5 h-5" />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md rounded-tl-none px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="inline-block w-4 h-4 border-2 border-gray-400 dark:border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Pensando...</span>
                       </div>
                     </div>
                   </div>
@@ -393,7 +406,7 @@ export default function Chat() {
                       placeholder="Pergunte qualquer coisa..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      disabled={isPending}
+                      disabled={isPending || isAiThinking}
                       className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
                     />
 
@@ -404,14 +417,14 @@ export default function Chat() {
                       </span>
                       <SpeechInput 
                         onTranscriptChange={(transcript) => setMessage(transcript)}
-                        disabled={isPending}
+                        disabled={isPending || isAiThinking}
                         conversationId={conversationId}
                         userId={user?.id}
                       />
                       <Button
                         type="submit"
                         size="icon"
-                        disabled={!message.trim() || isPending}
+                        disabled={!message.trim() || isPending || isAiThinking}
                         className="h-9 w-9 bg-primary text-white rounded-full"
                       >
                         <ArrowUp className="w-4 h-4" />
