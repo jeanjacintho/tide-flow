@@ -5,14 +5,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiService, ConversationResponse, Message } from "@/lib/api";
-import { ArrowUp, ChevronRight } from "lucide-react";
+import { ArrowUp, BotIcon, ChevronRight, UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SpeechInput from "@/components/speetch-input";
 
 const EXAMPLE_QUERIES = [
-  "Como posso melhorar minha saúde mental?",
-  "Explique o que é ansiedade de forma simples",
-  "Quais são os sinais de estresse?",
-  "Como desenvolver resiliência emocional?"
+  "Hoje estou triste",
+  "Hoje estou ansioso",
+  "Hoje estou com medo",
+  "Hoje estou com raiva"
 ];
 
 export default function Chat() {
@@ -23,6 +24,8 @@ export default function Chat() {
   const [isPending, startTransition] = useTransition();
   const [showExamples, setShowExamples] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,6 +49,79 @@ export default function Chat() {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
+  }, [messages]);
+
+  // Efeito para calcular opacidade baseada no scroll
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop;
+      const scrollHeight = container.scrollHeight;
+      const clientHeight = container.clientHeight;
+      
+      // Só aplica o efeito se houver scroll (conteúdo maior que o container)
+      const hasScroll = scrollHeight > clientHeight;
+      
+      if (!hasScroll) {
+        // Se não há scroll, todas as mensagens ficam opacas
+        messageRefs.current.forEach((element) => {
+          if (element) {
+            element.style.opacity = '1';
+          }
+        });
+        return;
+      }
+
+      // Atualiza opacidade de cada mensagem baseada na posição
+      messageRefs.current.forEach((element) => {
+        if (!element) return;
+        
+        const rect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calcula a posição relativa da mensagem no container
+        const relativeTop = rect.top - containerRect.top;
+        const containerHeight = containerRect.height;
+        const messageHeight = rect.height;
+        const messageBottom = relativeTop + messageHeight;
+        
+        // Zona de fade (150px do topo e do fundo)
+        const fadeZone = 150;
+        
+        let opacity = 1;
+        
+        // Fade no topo: apenas quando há scroll para baixo e mensagem está saindo pelo topo
+        if (scrollTop > 0 && relativeTop < fadeZone) {
+          // Mensagem está saindo pelo topo
+          opacity = Math.max(0.3, relativeTop / fadeZone);
+        }
+        // Fade no fundo: apenas quando não está no final do scroll e mensagem está saindo pelo fundo
+        else if (scrollTop + clientHeight < scrollHeight - 10 && messageBottom > containerHeight - fadeZone) {
+          // Mensagem está saindo pelo fundo
+          const distanceFromBottom = containerHeight - messageBottom;
+          opacity = Math.max(0.3, distanceFromBottom / fadeZone);
+        }
+        
+        element.style.opacity = opacity.toString();
+      });
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    // Usa ResizeObserver para detectar mudanças no tamanho do conteúdo
+    const resizeObserver = new ResizeObserver(() => {
+      handleScroll();
+    });
+    resizeObserver.observe(container);
+    
+    // Chama uma vez para calcular opacidade inicial
+    handleScroll();
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      resizeObserver.disconnect();
+    };
   }, [messages]);
 
   useEffect(() => {
@@ -126,7 +202,7 @@ export default function Chat() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
       {/* Header - Minimalist */}
-      <header className="absolute top-0 left-0 right-0 z-50">
+      <header className="absolute top-0 left-0 right-0 z-50 sticky">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">tideflow</h1>
@@ -149,11 +225,11 @@ export default function Chat() {
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-20">
             <div className="w-full max-w-5xl space-y-12">
               {/* Title Section */}
-              <div className="text-center space-y-3">
-                <h2 className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-200">
+              <div className="text-left space-y-3">
+                <h2 className="text-5xl font-bold bg-gradient-to-r from-zinc-800 via-primary to-purple-500 bg-clip-text text-transparent">
                   Olá, {user?.name || 'usuário'}
                 </h2>
-                <p className="text-xl md:text-2xl font-medium bg-gradient-to-r from-gray-700 via-gray-600 to-purple-600 dark:from-gray-300 dark:via-gray-400 dark:to-purple-400 bg-clip-text text-transparent">
+                <p className="text-5xl font-medium bg-gradient-to-r from-zinc-800 via-primary to-purple-500 bg-clip-text text-transparent">
                   Como posso ajudar você hoje?
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
@@ -167,7 +243,7 @@ export default function Chat() {
                   <button
                     key={index}
                     onClick={() => handleExampleClick(example)}
-                    className="flex flex-col items-start p-5 text-left bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all duration-200 group border border-gray-200 dark:border-gray-700"
+                    className="flex flex-col items-start p-5 text-left bg-white dark:bg-gray-800 rounded-lg transition-all duration-200 group border border-gray-200 dark:border-gray-700"
                   >
                     <span className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">{example}</span>
                     <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mt-auto group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
@@ -180,7 +256,7 @@ export default function Chat() {
               {/* Input Area - Centered with examples */}
               <div className="w-full">
                 <form onSubmit={handleSubmit}>
-                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
+                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                     {/* Input */}
                     <Input
                       type="text"
@@ -196,11 +272,17 @@ export default function Chat() {
                       <span className="text-xs text-gray-400 dark:text-gray-500">
                         {message.length}/1000
                       </span>
+                      <SpeechInput 
+                        onTranscriptChange={(transcript) => setMessage(transcript)}
+                        disabled={isPending}
+                        conversationId={conversationId}
+                        userId={user?.id}
+                      />
                       <Button
                         type="submit"
                         size="icon"
                         disabled={!message.trim() || isPending}
-                        className="h-9 w-9 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-sm"
+                        className="h-9 w-9 bg-primary text-white rounded-lg"
                       >
                         <ArrowUp className="w-4 h-4" />
                       </Button>
@@ -212,32 +294,53 @@ export default function Chat() {
           </div>
         ) : (
           <>
-            {/* Chat messages - animated expansion */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 transition-all duration-500 ease-in-out">
+            {/* Chat messages - animated expansion with fade effect */}
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-6 py-8 transition-all duration-500 ease-in-out relative"
+            >
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
+                    ref={(el) => {
+                      if (el) {
+                        messageRefs.current.set(msg.id, el);
+                      } else {
+                        messageRefs.current.delete(msg.id);
+                      }
+                    }}
                     className={cn(
-                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      "flex w-full animate-in gap-2 fade-in slide-in-from-bottom-2 duration-300 transition-opacity",
                       msg.role === 'USER' ? 'justify-end' : 'justify-start'
                     )}
+                    style={{ opacity: 1 }}
                   >
+                    {msg.role !== 'USER' && (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                        <BotIcon className="w-5 h-5" />
+                      </div>
+                    )}
                     <div
                       className={cn(
-                        "max-w-[75%] rounded-2xl px-5 py-4 shadow-sm",
+                        "max-w-[75%] px-5 py-4",
                         msg.role === 'USER'
-                          ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900'
-                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
+                          ? 'bg-primary border border-[color-mix(in_srgb,theme(colors.primary),black_10%)] dark:bg-gray-200 text-white dark:text-gray-900 rounded-md rounded-tr-none'
+                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md rounded-tl-none'
                       )}
                     >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                     </div>
+                    {msg.role === 'USER' && (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                    )}
                   </div>
                 ))}
                 {isPending && (
                   <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4 shadow-sm">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4">
                       <div className="flex gap-1.5">
                         <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                         <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -252,9 +355,9 @@ export default function Chat() {
 
             {/* Input Area - Fixed at bottom when chat is active */}
             <div className="w-full pb-6 transition-all duration-500 ease-in-out">
-              <div className="max-w-4xl mx-auto px-6">
+              <div className="max-w-4xl mx-auto">
                 <form onSubmit={handleSubmit}>
-                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
+                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                     {/* Input */}
                     <Input
                       type="text"
@@ -270,11 +373,17 @@ export default function Chat() {
                       <span className="text-xs text-gray-400 dark:text-gray-500">
                         {message.length}/1000
                       </span>
+                      <SpeechInput 
+                        onTranscriptChange={(transcript) => setMessage(transcript)}
+                        disabled={isPending}
+                        conversationId={conversationId}
+                        userId={user?.id}
+                      />
                       <Button
                         type="submit"
                         size="icon"
                         disabled={!message.trim() || isPending}
-                        className="h-9 w-9 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-sm"
+                        className="h-9 w-9 bg-primary text-white rounded-full"
                       >
                         <ArrowUp className="w-4 h-4" />
                       </Button>

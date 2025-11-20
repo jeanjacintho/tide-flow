@@ -87,12 +87,30 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  faster-whisper:
+    build:
+      context: ./whisper-service
+      dockerfile: Dockerfile
+    container_name: tideflow-faster-whisper
+    ports:
+      - "8001:8000"
+    environment:
+      - MODEL_SIZE=tiny
+      - DEVICE=cpu
+      - LANGUAGE=pt
+    volumes:
+      - faster_whisper_cache:/root/.cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_user_data:
   postgres_notification_data:
   postgres_ai_data:
   rabbitmq_data:
   pgadmin_data:
-
-
-
+  ollama_data:
+  faster_whisper_cache:
