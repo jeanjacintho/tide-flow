@@ -1,6 +1,6 @@
 package br.jeanjacintho.tideflow.ai_service.service;
 
-import br.jeanjacintho.tideflow.ai_service.client.OllamaClient;
+import br.jeanjacintho.tideflow.ai_service.client.LLMClient;
 import br.jeanjacintho.tideflow.ai_service.model.Memoria;
 import br.jeanjacintho.tideflow.ai_service.model.TipoMemoria;
 import br.jeanjacintho.tideflow.ai_service.repository.MemoriaRepository;
@@ -27,14 +27,14 @@ public class MemoriaService {
     private static final int DIAS_PARA_PERGUNTA_PROATIVA = 7;
 
     private final MemoriaRepository memoriaRepository;
-    private final OllamaClient ollamaClient;
+    private final LLMClient llmClient;
     private final ObjectMapper objectMapper;
     private final TriggerService triggerService;
 
-    public MemoriaService(MemoriaRepository memoriaRepository, OllamaClient ollamaClient, 
+    public MemoriaService(MemoriaRepository memoriaRepository, LLMClient llmClient, 
                          ObjectMapper objectMapper, TriggerService triggerService) {
         this.memoriaRepository = memoriaRepository;
-        this.ollamaClient = ollamaClient;
+        this.llmClient = llmClient;
         this.objectMapper = objectMapper;
         this.triggerService = triggerService;
     }
@@ -50,7 +50,7 @@ public class MemoriaService {
             try {
                 logger.info("Iniciando extração de memórias para usuário: {}", usuarioId);
                 
-                String jsonResponse = ollamaClient.extractMemories(userMessage, aiResponse)
+                String jsonResponse = llmClient.extractMemories(userMessage, aiResponse)
                         .block();
 
                 if (jsonResponse == null || jsonResponse.trim().isEmpty()) {
@@ -214,7 +214,7 @@ public class MemoriaService {
         Memoria memoria = memoriasAntigas.get(0);
 
         try {
-            String pergunta = ollamaClient.generateProactiveQuestion(
+            String pergunta = llmClient.generateProactiveQuestion(
                     memoria.getConteudo(),
                     memoria.getTipo().name()
             ).block();

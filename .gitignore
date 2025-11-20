@@ -120,6 +120,15 @@ nb-configuration.xml
 **/*.env
 
 ##############################
+## Application Properties with Secrets
+##################
+# Ignore application.properties that may contain secrets
+# Keep application.properties.example for reference
+ai-service/src/main/resources/application-local.properties
+**/application-local.properties
+**/application-prod.properties
+
+##############################
 ## Next.js / Node.js
 ##################
 # dependencies

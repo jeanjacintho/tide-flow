@@ -1,6 +1,7 @@
 package br.jeanjacintho.tideflow.ai_service.client;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -10,7 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class OllamaClient {
+@ConditionalOnProperty(name = "llm.provider", havingValue = "ollama", matchIfMissing = true)
+public class OllamaClient implements LLMClient {
 
     private final WebClient webClient;
     private final String modelName;
@@ -24,6 +26,7 @@ public class OllamaClient {
         this.timeout = timeout;
     }
 
+    @Override
     public Mono<String> generateResponse(String prompt) {
         Map<String, Object> requestBody = Map.of(
                 "model", modelName,
@@ -44,6 +47,7 @@ public class OllamaClient {
                 .onErrorReturn("Desculpe, não consegui processar sua mensagem no momento.");
     }
 
+    @Override
     public Mono<String> chatWithHistory(List<Map<String, String>> messages) {
         Map<String, Object> requestBody = Map.of(
                 "model", modelName,
@@ -69,6 +73,7 @@ public class OllamaClient {
                 .onErrorReturn("Desculpe, não consegui processar sua mensagem no momento.");
     }
 
+    @Override
     public Mono<String> extractMemories(String userMessage, String aiResponse) {
         String prompt = String.format(
             "Analise a seguinte conversa e extraia informações importantes que devem ser lembradas sobre o usuário. " +
@@ -123,6 +128,7 @@ public class OllamaClient {
                 .onErrorReturn("{\"memorias\": []}");
     }
 
+    @Override
     public Mono<String> generateProactiveQuestion(String memoriaConteudo, String memoriaTipo) {
         String prompt = String.format(
             "Com base nesta memória sobre o usuário, gere uma pergunta natural e empática que mostre que você se lembra dele.\n\n" +
@@ -151,6 +157,7 @@ public class OllamaClient {
                 .onErrorReturn("");
     }
 
+    @Override
     public Mono<String> extractEmotionalAnalysis(String userMessage) {
         String prompt = String.format(
             "Analise a seguinte mensagem do usuário e extraia informações sobre suas emoções.\n\n" +

@@ -1,6 +1,6 @@
 package br.jeanjacintho.tideflow.ai_service.service;
 
-import br.jeanjacintho.tideflow.ai_service.client.OllamaClient;
+import br.jeanjacintho.tideflow.ai_service.client.LLMClient;
 import br.jeanjacintho.tideflow.ai_service.dto.request.ConversationRequest;
 import br.jeanjacintho.tideflow.ai_service.dto.response.ConversationHistoryResponse;
 import br.jeanjacintho.tideflow.ai_service.dto.response.ConversationResponse;
@@ -28,20 +28,20 @@ public class ConversationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ConversationService.class);
 
-    private final OllamaClient ollamaClient;
+    private final LLMClient llmClient;
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
     private final MemoriaService memoriaService;
     private final ObjectMapper objectMapper;
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
 
-    public ConversationService(OllamaClient ollamaClient,
+    public ConversationService(LLMClient llmClient,
                                ConversationRepository conversationRepository,
                                ConversationMessageRepository conversationMessageRepository,
                                MemoriaService memoriaService,
                                ObjectMapper objectMapper,
                                EmotionalAnalysisRepository emotionalAnalysisRepository) {
-        this.ollamaClient = ollamaClient;
+        this.llmClient = llmClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
         this.memoriaService = memoriaService;
@@ -76,7 +76,7 @@ public class ConversationService {
             messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
             messagesForOllama.addAll(history);
 
-            return ollamaClient.chatWithHistory(messagesForOllama)
+            return llmClient.chatWithHistory(messagesForOllama)
                 .flatMap(aiResponse -> {
                     ConversationMessage assistantMessage = new ConversationMessage(
                             MessageRole.ASSISTANT,
@@ -182,7 +182,7 @@ public class ConversationService {
      * Extrai análise emocional da mensagem do usuário usando IA.
      */
     private Mono<EmotionalAnalysis> extractEmotionalAnalysis(String userMessage) {
-        return ollamaClient.extractEmotionalAnalysis(userMessage)
+        return llmClient.extractEmotionalAnalysis(userMessage)
                 .map(jsonResponse -> {
                     try {
                         // Limpa a resposta se vier com markdown

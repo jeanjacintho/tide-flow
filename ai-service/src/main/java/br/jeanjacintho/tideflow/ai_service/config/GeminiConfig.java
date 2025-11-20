@@ -7,22 +7,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * Configuração para o cliente Ollama.
- * Só é criado se a propriedade llm.provider estiver configurada como "ollama" ou não estiver definida (default).
+ * Configuração para o cliente Gemini.
+ * Só é criado se a propriedade llm.provider estiver configurada como "gemini".
  */
 @Configuration
-@ConditionalOnProperty(name = "llm.provider", havingValue = "ollama", matchIfMissing = true)
-public class OllamaConfig {
+@ConditionalOnProperty(name = "llm.provider", havingValue = "gemini")
+public class GeminiConfig {
 
-    @Value("${ollama.base.url}")
-    private String ollamaBaseUrl;
+    @Value("${gemini.base.url:https://generativelanguage.googleapis.com}")
+    private String geminiBaseUrl;
 
     @Bean
-    public WebClient ollamaWebClient() {
+    public WebClient geminiWebClient() {
         return WebClient.builder()
-                .baseUrl(ollamaBaseUrl)
+                .baseUrl(geminiBaseUrl)
                 .build();
     }
 }
-
 
