@@ -25,13 +25,16 @@ public class ConversationService {
     private final OllamaClient ollamaClient;
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository conversationMessageRepository;
+    private final MemoriaService memoriaService;
 
     public ConversationService(OllamaClient ollamaClient,
                                ConversationRepository conversationRepository,
-                               ConversationMessageRepository conversationMessageRepository) {
+                               ConversationMessageRepository conversationMessageRepository,
+                               MemoriaService memoriaService) {
         this.ollamaClient = ollamaClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
+        this.memoriaService = memoriaService;
     }
 
     @Transactional
@@ -48,12 +51,13 @@ public class ConversationService {
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));
 
-        String systemPrompt = "Você é um psicólogo empático e profissional. Seu papel é ajudar o usuário a explorar e compreender seus sentimentos através de uma conversa terapêutica. " +
-                "Use um tom acolhedor, mas profissional. Faça perguntas curtas e reflexivas que instigam o usuário a se aprofundar e falar mais. " +
-                "Valide os sentimentos compartilhados e faça conexões com o que já foi mencionado. " +
-                "Evite palavras intimistas como 'amor', 'querido', etc. " +
-                "Sempre termine suas respostas com uma pergunta curta que convide o usuário a continuar explorando seus sentimentos. " +
-                "Mantenha a conversa fluida e natural, como uma sessão de terapia.";
+        // Recupera memórias relevantes do usuário
+        String memoriasFormatadas = memoriaService.recuperarMemoriasRelevantes(
+                request.getUserId(), 
+                request.getMessage()
+        );
+
+        String systemPrompt = buildSystemPromptWithMemories(memoriasFormatadas);
 
         List<Map<String, String>> messagesForOllama = new ArrayList<>();
         messagesForOllama.add(Map.of("role", "system", "content", systemPrompt));
@@ -72,6 +76,13 @@ public class ConversationService {
                     conversationRepository.save(conversation);
 
                     EmotionalAnalysis analysis = extractEmotionalAnalysis(aiResponse);
+
+                    // Processa extração de memórias de forma assíncrona
+                    memoriaService.processarMensagemParaMemoria(
+                            request.getUserId(),
+                            request.getMessage(),
+                            aiResponse
+                    );
 
                     return new ConversationResponse(
                             aiResponse,
@@ -107,6 +118,32 @@ public class ConversationService {
                         "content", msg.getContent()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Constrói o system prompt incluindo as memórias do usuário.
+     */
+    private String buildSystemPromptWithMemories(String memoriasFormatadas) {
+        StringBuilder promptBuilder = new StringBuilder();
+        
+        promptBuilder.append("Você é um diário pessoal com IA. Seja empático, acolhedor e faça perguntas relevantes.\n");
+        promptBuilder.append("Use um tom acolhedor, mas profissional. Faça perguntas curtas e reflexivas que instigam o usuário a se aprofundar e falar mais.\n");
+        promptBuilder.append("Valide os sentimentos compartilhados e faça conexões com o que já foi mencionado.\n");
+        promptBuilder.append("Evite palavras intimistas como 'amor', 'querido', etc.\n");
+        promptBuilder.append("Sempre termine suas respostas com uma pergunta curta que convide o usuário a continuar explorando seus sentimentos.\n");
+        promptBuilder.append("Mantenha a conversa fluida e natural, como uma sessão de terapia.\n\n");
+        
+        if (!memoriasFormatadas.isEmpty()) {
+            promptBuilder.append(memoriasFormatadas);
+            promptBuilder.append("\n");
+        }
+        
+        promptBuilder.append("IMPORTANTE: Você tem acesso às memórias importantes do usuário. ");
+        promptBuilder.append("Use essas informações para fazer perguntas relevantes e mostrar que se lembra de eventos, objetivos e preferências mencionados anteriormente. ");
+        promptBuilder.append("Por exemplo, se o usuário mencionou que está esperando resultado de uma prova, você pode perguntar sobre isso em conversas futuras quando for pertinente. ");
+        promptBuilder.append("Não mencione explicitamente que está consultando memórias, apenas use o contexto de forma natural.");
+
+        return promptBuilder.toString();
     }
 
     private EmotionalAnalysis extractEmotionalAnalysis(String aiResponse) {

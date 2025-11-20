@@ -16,6 +16,8 @@ const EXAMPLE_QUERIES = [
   "Hoje estou com raiva"
 ];
 
+const CONVERSATION_ID_KEY = 'tideflow_conversation_id';
+
 export default function Chat() {
   const { user, logout } = useAuth();
   const [message, setMessage] = useState('');
@@ -40,8 +42,34 @@ export default function Chat() {
       setShowExamples(false);
     } catch (error) {
       console.error('Error loading conversation history:', error);
+      // Se a conversa não existir mais, limpa o localStorage
+      if (error instanceof Error && error.message.includes('not found')) {
+        localStorage.removeItem(CONVERSATION_ID_KEY);
+        setConversationId(undefined);
+      }
     }
   }, [conversationId, user]);
+
+  // Salva conversationId no localStorage quando ele muda
+  useEffect(() => {
+    if (conversationId) {
+      localStorage.setItem(CONVERSATION_ID_KEY, conversationId);
+    }
+  }, [conversationId]);
+
+  // Recupera conversationId do localStorage ao montar (se houver)
+  // O sistema de memória já mantém o contexto, então só precisamos carregar as mensagens visuais
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const savedConversationId = localStorage.getItem(CONVERSATION_ID_KEY);
+    if (savedConversationId && !conversationId) {
+      // Usa setTimeout para evitar setState síncrono no effect
+      setTimeout(() => {
+        setConversationId(savedConversationId);
+      }, 0);
+    }
+  }, [user?.id, conversationId]);
 
   useEffect(() => {
     // Aguarda um pouco para a animação de expansão acontecer
@@ -168,6 +196,7 @@ export default function Chat() {
           );
           
           setConversationId(response.conversationId);
+          // O useEffect acima já salva no localStorage automaticamente
 
           // Adiciona resposta da IA
           const aiMessage: Message = {

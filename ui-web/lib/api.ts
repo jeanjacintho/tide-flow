@@ -211,6 +211,39 @@ class ApiService {
       throw error;
     }
   }
+
+  async getUserConversations(userId: string): Promise<ConversationSummaryResponse[]> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/conversations/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Erro ao buscar conversas (status: ${response.status})`;
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o serviço está rodando.');
+      }
+      throw error;
+    }
+  }
 }
 
 export interface ConversationResponse {
@@ -238,6 +271,15 @@ export interface ConversationHistoryResponse {
   createdAt: string;
   updatedAt: string;
   messages: Message[];
+}
+
+export interface ConversationSummaryResponse {
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessagePreview: string;
 }
 
 export const apiService = new ApiService();

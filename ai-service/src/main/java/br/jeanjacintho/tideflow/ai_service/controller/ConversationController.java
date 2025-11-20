@@ -7,6 +7,7 @@ import br.jeanjacintho.tideflow.ai_service.dto.response.ConversationResponse;
 import br.jeanjacintho.tideflow.ai_service.dto.response.ConversationSummaryResponse;
 import br.jeanjacintho.tideflow.ai_service.dto.response.TranscriptionResponse;
 import br.jeanjacintho.tideflow.ai_service.service.ConversationService;
+import br.jeanjacintho.tideflow.ai_service.service.MemoriaService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,8 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 @RestController
 @RequestMapping("/api/conversations")
@@ -24,10 +27,14 @@ public class ConversationController {
 
     private final ConversationService conversationService;
     private final WhisperClient whisperClient;
+    private final MemoriaService memoriaService;
 
-    public ConversationController(ConversationService conversationService, WhisperClient whisperClient) {
+    public ConversationController(ConversationService conversationService, 
+                                  WhisperClient whisperClient,
+                                  MemoriaService memoriaService) {
         this.conversationService = conversationService;
         this.whisperClient = whisperClient;
+        this.memoriaService = memoriaService;
     }
 
     @PostMapping
@@ -88,6 +95,21 @@ public class ConversationController {
             return Mono.just(ResponseEntity.badRequest()
                     .body(new TranscriptionResponse("Erro ao processar arquivo de áudio.", null)));
         }
+    }
+
+    @GetMapping("/proactive-question/{userId}")
+    public Mono<ResponseEntity<Map<String, String>>> getProactiveQuestion(
+            @PathVariable String userId) {
+        
+        return Mono.fromCallable((Callable<ResponseEntity<Map<String, String>>>) () -> {
+            java.util.Optional<String> pergunta = memoriaService.sugerirPerguntaProativa(userId);
+            
+            if (pergunta.isPresent()) {
+                return ResponseEntity.ok(Map.of("question", pergunta.get()));
+            } else {
+                return ResponseEntity.ok(Map.of("question", ""));
+            }
+        });
     }
 }
 
