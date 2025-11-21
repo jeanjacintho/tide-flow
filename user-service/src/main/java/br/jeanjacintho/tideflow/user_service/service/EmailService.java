@@ -33,6 +33,12 @@ public class EmailService {
         }
     }
 
+    EmailService(Resend resend, String fromEmail, boolean emailEnabled) {
+        this.resend = resend;
+        this.fromEmail = fromEmail;
+        this.emailEnabled = emailEnabled;
+    }
+
     public void sendWelcomeEmail(String to, String name) {
         if (!emailEnabled) {
             logger.info("Email desabilitado. Mensagem de boas-vindas para: {}", to);

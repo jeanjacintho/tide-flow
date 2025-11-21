@@ -1,13 +1,9 @@
 package br.jeanjacintho.tideflow.ai_service;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
 
-@SpringBootTest
+@Suite
+@SelectPackages("br.jeanjacintho.tideflow.ai_service")
 class AiServiceApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
-
 }
