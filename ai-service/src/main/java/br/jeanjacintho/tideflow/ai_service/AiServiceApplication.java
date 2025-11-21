@@ -26,22 +26,34 @@ public class AiServiceApplication {
 
 	private static void loadEnvFile() {
 		try {
-			Dotenv dotenv = Dotenv.configure()
-					.directory(".")
-					.directory("../")
-					.ignoreIfMissing()
-					.load();
+			// Carrega .env da raiz do projeto (../) ou do diretório atual (.)
+			Dotenv dotenv = null;
+			java.io.File envFile = new java.io.File("../.env");
+			
+			if (envFile.exists()) {
+				dotenv = Dotenv.configure().directory("../").filename(".env").ignoreIfMissing().load();
+			} else {
+				envFile = new java.io.File(".env");
+				if (envFile.exists()) {
+					dotenv = Dotenv.configure().directory(".").filename(".env").ignoreIfMissing().load();
+				} else {
+					return;
+				}
+			}
 
-			// Carrega variáveis do .env como System Properties (Spring Boot lê via ${VAR_NAME:})
+			if (dotenv == null || dotenv.entries().isEmpty()) {
+				return;
+			}
+
+			// Define variáveis do .env como System Properties
+			// Spring Boot lê System Properties quando usa ${VAR_NAME:} no application.properties
 			dotenv.entries().forEach(entry -> {
-				if (System.getenv(entry.getKey()) == null) {
+				if (System.getProperty(entry.getKey()) == null) {
 					System.setProperty(entry.getKey(), entry.getValue());
 				}
 			});
 			
-			if (dotenv.entries().size() > 0) {
-				logger.info("Carregadas {} variáveis do .env", dotenv.entries().size());
-			}
+			logger.info("Carregadas {} variáveis do .env", dotenv.entries().size());
 		} catch (Exception e) {
 			logger.debug("Arquivo .env não encontrado ou erro ao carregar: {}", e.getMessage());
 		}
