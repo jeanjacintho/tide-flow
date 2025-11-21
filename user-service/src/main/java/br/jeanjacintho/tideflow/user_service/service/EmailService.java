@@ -1,6 +1,6 @@
 package br.jeanjacintho.tideflow.user_service.service;
 
-import com.resend.*;
+import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
