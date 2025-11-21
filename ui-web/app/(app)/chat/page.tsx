@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiService, ConversationResponse, Message } from "@/lib/api";
-import { ArrowUp, BotIcon, ChevronRight, UserIcon } from "lucide-react";
+import { ArrowUp, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SpeechInput from "@/components/speetch-input";
 
@@ -17,6 +17,36 @@ const EXAMPLE_QUERIES = [
 ];
 
 const CONVERSATION_ID_KEY = 'tideflow_conversation_id';
+
+const formatMessageTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const time = `${hours}:${minutes}`;
+
+  if (messageDate.getTime() === today.getTime()) {
+    return time;
+  } else if (messageDate.getTime() === yesterday.getTime()) {
+    return `Ontem às ${time}`;
+  } else {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const currentYear = now.getFullYear();
+    
+    if (year === currentYear) {
+      return `${day}/${month} às ${time}`;
+    } else {
+      return `${day}/${month}/${year} às ${time}`;
+    }
+  }
+};
 
 export default function Chat() {
   const { user, logout } = useAuth();
@@ -347,43 +377,45 @@ export default function Chat() {
                       }
                     }}
                     className={cn(
-                      "flex w-full animate-in gap-2 fade-in slide-in-from-bottom-2 duration-300 transition-opacity",
+                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 transition-opacity",
                       msg.role === 'USER' ? 'justify-end' : 'justify-start'
                     )}
                     style={{ opacity: 1 }}
                   >
-                    {msg.role !== 'USER' && (
-                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                        <BotIcon className="w-5 h-5" />
+                    <div className={cn(
+                      "flex flex-col max-w-[75%]",
+                      msg.role === 'USER' ? 'items-end' : 'items-start'
+                    )}>
+                      <div
+                        className={cn(
+                          "px-5 py-4",
+                          msg.role === 'USER'
+                            ? 'bg-primary border border-[color-mix(in_srgb,theme(colors.primary),black_10%)] dark:bg-gray-200 text-white dark:text-gray-900 rounded-md'
+                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md'
+                        )}
+                      >
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                       </div>
-                    )}
-                    <div
-                      className={cn(
-                        "max-w-[75%] px-5 py-4",
-                        msg.role === 'USER'
-                          ? 'bg-primary border border-[color-mix(in_srgb,theme(colors.primary),black_10%)] dark:bg-gray-200 text-white dark:text-gray-900 rounded-md rounded-tr-none'
-                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md rounded-tl-none'
-                      )}
-                    >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                      <span
+                        className={cn(
+                          "text-[10px] mt-0.5 px-1 select-none",
+                          msg.role === 'USER'
+                            ? 'text-gray-400 dark:text-gray-400'
+                            : 'text-gray-400 dark:text-gray-500'
+                        )}
+                      >
+                        {formatMessageTime(msg.createdAt)}
+                      </span>
                     </div>
-                    {msg.role === 'USER' && (
-                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                        <UserIcon className="w-5 h-5" />
-                      </div>
-                    )}
                   </div>
                 ))}
                 {isAiThinking && (
                   <div
                     className={cn(
-                      "flex w-full animate-in gap-2 fade-in slide-in-from-bottom-2 duration-300 justify-start"
+                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-start"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                      <BotIcon className="w-5 h-5" />
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md rounded-tl-none px-5 py-4">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-5 py-4">
                       <div className="flex items-center gap-2">
                         <div className="inline-block w-4 h-4 border-2 border-gray-400 dark:border-gray-500 border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-sm text-gray-500 dark:text-gray-400">Pensando...</span>
