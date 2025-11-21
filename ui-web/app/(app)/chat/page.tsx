@@ -266,7 +266,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
+    <div className="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative min-h-0">
         {messages.length === 0 && showExamples ? (
@@ -369,15 +369,15 @@ export default function Chat() {
                       "flex flex-col max-w-[75%]",
                       msg.role === 'USER' ? 'items-end' : 'items-start'
                     )}>
-                      <div
-                        className={cn(
+                    <div
+                      className={cn(
                           "px-5 py-4",
-                          msg.role === 'USER'
+                        msg.role === 'USER'
                             ? 'bg-primary border border-[color-mix(in_srgb,theme(colors.primary),black_10%)] dark:bg-gray-200 text-white dark:text-gray-900 rounded-md'
                             : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md'
-                        )}
-                      >
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                      )}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
                       </div>
                       <span
                         className={cn(
