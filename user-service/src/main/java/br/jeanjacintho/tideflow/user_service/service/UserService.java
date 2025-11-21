@@ -18,7 +18,6 @@ import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
-import br.jeanjacintho.tideflow.user_service.event.UserCreatedEvent;
 import br.jeanjacintho.tideflow.user_service.model.User;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 import br.jeanjacintho.tideflow.user_service.specifiction.UserSpecification;
@@ -28,13 +27,13 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserEventPublisher eventPublisher;
+    private final EmailService emailService;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserEventPublisher eventPublisher) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.eventPublisher = eventPublisher;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -51,11 +50,7 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         
-        eventPublisher.publishUserCreated(new UserCreatedEvent(
-            savedUser.getId(),
-            savedUser.getName(),
-            savedUser.getEmail()
-        ));
+        emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getName());
         
         return UserResponseDTO.fromEntity(savedUser);
     }
@@ -77,11 +72,7 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         
-        eventPublisher.publishUserCreated(new UserCreatedEvent(
-            savedUser.getId(),
-            savedUser.getName(),
-            savedUser.getEmail()
-        ));
+        emailService.sendWelcomeEmail(savedUser.getEmail(), savedUser.getName());
         
         return UserResponseDTO.fromEntity(savedUser);
     }

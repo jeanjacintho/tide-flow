@@ -35,7 +35,6 @@ import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
-import br.jeanjacintho.tideflow.user_service.event.UserCreatedEvent;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.User;
@@ -54,7 +53,7 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private UserEventPublisher eventPublisher;
+    private EmailService emailService;
 
     @InjectMocks
     private UserService userService;
@@ -115,7 +114,7 @@ class UserServiceTest {
         verify(userRepository).existsByEmail(createRequestDTO.getEmail());
         verify(passwordEncoder).encode(createRequestDTO.getPassword());
         verify(userRepository).save(any(User.class));
-        verify(eventPublisher).publishUserCreated(any(UserCreatedEvent.class));
+        verify(emailService).sendWelcomeEmail(testUser.getEmail(), testUser.getName());
     }
 
     @Test
@@ -345,11 +344,7 @@ class UserServiceTest {
         verify(userRepository).existsByEmail(registerDTO.email());
         verify(passwordEncoder).encode(registerDTO.password());
         verify(userRepository).save(any(User.class));
-        verify(eventPublisher).publishUserCreated(argThat(event -> 
-            event.userId().equals(testUser.getId()) &&
-            event.name().equals(testUser.getName()) &&
-            event.email().equals(testUser.getEmail())
-        ));
+        verify(emailService).sendWelcomeEmail(testUser.getEmail(), testUser.getName());
     }
 
     @Test
@@ -361,10 +356,6 @@ class UserServiceTest {
 
         userService.createUser(createRequestDTO);
 
-        verify(eventPublisher).publishUserCreated(argThat(event -> 
-            event.userId().equals(testUser.getId()) &&
-            event.name().equals(testUser.getName()) &&
-            event.email().equals(testUser.getEmail())
-        ));
+        verify(emailService).sendWelcomeEmail(testUser.getEmail(), testUser.getName());
     }
 }
