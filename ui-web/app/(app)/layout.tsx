@@ -13,6 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AppLayout({
   children,
@@ -44,10 +45,8 @@ export default function AppLayout({
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <Sidebar>
-          <SidebarHeader className="border-b p-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">tideflow</h1>
-            </div>
+          <SidebarHeader className="border-b p-4 flex flex-row items-center h-[70px]">
+            <h1 className="text-lg font-semibold">tideflow</h1>
           </SidebarHeader>
           <SidebarContent />
           <SidebarFooter className="border-t">
@@ -64,8 +63,9 @@ export default function AppLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background p-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background p-4 h-[70px]">
             <SidebarTrigger />
+            <ThemeToggle />
           </div>
           <main className="flex-1">
             {children}
