@@ -1,6 +1,9 @@
 package br.jeanjacintho.tideflow.user_service.service;
 
 import com.resend.*;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,14 +45,14 @@ public class EmailService {
         }
 
         try {
-            SendEmailRequest sendEmailRequest = SendEmailRequest.builder()
+            CreateEmailOptions params = CreateEmailOptions.builder()
                     .from(fromEmail)
                     .to(to)
                     .subject("Bem-vindo ao Tide Flow!")
                     .html(buildWelcomeEmailHtml(name))
                     .build();
 
-            SendEmailResponse response = resend.emails().send(sendEmailRequest);
+            CreateEmailResponse response = resend.emails().send(params);
             logger.info("Email de boas-vindas enviado com sucesso para: {} (ID: {})", to, response.getId());
         } catch (ResendException e) {
             logger.error("Erro ao enviar email de boas-vindas para: {}", to, e);
