@@ -49,7 +49,7 @@ const formatMessageTime = (dateString: string): string => {
 };
 
 export default function Chat() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -266,26 +266,9 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
-      {/* Header - Minimalist */}
-      <header className="absolute top-0 left-0 right-0 z-50 sticky">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">tideflow</h1>
-            <div className="flex items-center gap-3">
-              {user?.name && (
-                <span className="text-sm text-gray-600 dark:text-gray-400">{user.name}</span>
-              )}
-              <Button variant="ghost" size="sm" onClick={logout} className="text-gray-600 dark:text-gray-400">
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-900">
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden relative">
         {messages.length === 0 && showExamples ? (
           // Initial state - centered layout with input
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-20">
@@ -363,7 +346,7 @@ export default function Chat() {
             {/* Chat messages - animated expansion with fade effect */}
             <div 
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-8 transition-all duration-500 ease-in-out relative"
+              className="flex-1 overflow-y-auto px-6 py-8 pb-24 transition-all duration-500 ease-in-out relative"
             >
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((msg) => (
@@ -428,8 +411,8 @@ export default function Chat() {
             </div>
 
             {/* Input Area - Fixed at bottom when chat is active */}
-            <div className="w-full pb-6 transition-all duration-500 ease-in-out">
-              <div className="max-w-4xl mx-auto">
+            <div className="sticky bottom-0 z-10 w-full bg-gray-100 dark:bg-gray-900 pb-6 pt-4 transition-all duration-500 ease-in-out">
+              <div className="max-w-4xl mx-auto px-6">
                 <form onSubmit={handleSubmit}>
                   <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                     {/* Input */}

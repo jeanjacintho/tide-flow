@@ -3,13 +3,23 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarContent,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { NavUser } from "@/components/nav-user";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,11 +41,38 @@ export default function AppLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <main className="flex-1">
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <Sidebar>
+          <SidebarHeader className="border-b p-4">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold">tideflow</h1>
+            </div>
+          </SidebarHeader>
+          <SidebarContent />
+          <SidebarFooter className="border-t">
+            {user && (
+              <NavUser
+                user={{
+                  name: user.name || 'Usuário',
+                  email: user.email,
+                  avatarUrl: user.avatarUrl,
+                }}
+                onLogout={logout}
+              />
+            )}
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background p-4">
+            <SidebarTrigger />
+          </div>
+          <main className="flex-1">
+            {children}
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
 
