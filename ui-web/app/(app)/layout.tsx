@@ -62,12 +62,12 @@ export default function AppLayout({
             )}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background p-4 h-[70px]">
+        <SidebarInset className="flex flex-col h-screen overflow-hidden">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background p-4 h-[70px] shrink-0">
             <SidebarTrigger />
             <ThemeToggle />
           </div>
-          <main className="flex-1">
+          <main className="flex-1 overflow-hidden">
             {children}
           </main>
         </SidebarInset>

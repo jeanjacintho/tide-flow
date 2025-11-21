@@ -266,9 +266,9 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-900">
+    <div className="flex h-full flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 flex flex-col overflow-hidden relative min-h-0">
         {messages.length === 0 && showExamples ? (
           // Initial state - centered layout with input
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-20">
@@ -342,11 +342,11 @@ export default function Chat() {
             </div>
           </div>
         ) : (
-          <>
+          <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
             {/* Chat messages - animated expansion with fade effect */}
             <div 
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-8 pb-24 transition-all duration-500 ease-in-out relative"
+              className="flex-1 overflow-y-auto px-6 py-8 pb-32 transition-all duration-500 ease-in-out min-h-0"
             >
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((msg) => (
@@ -411,7 +411,7 @@ export default function Chat() {
             </div>
 
             {/* Input Area - Fixed at bottom when chat is active */}
-            <div className="sticky bottom-0 z-10 w-full bg-gray-100 dark:bg-gray-900 pb-6 pt-4 transition-all duration-500 ease-in-out">
+            <div className="absolute bottom-0 left-0 right-0 z-10 w-full bg-gray-100 dark:bg-gray-900 pb-6 pt-4 transition-all duration-500 ease-in-out border-t border-gray-200 dark:border-gray-800">
               <div className="max-w-4xl mx-auto px-6">
                 <form onSubmit={handleSubmit}>
                   <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
@@ -449,7 +449,7 @@ export default function Chat() {
                 </form>
               </div>
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>
