@@ -12,6 +12,8 @@ import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationMessageRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.ConversationRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.EmotionalAnalysisRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,34 +90,63 @@ public class ConversationService {
 
                     conversationRepository.save(conversation);
 
-                    // Extrai análise emocional da mensagem do usuário usando IA
-                    return extractEmotionalAnalysis(request.getMessage())
-                            .map(analysis -> {
-                                // Salva análise emocional associada à mensagem do usuário
-                                analysis.setUsuarioId(request.getUserId());
-                                analysis.setConversationId(conversation.getId());
-                                analysis.setMessageId(userMessage.getId());
-                                analysis.setSequenceNumber(userMessage.getSequenceNumber());
-                                emotionalAnalysisRepository.save(analysis);
+                    // Extrai análise emocional e memórias em uma única requisição (otimização)
+                    return llmClient.extractEmotionalAnalysisAndMemories(request.getMessage(), aiResponse)
+                            .map(jsonResponse -> {
+                                try {
+                                    // Limpa a resposta se vier com markdown
+                                    jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
+                                    
+                                    Map<String, Object> responseMap;
+                                    try {
+                                        responseMap = objectMapper.readValue(jsonResponse, new TypeReference<Map<String, Object>>() {});
+                                    } catch (JsonProcessingException e) {
+                                        logger.error("Erro ao fazer parse do JSON consolidado: {}", e.getMessage(), e);
+                                        throw new RuntimeException("Erro ao processar resposta da IA", e);
+                                    }
+                                    
+                                    // Processa análise emocional
+                                    Map<String, Object> analiseEmocionalData = extractMapFromResponse(responseMap, "analiseEmocional");
+                                    
+                                    EmotionalAnalysis analysis = parseEmotionalAnalysis(analiseEmocionalData);
+                                    analysis.setUsuarioId(request.getUserId());
+                                    analysis.setConversationId(conversation.getId());
+                                    analysis.setMessageId(userMessage.getId());
+                                    analysis.setSequenceNumber(userMessage.getSequenceNumber());
+                                    emotionalAnalysisRepository.save(analysis);
 
-                                // Processa extração de memórias de forma assíncrona
-                                memoriaService.processarMensagemParaMemoria(
-                                        request.getUserId(),
-                                        request.getMessage(),
-                                        aiResponse
-                                );
+                                    // Processa memórias e gatilhos de forma assíncrona
+                                    memoriaService.processarMensagemParaMemoriaConsolidada(
+                                            request.getUserId(),
+                                            request.getMessage(),
+                                            aiResponse,
+                                            responseMap
+                                    );
 
-                                // Analisa padrões temporais de forma assíncrona (após acumular algumas mensagens)
-                                // Será executado periodicamente pelo scheduler, mas também pode ser acionado manualmente
-                                
-                                return new ConversationResponse(
-                                        aiResponse,
-                                        conversation.getId().toString(),
-                                        false,
-                                        analysis
-                                );
+                                    return new ConversationResponse(
+                                            aiResponse,
+                                            conversation.getId().toString(),
+                                            false,
+                                            analysis
+                                    );
+                                } catch (Exception e) {
+                                    logger.error("Erro ao processar resposta consolidada: {}", e.getMessage(), e);
+                                    EmotionalAnalysis defaultAnalysis = createDefaultEmotionalAnalysis();
+                                    defaultAnalysis.setUsuarioId(request.getUserId());
+                                    defaultAnalysis.setConversationId(conversation.getId());
+                                    defaultAnalysis.setMessageId(userMessage.getId());
+                                    defaultAnalysis.setSequenceNumber(userMessage.getSequenceNumber());
+                                    emotionalAnalysisRepository.save(defaultAnalysis);
+                                    
+                                    return new ConversationResponse(
+                                            aiResponse,
+                                            conversation.getId().toString(),
+                                            false,
+                                            defaultAnalysis
+                                    );
+                                }
                             })
-                            .defaultIfEmpty(new ConversationResponse(
+                            .onErrorReturn(new ConversationResponse(
                                     aiResponse,
                                     conversation.getId().toString(),
                                     false,
@@ -178,66 +209,84 @@ public class ConversationService {
         return promptBuilder.toString();
     }
 
+
     /**
-     * Extrai análise emocional da mensagem do usuário usando IA.
+     * Extrai um Map de um responseMap de forma type-safe.
      */
-    private Mono<EmotionalAnalysis> extractEmotionalAnalysis(String userMessage) {
-        return llmClient.extractEmotionalAnalysis(userMessage)
-                .map(jsonResponse -> {
-                    try {
-                        // Limpa a resposta se vier com markdown
-                        jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
-                        
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> analysisData = objectMapper.readValue(jsonResponse, Map.class);
-                        
-                        String primaryEmotional = (String) analysisData.getOrDefault("primaryEmotional", "neutro");
-                        if (primaryEmotional == null || primaryEmotional.isEmpty()) {
-                            primaryEmotional = "neutro";
-                        }
-                        
-                        Integer intensity = 50; // Default
-                        Object intensityObj = analysisData.get("intensity");
-                        if (intensityObj instanceof Number) {
-                            intensity = ((Number) intensityObj).intValue();
-                            // Garante que está entre 0 e 100
-                            intensity = Math.max(0, Math.min(100, intensity));
-                        }
-                        
-                        @SuppressWarnings("unchecked")
-                        List<String> triggers = (List<String>) analysisData.getOrDefault("triggers", new ArrayList<>());
-                        if (triggers == null) {
-                            triggers = new ArrayList<>();
-                        }
-                        
-                        String context = (String) analysisData.getOrDefault("context", "");
-                        if (context == null) {
-                            context = "";
-                        }
-                        // Limita o tamanho do contexto
-                        if (context.length() > 500) {
-                            context = context.substring(0, 497) + "...";
-                        }
-                        
-                        String suggestion = (String) analysisData.getOrDefault("suggestion", 
-                                "Continue conversando para entender melhor suas emoções.");
-                        if (suggestion == null || suggestion.isEmpty()) {
-                            suggestion = "Continue conversando para entender melhor suas emoções.";
-                        }
-                        
-                        return new EmotionalAnalysis(
-                                primaryEmotional,
-                                intensity,
-                                triggers,
-                                context,
-                                suggestion
-                        );
-                    } catch (Exception e) {
-                        logger.error("Erro ao processar análise emocional: {}", e.getMessage(), e);
-                        return createDefaultEmotionalAnalysis();
-                    }
-                })
-                .onErrorReturn(createDefaultEmotionalAnalysis());
+    private Map<String, Object> extractMapFromResponse(Map<String, Object> responseMap, String key) {
+        Object obj = responseMap.getOrDefault(key, new HashMap<>());
+        if (obj instanceof Map<?, ?>) {
+            Map<?, ?> rawMap = (Map<?, ?>) obj;
+            Map<String, Object> result = new HashMap<>();
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                if (entry.getKey() instanceof String) {
+                    result.put((String) entry.getKey(), entry.getValue());
+                }
+            }
+            return result;
+        }
+        return new HashMap<>();
+    }
+
+    /**
+     * Extrai uma lista de strings de um Map de forma type-safe.
+     */
+    private List<String> extractStringListFromMap(Map<String, Object> map, String key) {
+        Object obj = map.getOrDefault(key, new ArrayList<>());
+        if (obj instanceof List<?>) {
+            List<?> rawList = (List<?>) obj;
+            List<String> result = new ArrayList<>();
+            for (Object item : rawList) {
+                if (item instanceof String) {
+                    result.add((String) item);
+                }
+            }
+            return result;
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * Parse análise emocional de um Map de dados.
+     */
+    private EmotionalAnalysis parseEmotionalAnalysis(Map<String, Object> analysisData) {
+        String primaryEmotional = (String) analysisData.getOrDefault("primaryEmotional", "neutro");
+        if (primaryEmotional == null || primaryEmotional.isEmpty()) {
+            primaryEmotional = "neutro";
+        }
+        
+        Integer intensity = 50; // Default
+        Object intensityObj = analysisData.get("intensity");
+        if (intensityObj instanceof Number) {
+            intensity = ((Number) intensityObj).intValue();
+            // Garante que está entre 0 e 100
+            intensity = Math.max(0, Math.min(100, intensity));
+        }
+        
+        List<String> triggers = extractStringListFromMap(analysisData, "triggers");
+        
+        String context = (String) analysisData.getOrDefault("context", "");
+        if (context == null) {
+            context = "";
+        }
+        // Limita o tamanho do contexto
+        if (context.length() > 500) {
+            context = context.substring(0, 497) + "...";
+        }
+        
+        String suggestion = (String) analysisData.getOrDefault("suggestion", 
+                "Continue conversando para entender melhor suas emoções.");
+        if (suggestion == null || suggestion.isEmpty()) {
+            suggestion = "Continue conversando para entender melhor suas emoções.";
+        }
+        
+        return new EmotionalAnalysis(
+                primaryEmotional,
+                intensity,
+                triggers,
+                context,
+                suggestion
+        );
     }
 
     /**

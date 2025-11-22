@@ -40,34 +40,28 @@ public class MemoriaService {
     }
 
     /**
-     * Processa mensagem e resposta da IA para extrair e salvar memórias.
+     * Processa mensagem e resposta da IA para extrair e salvar memórias usando dados consolidados.
+     * Versão otimizada que recebe o JSON já processado da requisição consolidada.
      * Executa de forma assíncrona para não travar a resposta ao usuário.
      */
     @Async
     @Transactional
-    public CompletableFuture<Void> processarMensagemParaMemoria(String usuarioId, String userMessage, String aiResponse) {
+    public CompletableFuture<Void> processarMensagemParaMemoriaConsolidada(
+            String usuarioId, 
+            String userMessage, 
+            String aiResponse,
+            Map<String, Object> responseMap
+    ) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                logger.info("Iniciando extração de memórias para usuário: {}", usuarioId);
+                logger.info("Iniciando processamento consolidado de memórias para usuário: {}", usuarioId);
                 
-                String jsonResponse = llmClient.extractMemories(userMessage, aiResponse)
-                        .block();
-
-                if (jsonResponse == null || jsonResponse.trim().isEmpty()) {
-                    logger.warn("Resposta vazia do Ollama para extração de memórias");
-                    return null;
-                }
-
-                // Limpa a resposta se vier com markdown
-                jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
-
-                @SuppressWarnings("unchecked")
-                Map<String, Object> responseMap = objectMapper.readValue(jsonResponse, Map.class);
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> memoriasData = (List<Map<String, Object>>) responseMap.get("memorias");
+                List<Map<String, Object>> memoriasData = extractMapListFromResponse(responseMap, "memorias");
 
                 if (memoriasData == null || memoriasData.isEmpty()) {
                     logger.info("Nenhuma memória extraída da conversa");
+                    // Ainda processa gatilhos mesmo sem memórias
+                    triggerService.processarGatilhos(usuarioId, responseMap);
                     return null;
                 }
 
@@ -97,11 +91,12 @@ public class MemoriaService {
 
                 return null;
             } catch (Exception e) {
-                logger.error("Erro ao processar memórias: {}", e.getMessage(), e);
+                logger.error("Erro ao processar memórias consolidadas: {}", e.getMessage(), e);
                 return null;
             }
         });
     }
+
 
     /**
      * Recupera memórias relevantes do usuário para incluir no contexto da conversa.
@@ -160,6 +155,31 @@ public class MemoriaService {
     @CacheEvict(value = "memoriasRelevantes", key = "#usuarioId")
     public void invalidarCacheMemorias(String usuarioId) {
         logger.debug("Cache de memórias invalidado para usuário: {}", usuarioId);
+    }
+
+    /**
+     * Extrai uma lista de Maps de um responseMap de forma type-safe.
+     */
+    private List<Map<String, Object>> extractMapListFromResponse(Map<String, Object> responseMap, String key) {
+        Object obj = responseMap.getOrDefault(key, new ArrayList<>());
+        if (obj instanceof List<?>) {
+            List<?> rawList = (List<?>) obj;
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Object item : rawList) {
+                if (item instanceof Map<?, ?>) {
+                    Map<?, ?> rawMap = (Map<?, ?>) item;
+                    Map<String, Object> typedMap = new HashMap<>();
+                    for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                        if (entry.getKey() instanceof String) {
+                            typedMap.put((String) entry.getKey(), entry.getValue());
+                        }
+                    }
+                    result.add(typedMap);
+                }
+            }
+            return result;
+        }
+        return new ArrayList<>();
     }
 
     /**

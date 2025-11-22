@@ -59,7 +59,7 @@ public class PatternAnalysisService {
             // Coleta dados das mensagens
             List<MessageData> messageDataList = new ArrayList<>();
             for (ConversationMessage msg : userMessages) {
-                messageDataList.add(new MessageData(msg.getCreatedAt(), msg.getContent()));
+                messageDataList.add(new MessageData(msg.getCreatedAt()));
             }
 
             if (messageDataList.size() < MIN_OBSERVACOES_PADRAO) {
@@ -290,15 +290,11 @@ public class PatternAnalysisService {
     }
 
     // Classe auxiliar para dados da mensagem
-    @SuppressWarnings("unused")
     private static class MessageData {
         LocalDateTime data;
-        @SuppressWarnings("unused")
-        String conteudo; // Pode ser usado no futuro para análise de conteúdo
 
-        MessageData(LocalDateTime data, String conteudo) {
+        MessageData(LocalDateTime data) {
             this.data = data;
-            this.conteudo = conteudo;
         }
     }
 }

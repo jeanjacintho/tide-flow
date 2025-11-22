@@ -191,6 +191,65 @@ public class GeminiClient implements LLMClient {
                 .onErrorReturn("{}");
     }
 
+    @Override
+    public Mono<String> extractEmotionalAnalysisAndMemories(String userMessage, String aiResponse) {
+        String prompt = String.format(
+            "Analise a seguinte conversa e extraia duas informações importantes:\n\n" +
+            "1. Análise emocional da mensagem do usuário\n" +
+            "2. Memórias importantes que devem ser lembradas sobre o usuário\n\n" +
+            "Usuário: %s\n\n" +
+            "IA: %s\n\n" +
+            "Retorne APENAS um JSON válido no seguinte formato (sem markdown, sem texto adicional):\n" +
+            "{\n" +
+            "  \"analiseEmocional\": {\n" +
+            "    \"primaryEmotional\": \"tristeza|ansiedade|alegria|raiva|medo|neutro\",\n" +
+            "    \"intensity\": 0-100,\n" +
+            "    \"triggers\": [\"trigger1\", \"trigger2\"],\n" +
+            "    \"context\": \"breve contexto sobre a situação emocional\",\n" +
+            "    \"suggestion\": \"sugestão curta e empática\"\n" +
+            "  },\n" +
+            "  \"memorias\": [\n" +
+            "    {\n" +
+            "      \"tipo\": \"FATO_PESSOAL|PREFERENCIA|OBJETIVO|EVENTO|RELACIONAMENTO\",\n" +
+            "      \"conteudo\": \"descrição clara e concisa da informação\",\n" +
+            "      \"relevancia\": 0-100,\n" +
+            "      \"tags\": [\"tag1\", \"tag2\"]\n" +
+            "    }\n" +
+            "  ],\n" +
+            "  \"gatilhos\": [\n" +
+            "    {\n" +
+            "      \"tipo\": \"PESSOA|EVENTO|LUGAR|SITUACAO\",\n" +
+            "      \"descricao\": \"descrição clara do gatilho\",\n" +
+            "      \"impacto\": 1-10,\n" +
+            "      \"emocaoAssociada\": \"emoção que o gatilho causa\",\n" +
+            "      \"contexto\": \"contexto onde o gatilho ocorre\",\n" +
+            "      \"positivo\": true/false\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}\n\n" +
+            "INSTRUÇÕES:\n" +
+            "- Para análise emocional: Seja preciso, considere o tom, palavras-chave e contexto da mensagem do usuário.\n" +
+            "- Para memórias: Identifique fatos pessoais, preferências, objetivos, eventos futuros, relacionamentos importantes.\n" +
+            "- Para gatilhos: Identifique fatores que afetam o estado emocional (positivos melhoram humor, negativos pioram). Impacto: 1-3 (leve), 4-6 (moderado), 7-10 (forte).\n" +
+            "Se não houver informações importantes, retorne arrays vazios mas mantenha a estrutura JSON.",
+            userMessage, aiResponse
+        );
+
+        Map<String, Object> requestBody = buildGenerateRequest(prompt);
+
+        return webClient.post()
+                .uri("/v1beta/models/{model}:generateContent", modelName)
+                .header("X-goog-api-key", apiKey)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofMillis(timeout * 2))
+                .map(this::extractTextFromResponse)
+                .map(response -> response != null ? response : "{\"analiseEmocional\": {}, \"memorias\": [], \"gatilhos\": []}")
+                .doOnError(this::logError)
+                .onErrorReturn("{\"analiseEmocional\": {}, \"memorias\": [], \"gatilhos\": []}");
+    }
+
     /**
      * Constrói o request body para generateContent do Gemini.
      */

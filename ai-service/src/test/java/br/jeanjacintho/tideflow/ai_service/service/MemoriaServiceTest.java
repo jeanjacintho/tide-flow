@@ -13,7 +13,6 @@ import br.jeanjacintho.tideflow.ai_service.client.LLMClient;
 import br.jeanjacintho.tideflow.ai_service.model.Memoria;
 import br.jeanjacintho.tideflow.ai_service.model.TipoMemoria;
 import br.jeanjacintho.tideflow.ai_service.repository.MemoriaRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,6 @@ import java.util.concurrent.CompletableFuture;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MemoriaService Tests")
-@SuppressWarnings("unchecked")
 class MemoriaServiceTest {
 
     @Mock
@@ -41,9 +39,6 @@ class MemoriaServiceTest {
 
     @Mock
     private LLMClient llmClient;
-
-    @Mock
-    private ObjectMapper objectMapper;
 
     @Mock
     private TriggerService triggerService;
@@ -114,12 +109,8 @@ class MemoriaServiceTest {
     }
 
     @Test
-    @DisplayName("processarMensagemParaMemoria - Deve processar e salvar memórias quando extraídas")
-    void testProcessarMensagemParaMemoriaSuccess() throws Exception {
-        String jsonResponse = "{\"memorias\":[{\"tipo\":\"FATO_PESSOAL\",\"conteudo\":\"Usuário está ansioso\",\"relevancia\":80}]}";
-        
-        when(llmClient.extractMemories(userMessage, aiResponse)).thenReturn(Mono.just(jsonResponse));
-        
+    @DisplayName("processarMensagemParaMemoriaConsolidada - Deve processar e salvar memórias quando extraídas")
+    void testProcessarMensagemParaMemoriaConsolidadaSuccess() {
         Map<String, Object> responseMap = new HashMap<>();
         List<Map<String, Object>> memoriasData = new ArrayList<>();
         Map<String, Object> memoriaData = new HashMap<>();
@@ -128,26 +119,22 @@ class MemoriaServiceTest {
         memoriaData.put("relevancia", 80);
         memoriasData.add(memoriaData);
         responseMap.put("memorias", memoriasData);
+        responseMap.put("gatilhos", new ArrayList<>());
         
-        java.util.Map<String, Object> responseMapTyped = (java.util.Map<String, Object>) responseMap;
-        when(objectMapper.readValue(anyString(), any(Class.class))).thenReturn(responseMapTyped);
         when(memoriaRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoria(userId, userMessage, aiResponse);
+        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
+                userId, userMessage, aiResponse, responseMap);
 
         future.join();
 
-        verify(llmClient).extractMemories(userMessage, aiResponse);
         verify(memoriaRepository).saveAll(anyList());
+        verify(triggerService).processarGatilhos(userId, responseMap);
     }
 
     @Test
-    @DisplayName("processarMensagemParaMemoria - Deve processar gatilhos quando presentes")
-    void testProcessarMensagemParaMemoriaWithTriggers() throws Exception {
-        String jsonResponse = "{\"memorias\":[{\"tipo\":\"FATO_PESSOAL\",\"conteudo\":\"Teste\",\"relevancia\":50}],\"gatilhos\":[{\"tipo\":\"SITUACAO\",\"descricao\":\"Trabalho\"}]}";
-        
-        when(llmClient.extractMemories(userMessage, aiResponse)).thenReturn(Mono.just(jsonResponse));
-        
+    @DisplayName("processarMensagemParaMemoriaConsolidada - Deve processar gatilhos quando presentes")
+    void testProcessarMensagemParaMemoriaConsolidadaWithTriggers() {
         Map<String, Object> responseMap = new HashMap<>();
         List<Map<String, Object>> memoriasData = new ArrayList<>();
         Map<String, Object> memoriaData = new HashMap<>();
@@ -156,12 +143,18 @@ class MemoriaServiceTest {
         memoriaData.put("relevancia", 50);
         memoriasData.add(memoriaData);
         responseMap.put("memorias", memoriasData);
-        responseMap.put("gatilhos", new ArrayList<>());
         
-        when(objectMapper.readValue(anyString(), any(Class.class))).thenReturn((java.util.Map<String, Object>) responseMap);
+        List<Map<String, Object>> gatilhosData = new ArrayList<>();
+        Map<String, Object> gatilhoData = new HashMap<>();
+        gatilhoData.put("tipo", "SITUACAO");
+        gatilhoData.put("descricao", "Trabalho");
+        gatilhosData.add(gatilhoData);
+        responseMap.put("gatilhos", gatilhosData);
+        
         when(memoriaRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoria(userId, userMessage, aiResponse);
+        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
+                userId, userMessage, aiResponse, responseMap);
 
         future.join();
 
@@ -169,14 +162,31 @@ class MemoriaServiceTest {
     }
 
     @Test
-    @DisplayName("processarMensagemParaMemoria - Deve tratar erro graciosamente")
-    void testProcessarMensagemParaMemoriaHandlesError() {
-        when(llmClient.extractMemories(userMessage, aiResponse))
-                .thenReturn(Mono.error(new RuntimeException("LLM error")));
+    @DisplayName("processarMensagemParaMemoriaConsolidada - Deve tratar erro graciosamente")
+    void testProcessarMensagemParaMemoriaConsolidadaHandlesError() {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("memorias", null);
+        responseMap.put("gatilhos", new ArrayList<>());
 
-        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoria(userId, userMessage, aiResponse);
+        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
+                userId, userMessage, aiResponse, responseMap);
 
         future.join();
+    }
+
+    @Test
+    @DisplayName("processarMensagemParaMemoriaConsolidada - Deve processar mesmo sem memórias")
+    void testProcessarMensagemParaMemoriaConsolidadaWithoutMemories() {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("memorias", new ArrayList<>());
+        responseMap.put("gatilhos", new ArrayList<>());
+
+        CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
+                userId, userMessage, aiResponse, responseMap);
+
+        future.join();
+
+        verify(triggerService).processarGatilhos(userId, responseMap);
     }
 
     @Test

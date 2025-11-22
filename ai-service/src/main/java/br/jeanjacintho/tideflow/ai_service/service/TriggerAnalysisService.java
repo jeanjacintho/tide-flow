@@ -68,7 +68,6 @@ public class TriggerAnalysisService {
                         .findByMessageId(msg.getId());
                 
                 messageEmotions.add(new MessageEmotionData(
-                        msg.getCreatedAt(),
                         msg.getContent(),
                         analysis.orElse(null)
                 ));
@@ -226,17 +225,12 @@ public class TriggerAnalysisService {
     }
 
     // Classe auxiliar
-    @SuppressWarnings("unused")
     private static class MessageEmotionData {
-        @SuppressWarnings("unused")
-        java.time.LocalDateTime data; // Pode ser usado no futuro para análise temporal
         String conteudo;
-        @SuppressWarnings("unused")
-        br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis emocao; // Pode ser usado no futuro
+        br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis emocao;
 
-        MessageEmotionData(java.time.LocalDateTime data, String conteudo, 
+        MessageEmotionData(String conteudo, 
                           br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis emocao) {
-            this.data = data;
             this.conteudo = conteudo;
             this.emocao = emocao;
         }

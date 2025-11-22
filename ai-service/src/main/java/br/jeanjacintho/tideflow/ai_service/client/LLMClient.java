@@ -35,5 +35,11 @@ public interface LLMClient {
      * Extrai análise emocional de uma mensagem do usuário.
      */
     Mono<String> extractEmotionalAnalysis(String userMessage);
+    
+    /**
+     * Extrai análise emocional e memórias em uma única requisição.
+     * Retorna JSON com ambos os dados para otimizar chamadas à API.
+     */
+    Mono<String> extractEmotionalAnalysisAndMemories(String userMessage, String aiResponse);
 }
 
