@@ -126,7 +126,8 @@ class EmailServiceTest {
         verify(emails).send(captor.capture());
         
         CreateEmailOptions capturedOptions = captor.getValue();
-        assertEquals(devEmail, capturedOptions.getTo());
+        assertEquals(1, capturedOptions.getTo().size());
+        assertEquals(devEmail, capturedOptions.getTo().get(0));
     }
 }
 
