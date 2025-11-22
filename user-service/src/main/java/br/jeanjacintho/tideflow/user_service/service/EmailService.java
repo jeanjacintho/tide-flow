@@ -6,6 +6,7 @@ import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,20 @@ public class EmailService {
     private final Resend resend;
     private final String fromEmail;
     private final boolean emailEnabled;
+    private final boolean devMode;
+    private final String devEmail;
 
+    @Autowired
     public EmailService(
             @Value("${RESEND_API_KEY:}") String apiKey,
             @Value("${resend.from.email:onboarding@resend.dev}") String fromEmail,
-            @Value("${resend.enabled:true}") boolean emailEnabled) {
+            @Value("${resend.enabled:true}") boolean emailEnabled,
+            @Value("${resend.dev-mode:false}") String devModeStr,
+            @Value("${resend.dev-email:}") String devEmail) {
         this.fromEmail = fromEmail;
         this.emailEnabled = emailEnabled;
+        this.devMode = devModeStr != null && !devModeStr.isEmpty() && Boolean.parseBoolean(devModeStr);
+        this.devEmail = devEmail != null && !devEmail.isEmpty() ? devEmail : null;
         
         if (apiKey == null || apiKey.isEmpty()) {
             logger.warn("RESEND_API_KEY não configurada. Emails não serão enviados.");
@@ -31,12 +39,22 @@ public class EmailService {
         } else {
             this.resend = new Resend(apiKey);
         }
+        
+        if (devMode) {
+            if (devEmail == null || devEmail.isEmpty()) {
+                logger.warn("Modo dev ativado mas EMAIL_DEVMODE não configurado. Emails não serão redirecionados.");
+            } else {
+                logger.info("Modo de desenvolvimento ativado. Todos os emails serão redirecionados para: {}", devEmail);
+            }
+        }
     }
 
-    EmailService(Resend resend, String fromEmail, boolean emailEnabled) {
+    EmailService(Resend resend, String fromEmail, boolean emailEnabled, boolean devMode, String devEmail) {
         this.resend = resend;
         this.fromEmail = fromEmail;
         this.emailEnabled = emailEnabled;
+        this.devMode = devMode;
+        this.devEmail = devEmail;
     }
 
     public void sendWelcomeEmail(String to, String name) {
@@ -50,18 +68,29 @@ public class EmailService {
             return;
         }
 
+        String recipientEmail = to;
+        if (devMode && devEmail != null && !devEmail.isEmpty()) {
+            logger.info("Modo dev ativo: redirecionando email de {} para {}", to, devEmail);
+            recipientEmail = devEmail;
+        }
+
         try {
             CreateEmailOptions params = CreateEmailOptions.builder()
                     .from(fromEmail)
-                    .to(to)
+                    .to(recipientEmail)
                     .subject("Bem-vindo ao Tide Flow!")
                     .html(buildWelcomeEmailHtml(name))
                     .build();
 
             CreateEmailResponse response = resend.emails().send(params);
-            logger.info("Email de boas-vindas enviado com sucesso para: {} (ID: {})", to, response.getId());
+            if (devMode) {
+                logger.info("Email de boas-vindas enviado com sucesso para {} (redirecionado de {}) (ID: {})", 
+                    devEmail, to, response.getId());
+            } else {
+                logger.info("Email de boas-vindas enviado com sucesso para: {} (ID: {})", to, response.getId());
+            }
         } catch (ResendException e) {
-            logger.error("Erro ao enviar email de boas-vindas para: {}", to, e);
+            logger.error("Erro ao enviar email de boas-vindas para: {}", recipientEmail, e);
         }
     }
 

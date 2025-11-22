@@ -10,6 +10,7 @@ public class UserResponseDTO {
     private String email;
     private String phone;
     private String avatarUrl;
+    private String trustedEmail;
     private String city;
     private String state;
     private LocalDateTime createdAt;
@@ -17,12 +18,13 @@ public class UserResponseDTO {
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String email, String phone, String avatarUrl, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
+        this.trustedEmail = trustedEmail;
         this.city = city;
         this.state = state;
         this.createdAt = createdAt;
@@ -36,6 +38,7 @@ public class UserResponseDTO {
             user.getEmail(),
             user.getPhone(),
             user.getAvatarUrl(),
+            user.getTrustedEmail(),
             user.getCity(),
             user.getState(),
             user.getCreatedAt(),
@@ -81,6 +84,14 @@ public class UserResponseDTO {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getTrustedEmail() {
+        return trustedEmail;
+    }
+
+    public void setTrustedEmail(String trustedEmail) {
+        this.trustedEmail = trustedEmail;
     }
 
     public LocalDateTime getCreatedAt() {

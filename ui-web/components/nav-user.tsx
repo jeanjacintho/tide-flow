@@ -1,6 +1,7 @@
 "use client"
 
-import { Settings, LogOut, MoreVertical } from "lucide-react"
+import { User, LogOut, MoreVertical } from "lucide-react"
+import { useRouter } from "next/navigation"
 import {
   Avatar,
   AvatarFallback,
@@ -33,6 +34,7 @@ interface NavUserProps {
 
 export function NavUser({ user, onLogout }: NavUserProps) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
 
   const getUserInitials = (name: string) => {
     return name
@@ -91,9 +93,9 @@ export function NavUser({ user, onLogout }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Perfil
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

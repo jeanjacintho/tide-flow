@@ -22,6 +22,10 @@ public class UpdateUserRequestDTO {
     @Size(max = 500, message = "URL do avatar deve ter no máximo 500 caracteres")
     private String avatarUrl;
 
+    @Email(message = "Email de confiança deve ser válido")
+    @Size(max = 255, message = "Email de confiança deve ter no máximo 255 caracteres")
+    private String trustedEmail;
+
     @Size(max = 100, message = "Cidade deve ter no máximo 100 caracteres")
     private String city;
 
@@ -68,6 +72,14 @@ public class UpdateUserRequestDTO {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getTrustedEmail() {
+        return trustedEmail;
+    }
+
+    public void setTrustedEmail(String trustedEmail) {
+        this.trustedEmail = trustedEmail;
     }
 
     public String getCity() {

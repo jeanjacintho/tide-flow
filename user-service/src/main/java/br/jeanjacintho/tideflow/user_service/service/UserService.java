@@ -105,6 +105,7 @@ public class UserService {
         }
         existingUser.setPhone(requestDTO.getPhone());
         existingUser.setAvatarUrl(requestDTO.getAvatarUrl());
+        existingUser.setTrustedEmail(requestDTO.getTrustedEmail());
         existingUser.setCity(requestDTO.getCity());
         existingUser.setState(requestDTO.getState());
 

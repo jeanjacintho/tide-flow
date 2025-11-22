@@ -36,6 +36,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/users/**").permitAll() // Permitir acesso interno de outros serviços
         .anyRequest().authenticated())
         .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
         .build();

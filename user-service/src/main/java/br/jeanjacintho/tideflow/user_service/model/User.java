@@ -29,6 +29,9 @@ public class User {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(name = "trusted_email", length = 255)
+    private String trustedEmail;
+
     @Column(length = 100)
     private String city;
 
@@ -122,6 +125,14 @@ public class User {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getTrustedEmail() {
+        return trustedEmail;
+    }
+
+    public void setTrustedEmail(String trustedEmail) {
+        this.trustedEmail = trustedEmail;
     }
 
     public String getCity() {

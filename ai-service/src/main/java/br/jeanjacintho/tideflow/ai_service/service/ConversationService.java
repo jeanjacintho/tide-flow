@@ -36,19 +36,25 @@ public class ConversationService {
     private final MemoriaService memoriaService;
     private final ObjectMapper objectMapper;
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
+    private final RiskDetectionService riskDetectionService;
+    private final RiskAlertPublisher riskAlertPublisher;
 
     public ConversationService(LLMClient llmClient,
                                ConversationRepository conversationRepository,
                                ConversationMessageRepository conversationMessageRepository,
                                MemoriaService memoriaService,
                                ObjectMapper objectMapper,
-                               EmotionalAnalysisRepository emotionalAnalysisRepository) {
+                               EmotionalAnalysisRepository emotionalAnalysisRepository,
+                               RiskDetectionService riskDetectionService,
+                               RiskAlertPublisher riskAlertPublisher) {
         this.llmClient = llmClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
         this.memoriaService = memoriaService;
         this.objectMapper = objectMapper;
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
+        this.riskDetectionService = riskDetectionService;
+        this.riskAlertPublisher = riskAlertPublisher;
     }
 
     @Transactional
@@ -61,6 +67,34 @@ public class ConversationService {
         ConversationMessage userMessage = new ConversationMessage(MessageRole.USER, request.getMessage(), nextSequence);
         conversation.addMessage(userMessage);
         conversationMessageRepository.save(userMessage);
+
+        // Analisa risco de forma assíncrona
+        riskDetectionService.analyzeRisk(request.getMessage(), request.getUserId())
+                .subscribe(
+                    riskAnalysis -> {
+                        logger.info("Análise de risco concluída para usuário {}: detectado={}, nível={}, confiança={}", 
+                            request.getUserId(), riskAnalysis.isRiskDetected(), riskAnalysis.getRiskLevel(), riskAnalysis.getConfidence());
+                        
+                        if (riskAnalysis.isRiskDetected()) {
+                            logger.info("Risco detectado! Nível: {}, Motivo: {}", riskAnalysis.getRiskLevel(), riskAnalysis.getReason());
+                            
+                            // Publica alerta para HIGH, CRITICAL ou MEDIUM (adicionando MEDIUM para não perder alertas importantes)
+                            if (riskAnalysis.getRiskLevel().equals("HIGH") || 
+                                riskAnalysis.getRiskLevel().equals("CRITICAL") ||
+                                riskAnalysis.getRiskLevel().equals("MEDIUM")) {
+                                logger.info("Publicando alerta de risco para usuário {} com nível {}", request.getUserId(), riskAnalysis.getRiskLevel());
+                                riskAlertPublisher.publishRiskAlert(request.getUserId(), request.getMessage(), riskAnalysis);
+                            } else {
+                                logger.info("Risco detectado mas nível {} não requer alerta imediato", riskAnalysis.getRiskLevel());
+                            }
+                        } else {
+                            logger.debug("Nenhum risco detectado na mensagem do usuário {}", request.getUserId());
+                        }
+                    }, 
+                    error -> {
+                        logger.error("Erro ao analisar risco para usuário {}: {}", request.getUserId(), error.getMessage(), error);
+                    }
+                );
 
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));

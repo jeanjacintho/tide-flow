@@ -22,6 +22,7 @@ export interface User {
   email: string;
   phone?: string;
   avatarUrl?: string;
+  trustedEmail?: string;
   city?: string;
   state?: string;
   createdAt: string;
@@ -39,9 +40,9 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = this.getAuthToken();
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (token) {
@@ -50,7 +51,7 @@ class ApiService {
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers,
+      headers: headers as HeadersInit,
     });
 
     if (!response.ok) {
@@ -201,6 +202,36 @@ class ApiService {
           // Ignore parsing errors
         }
         throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique se o serviço está rodando.');
+      }
+      throw error;
+    }
+  }
+
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP error! status: ${response.status}`);
       }
 
       return response.json();
