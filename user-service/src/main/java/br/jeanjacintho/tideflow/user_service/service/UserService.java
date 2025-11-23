@@ -46,7 +46,6 @@ public class UserService {
         user.setName(registerDTO.name());
         user.setEmail(registerDTO.email());
         user.setPassword(passwordEncoder.encode(registerDTO.password()));
-        user.setRole(registerDTO.role());
 
         User savedUser = userRepository.save(user);
         

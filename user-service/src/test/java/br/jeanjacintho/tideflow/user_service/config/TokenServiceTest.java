@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 
 @DisplayName("TokenService Tests")
 class TokenServiceTest {
@@ -34,7 +33,6 @@ class TokenServiceTest {
         testUser.setEmail("test@example.com");
         testUser.setName("Test User");
         testUser.setPassword("$2a$10$encodedPassword");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }
@@ -111,15 +109,13 @@ class TokenServiceTest {
     }
 
     @Test
-    @DisplayName("generateToken e validateToken - Deve funcionar com diferentes roles")
-    void testTokenWithDifferentRoles() {
-        testUser.setRole(UserRole.ADMIN);
+    @DisplayName("generateToken e validateToken - Deve funcionar corretamente")
+    void testTokenGenerationAndValidation() {
         String token = tokenService.generateToken(testUser);
         String email = tokenService.validateToken(token);
 
         assertEquals(testUser.getEmail(), email);
 
-        testUser.setRole(UserRole.USER);
         String token2 = tokenService.generateToken(testUser);
         String email2 = tokenService.validateToken(token2);
 

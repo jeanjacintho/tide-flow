@@ -17,7 +17,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 
 @DataJpaTest
 @DisplayName("UserRepository Tests")
@@ -42,7 +41,6 @@ class UserRepositoryTest {
         testUser.setAvatarUrl("https://example.com/avatar.jpg");
         testUser.setCity("São Paulo");
         testUser.setState("SP");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }

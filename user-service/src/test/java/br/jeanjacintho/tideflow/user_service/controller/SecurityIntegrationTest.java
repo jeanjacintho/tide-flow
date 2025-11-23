@@ -33,7 +33,6 @@ import br.jeanjacintho.tideflow.user_service.config.TokenService;
 import br.jeanjacintho.tideflow.user_service.dto.request.AuthenticationDTO;
 import br.jeanjacintho.tideflow.user_service.exception.GlobalExceptionHandler;
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 import br.jeanjacintho.tideflow.user_service.service.UserService;
 
@@ -75,7 +74,6 @@ class SecurityIntegrationTest {
         testUser.setId(testUserId);
         testUser.setEmail("test@example.com");
         testUser.setPassword("$2a$10$encodedPassword");
-        testUser.setRole(UserRole.USER);
         testUser.setName("Test User");
     }
 
@@ -94,7 +92,7 @@ class SecurityIntegrationTest {
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(testUser.getEmail())
                 .password(testUser.getPassword())
-                .authorities("ROLE_" + testUser.getRole().name())
+                .authorities("ROLE_USER")
                 .build();
         
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -121,7 +119,7 @@ class SecurityIntegrationTest {
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"New User\",\"email\":\"new@example.com\",\"password\":\"password123\",\"role\":\"USER\"}"))
+                .content("{\"name\":\"New User\",\"email\":\"new@example.com\",\"password\":\"password123\"}"))
                 .andExpect(status().isOk());
     }
 }

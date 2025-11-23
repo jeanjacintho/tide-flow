@@ -43,9 +43,6 @@ public class User {
     @Column(length = 2)
     private String state;
 
-    @Column(nullable = false)
-    private UserRole role;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
@@ -74,13 +71,12 @@ public class User {
 
     public User() {}
 
-    public User(String email, String password, UserRole role) {
+    public User(String email, String password) {
         this.email = email;
         this.password = password;
-        this.role = role;
     }
 
-    public User(String name, String email, String password, String phone, String avatarUrl, String city, String state, UserRole role) {
+    public User(String name, String email, String password, String phone, String avatarUrl, String city, String state) {
         this.name = name;
         this.email = email;
         this.password = password;
@@ -88,16 +84,12 @@ public class User {
         this.avatarUrl = avatarUrl;
         this.city = city;
         this.state = state;
-        this.role = role;
     }
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (role == null) {
-            role = UserRole.USER;
-        }
         if (isActive == null) {
             isActive = true;
         }
@@ -201,14 +193,6 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public void setRole(UserRole role) {
-        this.role = role;
     }
 
     public Company getCompany() {

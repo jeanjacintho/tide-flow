@@ -37,7 +37,6 @@ import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
 import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,7 +75,6 @@ class UserServiceTest {
         testUser.setAvatarUrl("https://example.com/avatar.jpg");
         testUser.setCity("São Paulo");
         testUser.setState("SP");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(now);
         testUser.setUpdatedAt(now);
 
@@ -189,7 +187,6 @@ class UserServiceTest {
         updatedUser.setCity(updateRequestDTO.getCity());
         updatedUser.setState(updateRequestDTO.getState());
         updatedUser.setPassword(testUser.getPassword());
-        updatedUser.setRole(testUser.getRole());
 
         when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
         when(userRepository.existsByEmail(updateRequestDTO.getEmail())).thenReturn(false);
@@ -329,7 +326,7 @@ class UserServiceTest {
     @Test
     @DisplayName("register - Deve registrar usuário e publicar evento")
     void testRegisterSuccess() {
-        RegisterDTO registerDTO = new RegisterDTO("John Doe", "john@example.com", "password123", UserRole.USER);
+        RegisterDTO registerDTO = new RegisterDTO("John Doe", "john@example.com", "password123");
         when(userRepository.existsByEmail(registerDTO.email())).thenReturn(false);
         when(passwordEncoder.encode(registerDTO.password())).thenReturn("$2a$10$encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(testUser);

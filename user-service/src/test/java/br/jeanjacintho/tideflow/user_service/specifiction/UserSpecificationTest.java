@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.domain.Specification;
 
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 
 @DisplayName("UserSpecification Tests")
 class UserSpecificationTest {
@@ -27,7 +26,6 @@ class UserSpecificationTest {
         testUser.setPhone("1234567890");
         testUser.setCity("São Paulo");
         testUser.setState("SP");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }

@@ -24,7 +24,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,7 +45,6 @@ class AuthorizationServiceTest {
         testUser.setEmail("test@example.com");
         testUser.setName("Test User");
         testUser.setPassword("$2a$10$encodedPassword");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }
@@ -76,21 +74,8 @@ class AuthorizationServiceTest {
     }
 
     @Test
-    @DisplayName("loadUserByUsername - Deve retornar ROLE_ADMIN quando usuário tem role ADMIN")
-    void testLoadUserByUsernameWithAdminRole() {
-        testUser.setRole(UserRole.ADMIN);
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
-
-        UserDetails userDetails = authorizationService.loadUserByUsername(testUser.getEmail());
-
-        assertTrue(userDetails.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN")));
-    }
-
-    @Test
-    @DisplayName("loadUserByUsername - Deve retornar ROLE_USER quando role é null")
-    void testLoadUserByUsernameWithNullRole() {
-        testUser.setRole(null);
+    @DisplayName("loadUserByUsername - Deve sempre retornar ROLE_USER")
+    void testLoadUserByUsernameAlwaysReturnsUserRole() {
         when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         UserDetails userDetails = authorizationService.loadUserByUsername(testUser.getEmail());

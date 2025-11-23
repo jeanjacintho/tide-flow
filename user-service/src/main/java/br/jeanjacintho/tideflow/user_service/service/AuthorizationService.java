@@ -35,11 +35,9 @@ public class AuthorizationService implements UserDetailsService {
 
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        if (user.getRole() != null) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
-        } else {
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        }
+        // Todos os usuários são USER por padrão
+        // Permissões específicas vêm de CompanyAdmin (será implementado na Fase 1.2 - Multi-tenant)
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         return authorities;
     }
 }

@@ -44,7 +44,6 @@ import br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException;
 import br.jeanjacintho.tideflow.user_service.exception.GlobalExceptionHandler;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.User;
-import br.jeanjacintho.tideflow.user_service.model.UserRole;
 import br.jeanjacintho.tideflow.user_service.service.UserService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -90,7 +89,6 @@ class UserControllerTest {
         testUser.setAvatarUrl("https://example.com/avatar.jpg");
         testUser.setCity("São Paulo");
         testUser.setState("SP");
-        testUser.setRole(UserRole.USER);
         testUser.setCreatedAt(now);
         testUser.setUpdatedAt(now);
 
