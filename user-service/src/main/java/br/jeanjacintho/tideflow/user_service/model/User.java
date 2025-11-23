@@ -7,7 +7,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_company", columnList = "company_id"),
+    @Index(name = "idx_user_department", columnList = "department_id"),
+    @Index(name = "idx_user_anonymized", columnList = "anonymized_id"),
+    @Index(name = "idx_user_active", columnList = "is_active")
+})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,6 +46,26 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
+
+    @Column(name = "employee_id", length = 100)
+    private String employeeId;
+
+    @Column(name = "anonymized_id", unique = true, nullable = false)
+    private UUID anonymizedId;
+
+    @Column(name = "joined_at", nullable = false)
+    private LocalDateTime joinedAt;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -70,7 +95,18 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        role = UserRole.USER;
+        if (role == null) {
+            role = UserRole.USER;
+        }
+        if (isActive == null) {
+            isActive = true;
+        }
+        if (anonymizedId == null) {
+            anonymizedId = UUID.randomUUID();
+        }
+        if (joinedAt == null) {
+            joinedAt = LocalDateTime.now();
+        }
     }
 
     @PreUpdate
@@ -173,5 +209,53 @@ public class User {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
+    }
+
+    public Department getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(Department department) {
+        this.department = department;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public UUID getAnonymizedId() {
+        return anonymizedId;
+    }
+
+    public void setAnonymizedId(UUID anonymizedId) {
+        this.anonymizedId = anonymizedId;
+    }
+
+    public LocalDateTime getJoinedAt() {
+        return joinedAt;
+    }
+
+    public void setJoinedAt(LocalDateTime joinedAt) {
+        this.joinedAt = joinedAt;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }
