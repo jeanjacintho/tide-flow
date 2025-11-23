@@ -43,6 +43,10 @@ public class User {
     @Column(length = 2)
     private String state;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "system_role", nullable = false)
+    private SystemRole systemRole;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
@@ -98,6 +102,9 @@ public class User {
         }
         if (joinedAt == null) {
             joinedAt = LocalDateTime.now();
+        }
+        if (systemRole == null) {
+            systemRole = SystemRole.NORMAL;
         }
     }
 
@@ -241,5 +248,13 @@ public class User {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public SystemRole getSystemRole() {
+        return systemRole;
+    }
+
+    public void setSystemRole(SystemRole systemRole) {
+        this.systemRole = systemRole;
     }
 }

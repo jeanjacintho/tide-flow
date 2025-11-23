@@ -29,4 +29,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     Long countActiveUsersByCompanyId(@Param("companyId") UUID companyId);
     
     boolean existsByCompanyIdAndEmployeeId(UUID companyId, String employeeId);
+    
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.company LEFT JOIN FETCH u.department WHERE u.email = :email")
+    Optional<User> findByEmailWithCompanyAndDepartment(@Param("email") String email);
 }

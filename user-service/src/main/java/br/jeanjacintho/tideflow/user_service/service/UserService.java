@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.jeanjacintho.tideflow.user_service.config.TenantContext;
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
@@ -79,11 +80,31 @@ public class UserService {
     public UserResponseDTO findById(@NonNull UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        
+        // Valida isolamento multi-tenant (SYSTEM_ADMIN tem acesso total)
+        if (!TenantContext.isSystemAdmin()) {
+            UUID currentCompanyId = TenantContext.getCompanyId();
+            if (currentCompanyId != null && !currentCompanyId.equals(user.getCompany().getId())) {
+                throw new ResourceNotFoundException("Usuário", id);
+            }
+        }
+        
         return UserResponseDTO.fromEntity(user);
     }
 
     public Page<UserResponseDTO> findAll(String name, String email, String phone, String city, String state, @NonNull Pageable pageable) {
         Specification<User> specification = UserSpecification.withFilters(name, email, phone, city, state);
+        
+        // Adiciona filtro de company_id se estiver no contexto (multi-tenant)
+        // SYSTEM_ADMIN não tem filtro - vê todos os usuários de todas as empresas
+        if (!TenantContext.isSystemAdmin()) {
+            UUID currentCompanyId = TenantContext.getCompanyId();
+            if (currentCompanyId != null) {
+                specification = specification.and((root, query, cb) -> 
+                    cb.equal(root.get("company").get("id"), currentCompanyId));
+            }
+        }
+        
         return userRepository.findAll(specification, pageable).map(UserResponseDTO::fromEntity);
     }
 
@@ -91,6 +112,14 @@ public class UserService {
     public UserResponseDTO updateUser(@NonNull UUID id, UpdateUserRequestDTO requestDTO) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+
+        // Valida isolamento multi-tenant (SYSTEM_ADMIN tem acesso total)
+        if (!TenantContext.isSystemAdmin()) {
+            UUID currentCompanyId = TenantContext.getCompanyId();
+            if (currentCompanyId != null && !currentCompanyId.equals(existingUser.getCompany().getId())) {
+                throw new ResourceNotFoundException("Usuário", id);
+            }
+        }
 
         if (!existingUser.getEmail().equals(requestDTO.getEmail()) && 
             userRepository.existsByEmail(requestDTO.getEmail())) {
@@ -114,9 +143,17 @@ public class UserService {
 
     @Transactional
     public void deleteUser(@NonNull UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Usuário", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
+        
+        // Valida isolamento multi-tenant (SYSTEM_ADMIN tem acesso total)
+        if (!TenantContext.isSystemAdmin()) {
+            UUID currentCompanyId = TenantContext.getCompanyId();
+            if (currentCompanyId != null && !currentCompanyId.equals(user.getCompany().getId())) {
+                throw new ResourceNotFoundException("Usuário", id);
+            }
         }
+        
         userRepository.deleteById(id);
     }
 

@@ -35,9 +35,15 @@ public class AuthorizationService implements UserDetailsService {
 
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
+        
         // Todos os usuários são USER por padrão
-        // Permissões específicas vêm de CompanyAdmin (será implementado na Fase 1.2 - Multi-tenant)
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        
+        // SYSTEM_ADMIN tem acesso total ao sistema
+        if (user.getSystemRole() != null && user.getSystemRole() == br.jeanjacintho.tideflow.user_service.model.SystemRole.SYSTEM_ADMIN) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"));
+        }
+        
         return authorities;
     }
 }

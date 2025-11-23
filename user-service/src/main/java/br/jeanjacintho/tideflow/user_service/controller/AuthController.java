@@ -16,6 +16,7 @@ import br.jeanjacintho.tideflow.user_service.dto.request.AuthenticationDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.LoginResponseDTO;
 import br.jeanjacintho.tideflow.user_service.model.User;
+import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 import br.jeanjacintho.tideflow.user_service.service.UserService;
 import jakarta.validation.Valid;
 
@@ -29,6 +30,8 @@ public class AuthController {
     private UserService userService;
     @Autowired
     private TokenService tokenService;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody AuthenticationDTO authenticationDTO) {
@@ -36,8 +39,10 @@ public class AuthController {
         var auth = authenticationManager.authenticate(userPassword);
         
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
-        User user = new User();
-        user.setEmail(userDetails.getUsername());
+        
+        // Busca o usuário completo do banco com relacionamentos para incluir informações de tenant no token
+        User user = userRepository.findByEmailWithCompanyAndDepartment(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         
         String token = tokenService.generateToken(user);
         return ResponseEntity.ok(new LoginResponseDTO(token));

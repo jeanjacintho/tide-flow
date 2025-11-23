@@ -27,6 +27,9 @@ public class SecurityConfig {
     @Autowired
     private SecurityFilter securityFilter;
 
+    @Autowired
+    private TenantFilter tenantFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
@@ -39,6 +42,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/users/**").permitAll() // Permitir acesso interno de outros serviços
         .anyRequest().authenticated())
         .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(tenantFilter, SecurityFilter.class)
         .build();
     }
 
