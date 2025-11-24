@@ -38,6 +38,8 @@ public class ConversationService {
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
     private final RiskDetectionService riskDetectionService;
     private final RiskAlertPublisher riskAlertPublisher;
+    private final EmotionalAggregationService aggregationService;
+    private final UserInfoService userInfoService;
 
     public ConversationService(LLMClient llmClient,
                                ConversationRepository conversationRepository,
@@ -46,7 +48,9 @@ public class ConversationService {
                                ObjectMapper objectMapper,
                                EmotionalAnalysisRepository emotionalAnalysisRepository,
                                RiskDetectionService riskDetectionService,
-                               RiskAlertPublisher riskAlertPublisher) {
+                               RiskAlertPublisher riskAlertPublisher,
+                               EmotionalAggregationService aggregationService,
+                               UserInfoService userInfoService) {
         this.llmClient = llmClient;
         this.conversationRepository = conversationRepository;
         this.conversationMessageRepository = conversationMessageRepository;
@@ -55,6 +59,8 @@ public class ConversationService {
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
         this.riskDetectionService = riskDetectionService;
         this.riskAlertPublisher = riskAlertPublisher;
+        this.aggregationService = aggregationService;
+        this.userInfoService = userInfoService;
     }
 
     @Transactional
@@ -147,7 +153,24 @@ public class ConversationService {
                                     analysis.setConversationId(conversation.getId());
                                     analysis.setMessageId(userMessage.getId());
                                     analysis.setSequenceNumber(userMessage.getSequenceNumber());
-                                    emotionalAnalysisRepository.save(analysis);
+                                    
+                                    // Busca informações do usuário para preencher department_id e company_id
+                                    userInfoService.getUserInfo(request.getUserId(), null)
+                                        .ifPresent(userInfo -> {
+                                            analysis.setDepartmentId(userInfo.departmentId());
+                                            analysis.setCompanyId(userInfo.companyId());
+                                        });
+                                    
+                                    EmotionalAnalysis savedAnalysis = emotionalAnalysisRepository.save(analysis);
+                                    
+                                    // Processa agregação em tempo real se department_id e company_id estiverem disponíveis
+                                    if (savedAnalysis.getDepartmentId() != null && savedAnalysis.getCompanyId() != null) {
+                                        try {
+                                            aggregationService.processNewEmotionalAnalysis(savedAnalysis);
+                                        } catch (Exception e) {
+                                            logger.warn("Erro ao processar agregação em tempo real: {}", e.getMessage());
+                                        }
+                                    }
 
                                     // Processa memórias e gatilhos de forma assíncrona
                                     memoriaService.processarMensagemParaMemoriaConsolidada(
@@ -170,7 +193,24 @@ public class ConversationService {
                                     defaultAnalysis.setConversationId(conversation.getId());
                                     defaultAnalysis.setMessageId(userMessage.getId());
                                     defaultAnalysis.setSequenceNumber(userMessage.getSequenceNumber());
-                                    emotionalAnalysisRepository.save(defaultAnalysis);
+                                    
+                                    // Busca informações do usuário
+                                    userInfoService.getUserInfo(request.getUserId(), null)
+                                        .ifPresent(userInfo -> {
+                                            defaultAnalysis.setDepartmentId(userInfo.departmentId());
+                                            defaultAnalysis.setCompanyId(userInfo.companyId());
+                                        });
+                                    
+                                    EmotionalAnalysis savedDefaultAnalysis = emotionalAnalysisRepository.save(defaultAnalysis);
+                                    
+                                    // Processa agregação em tempo real se disponível
+                                    if (savedDefaultAnalysis.getDepartmentId() != null && savedDefaultAnalysis.getCompanyId() != null) {
+                                        try {
+                                            aggregationService.processNewEmotionalAnalysis(savedDefaultAnalysis);
+                                        } catch (Exception aggregationError) {
+                                            logger.warn("Erro ao processar agregação em tempo real: {}", aggregationError.getMessage());
+                                        }
+                                    }
                                     
                                     return new ConversationResponse(
                                             aiResponse,

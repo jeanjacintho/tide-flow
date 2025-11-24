@@ -2,16 +2,19 @@ package br.jeanjacintho.tideflow.ai_service.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "emotional_analysis", indexes = {
+    @Table(name = "emotional_analysis", indexes = {
     @Index(name = "idx_emotional_user_message", columnList = "usuario_id, message_id"),
     @Index(name = "idx_emotional_conversation", columnList = "conversation_id, sequence_number"),
     @Index(name = "idx_emotional_primary", columnList = "primary_emotional"),
     @Index(name = "idx_emotional_intensity", columnList = "intensity DESC"),
-    @Index(name = "idx_emotional_user_primary", columnList = "usuario_id, primary_emotional")
+    @Index(name = "idx_emotional_user_primary", columnList = "usuario_id, primary_emotional"),
+    @Index(name = "idx_emotional_department", columnList = "department_id, conversation_id"),
+    @Index(name = "idx_emotional_company", columnList = "company_id, conversation_id")
 })
 public class EmotionalAnalysis {
     @Id
@@ -20,6 +23,12 @@ public class EmotionalAnalysis {
 
     @Column(name = "usuario_id", nullable = false)
     private String usuarioId;
+
+    @Column(name = "department_id")
+    private UUID departmentId;
+
+    @Column(name = "company_id")
+    private UUID companyId;
 
     @Column(name = "conversation_id")
     private UUID conversationId;
@@ -47,6 +56,16 @@ public class EmotionalAnalysis {
     @Column(columnDefinition = "TEXT")
     private String suggestion;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
     public EmotionalAnalysis() {}
 
     public EmotionalAnalysis(String primaryEmotional, Integer intensity, List<String> triggers, String context, String suggestion) {
@@ -61,6 +80,22 @@ public class EmotionalAnalysis {
                             String primaryEmotional, Integer intensity, List<String> triggers, 
                             String context, String suggestion) {
         this.usuarioId = usuarioId;
+        this.conversationId = conversationId;
+        this.messageId = messageId;
+        this.sequenceNumber = sequenceNumber;
+        this.primaryEmotional = primaryEmotional;
+        this.intensity = intensity;
+        this.triggers = triggers;
+        this.context = context;
+        this.suggestion = suggestion;
+    }
+
+    public EmotionalAnalysis(String usuarioId, UUID departmentId, UUID companyId, UUID conversationId, 
+                            UUID messageId, Integer sequenceNumber, String primaryEmotional, 
+                            Integer intensity, List<String> triggers, String context, String suggestion) {
+        this.usuarioId = usuarioId;
+        this.departmentId = departmentId;
+        this.companyId = companyId;
         this.conversationId = conversationId;
         this.messageId = messageId;
         this.sequenceNumber = sequenceNumber;
@@ -149,5 +184,29 @@ public class EmotionalAnalysis {
 
     public void setSequenceNumber(Integer sequenceNumber) {
         this.sequenceNumber = sequenceNumber;
+    }
+
+    public UUID getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(UUID departmentId) {
+        this.departmentId = departmentId;
+    }
+
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

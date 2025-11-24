@@ -25,6 +25,51 @@ public interface EmotionalAnalysisRepository extends JpaRepository<EmotionalAnal
         @Param("conversationId") UUID conversationId,
         @Param("sequenceNumber") Integer sequenceNumber
     );
+    
+    @Query("SELECT e FROM EmotionalAnalysis e WHERE e.departmentId = :departmentId " +
+           "AND e.createdAt >= :startDateTime AND e.createdAt < :endDateTime")
+    List<EmotionalAnalysis> findByDepartmentIdAndDateRange(
+        @Param("departmentId") UUID departmentId,
+        @Param("startDateTime") java.time.LocalDateTime startDateTime,
+        @Param("endDateTime") java.time.LocalDateTime endDateTime
+    );
+    
+    @Query("SELECT e FROM EmotionalAnalysis e WHERE e.companyId = :companyId " +
+           "AND e.createdAt >= :startDateTime AND e.createdAt < :endDateTime")
+    List<EmotionalAnalysis> findByCompanyIdAndDateRange(
+        @Param("companyId") UUID companyId,
+        @Param("startDateTime") java.time.LocalDateTime startDateTime,
+        @Param("endDateTime") java.time.LocalDateTime endDateTime
+    );
+    
+    @Query(value = "SELECT COUNT(DISTINCT e.usuario_id) FROM emotional_analysis e WHERE e.department_id = :departmentId " +
+           "AND DATE(e.created_at) = :date", nativeQuery = true)
+    Long countUniqueUsersByDepartmentAndDate(
+        @Param("departmentId") UUID departmentId,
+        @Param("date") java.time.LocalDate date
+    );
+    
+    @Query(value = "SELECT COUNT(DISTINCT e.conversation_id) FROM emotional_analysis e WHERE e.department_id = :departmentId " +
+           "AND DATE(e.created_at) = :date", nativeQuery = true)
+    Long countConversationsByDepartmentAndDate(
+        @Param("departmentId") UUID departmentId,
+        @Param("date") java.time.LocalDate date
+    );
+    
+    @Query(value = "SELECT COUNT(*) FROM emotional_analysis e WHERE e.department_id = :departmentId " +
+           "AND DATE(e.created_at) = :date", nativeQuery = true)
+    Long countMessagesByDepartmentAndDate(
+        @Param("departmentId") UUID departmentId,
+        @Param("date") java.time.LocalDate date
+    );
+    
+    @Query(value = "SELECT DISTINCT e.department_id FROM emotional_analysis e " +
+           "WHERE e.department_id IS NOT NULL AND DATE(e.created_at) = :date", nativeQuery = true)
+    List<UUID> findDistinctDepartmentIdsByDate(@Param("date") java.time.LocalDate date);
+    
+    @Query(value = "SELECT DISTINCT e.company_id FROM emotional_analysis e " +
+           "WHERE e.company_id IS NOT NULL AND DATE(e.created_at) = :date", nativeQuery = true)
+    List<UUID> findDistinctCompanyIdsByDate(@Param("date") java.time.LocalDate date);
 }
 
 

@@ -153,17 +153,21 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/register - Deve registrar usuário com sucesso")
     void testRegisterSuccess() throws Exception {
-        RegisterDTO registerDTO = new RegisterDTO("New User", "newuser@example.com", "password123");
+        RegisterDTO registerDTO = new RegisterDTO("New User", null, "newuser@example.com", "password123");
 
         UserResponseDTO mockResponse = new UserResponseDTO(
                 testUser.getId(),
                 testUser.getName(),
+                testUser.getUsername(),
                 testUser.getEmail(),
                 testUser.getPhone(),
                 testUser.getAvatarUrl(),
                 testUser.getTrustedEmail(),
                 testUser.getCity(),
                 testUser.getState(),
+                testUser.getMustChangePassword(),
+                testUser.getCompany() != null ? testUser.getCompany().getId() : null,
+                testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
@@ -179,7 +183,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/register - Deve retornar 409 com email duplicado")
     void testRegisterDuplicateEmail() throws Exception {
-        RegisterDTO registerDTO = new RegisterDTO("Existing User", "existing@example.com", "password123");
+        RegisterDTO registerDTO = new RegisterDTO("Existing User", null, "existing@example.com", "password123");
 
         when(userService.register(any(RegisterDTO.class)))
                 .thenThrow(new br.jeanjacintho.tideflow.user_service.exception.DuplicateEmailException("existing@example.com"));
@@ -193,17 +197,21 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/register - Deve registrar usuário com sucesso")
     void testRegisterAdminSuccess() throws Exception {
-        RegisterDTO registerDTO = new RegisterDTO("Admin User", "admin@example.com", "password123");
+        RegisterDTO registerDTO = new RegisterDTO("Admin User", null, "admin@example.com", "password123");
 
         UserResponseDTO mockResponse = new UserResponseDTO(
                 testUser.getId(),
                 testUser.getName(),
+                testUser.getUsername(),
                 testUser.getEmail(),
                 testUser.getPhone(),
                 testUser.getAvatarUrl(),
                 testUser.getTrustedEmail(),
                 testUser.getCity(),
                 testUser.getState(),
+                testUser.getMustChangePassword(),
+                testUser.getCompany() != null ? testUser.getCompany().getId() : null,
+                testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
@@ -219,7 +227,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/register - Deve retornar 400 com email vazio")
     void testRegisterEmptyEmail() throws Exception {
-        RegisterDTO registerDTO = new RegisterDTO("", "", "password123");
+        RegisterDTO registerDTO = new RegisterDTO("", null, "", "password123");
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -230,7 +238,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/register - Deve retornar 400 com senha vazia")
     void testRegisterEmptyPassword() throws Exception {
-        RegisterDTO registerDTO = new RegisterDTO("Test User", "test@example.com", "");
+        RegisterDTO registerDTO = new RegisterDTO("Test User", null, "test@example.com", "");
 
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)

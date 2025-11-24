@@ -326,7 +326,7 @@ class UserServiceTest {
     @Test
     @DisplayName("register - Deve registrar usuário e publicar evento")
     void testRegisterSuccess() {
-        RegisterDTO registerDTO = new RegisterDTO("John Doe", "john@example.com", "password123");
+        RegisterDTO registerDTO = new RegisterDTO("John Doe", null, "john@example.com", "password123");
         when(userRepository.existsByEmail(registerDTO.email())).thenReturn(false);
         when(passwordEncoder.encode(registerDTO.password())).thenReturn("$2a$10$encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(testUser);

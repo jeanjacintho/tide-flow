@@ -71,7 +71,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO register(RegisterDTO registerDTO) {
         String username = resolveUsername(registerDTO.username(), null);
-        validateUsernameAndEmail(username, registerDTO.email(), null);
+        validateUsernameAndEmail(username, registerDTO.email());
 
         User user = new User();
         user.setName(registerDTO.name());
@@ -103,7 +103,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO createUser(CreateUserRequestDTO requestDTO) {
         String username = resolveUsername(requestDTO.getUsername(), null);
-        validateUsernameAndEmail(username, requestDTO.getEmail(), null);
+        validateUsernameAndEmail(username, requestDTO.getEmail());
 
         User user = new User();
         user.setName(requestDTO.getName());
@@ -155,10 +155,10 @@ public class UserService {
         validateEmailUpdate(existingUser, requestDTO.getEmail());
 
         existingUser.setName(requestDTO.getName());
-        if (hasText(requestDTO.getEmail())) {
+        if (StringUtils.hasText(requestDTO.getEmail())) {
             existingUser.setEmail(requestDTO.getEmail());
         }
-        if (hasText(requestDTO.getPassword())) {
+        if (StringUtils.hasText(requestDTO.getPassword())) {
             existingUser.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
         }
         existingUser.setPhone(requestDTO.getPhone());
@@ -196,7 +196,7 @@ public class UserService {
         validateCompanyAccess(companyId);
         
         String username = resolveUsername(requestDTO.username(), companyId);
-        validateUsernameAndEmail(username, requestDTO.email(), companyId);
+        validateUsernameAndEmail(username, requestDTO.email());
         validateEmployeeId(companyId, requestDTO.employeeId());
 
         String temporaryPassword = generateNumericPassword();
@@ -316,7 +316,7 @@ public class UserService {
             : generateUniqueUsername();
     }
 
-    private void validateUsernameAndEmail(String username, String email, @SuppressWarnings("unused") UUID companyId) {
+    private void validateUsernameAndEmail(String username, String email) {
         if (userRepository.existsByUsername(username)) {
             throw new DuplicateUsernameException(username);
         }
