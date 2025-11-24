@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { HeartIcon, LayoutDashboard, MessageSquare, User } from "lucide-react";
+import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 export default function AppLayout({
@@ -71,6 +71,14 @@ export default function AppLayout({
                   <Link href="/chat">
                     <MessageSquare className="w-4 h-4" />
                     <span>Chat</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
+                  <Link href="/subscription">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Assinatura</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

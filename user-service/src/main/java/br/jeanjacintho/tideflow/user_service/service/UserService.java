@@ -55,16 +55,21 @@ public class UserService {
     private final EmailService emailService;
     private final CompanyRepository companyRepository;
     private final DepartmentRepository departmentRepository;
+    private final UsageTrackingService usageTrackingService;
+    private final SubscriptionService subscriptionService;
     private final SecureRandom secureRandom;
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService,
-                      CompanyRepository companyRepository, DepartmentRepository departmentRepository) {
+                      CompanyRepository companyRepository, DepartmentRepository departmentRepository,
+                      UsageTrackingService usageTrackingService, SubscriptionService subscriptionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.companyRepository = companyRepository;
         this.departmentRepository = departmentRepository;
+        this.usageTrackingService = usageTrackingService;
+        this.subscriptionService = subscriptionService;
         this.secureRandom = new SecureRandom();
     }
 
@@ -195,6 +200,9 @@ public class UserService {
 
         validateCompanyAccess(companyId);
         
+        // Valida limites de uso do plano
+        usageTrackingService.validateUsageLimits(companyId);
+        
         String username = resolveUsername(requestDTO.username(), companyId);
         validateUsernameAndEmail(username, requestDTO.email());
         validateEmployeeId(companyId, requestDTO.employeeId());
@@ -213,6 +221,9 @@ public class UserService {
         user.setMustChangePassword(true);
 
         User savedUser = userRepository.save(user);
+        
+        // Atualiza contagem de usuários na assinatura
+        subscriptionService.updateUserCount(companyId);
 
         return new InviteUserResponseDTO(
             savedUser.getId(),

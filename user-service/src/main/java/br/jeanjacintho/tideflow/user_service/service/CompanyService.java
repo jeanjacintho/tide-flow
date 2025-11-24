@@ -24,11 +24,16 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyAuthorizationService authorizationService;
+    private final SubscriptionService subscriptionService;
 
     @Autowired
-    public CompanyService(CompanyRepository companyRepository, CompanyAuthorizationService authorizationService) {
+    public CompanyService(
+            CompanyRepository companyRepository, 
+            CompanyAuthorizationService authorizationService,
+            SubscriptionService subscriptionService) {
         this.companyRepository = companyRepository;
         this.authorizationService = authorizationService;
+        this.subscriptionService = subscriptionService;
     }
 
     @Transactional
@@ -51,6 +56,16 @@ public class CompanyService {
         company.setStatus(CompanyStatus.TRIAL);
 
         Company savedCompany = companyRepository.save(company);
+        
+        // Cria assinatura automaticamente com plano FREE
+        try {
+            subscriptionService.createSubscription(savedCompany.getId(), SubscriptionPlan.FREE);
+        } catch (Exception e) {
+            // Log mas não falha a criação da empresa
+            org.slf4j.LoggerFactory.getLogger(CompanyService.class)
+                .warn("Erro ao criar assinatura para empresa {}: {}", savedCompany.getId(), e.getMessage());
+        }
+        
         return CompanyResponseDTO.fromEntity(savedCompany);
     }
 
