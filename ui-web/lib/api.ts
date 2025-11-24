@@ -25,6 +25,8 @@ export interface User {
   trustedEmail?: string;
   city?: string;
   state?: string;
+  companyId?: string;
+  departmentId?: string;
   createdAt: string;
   updatedAt: string;
 }

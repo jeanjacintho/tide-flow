@@ -51,7 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await apiService.getCurrentUser();
       setUser(userData);
       
-      router.push('/chat');
+      // Redireciona baseado no tipo de usuário
+      // Se tiver companyId, provavelmente é admin da empresa -> dashboard
+      // Caso contrário, é usuário normal -> chat
+      if (userData.companyId) {
+        router.push('/dashboard');
+      } else {
+        router.push('/chat');
+      }
     } catch (error) {
       throw error;
     }
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('auth_token');
     setUser(null);
-    router.push('/login');
+    router.push('/login/user');
   };
 
   const refreshUser = async () => {

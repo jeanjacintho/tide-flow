@@ -1,5 +1,14 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Building2, User, ChevronDown } from "lucide-react";
 
 export default function Home() {
   return (
@@ -10,9 +19,28 @@ export default function Home() {
             Tideflow
           </h1>
           <nav className="flex gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Entrar</Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-2">
+                  Entrar
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/login/user" className="flex items-center gap-2 w-full">
+                    <User className="h-4 w-4" />
+                    Login como Usuário
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/login/company" className="flex items-center gap-2 w-full">
+                    <Building2 className="h-4 w-4" />
+                    Login como Empresa
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link href="/register">
               <Button>Registrar</Button>
             </Link>
@@ -32,9 +60,28 @@ export default function Home() {
             <Link href="/register">
               <Button size="lg">Começar agora</Button>
             </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline">Já tenho conta</Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="lg" variant="outline" className="gap-2">
+                  Já tenho conta
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/login/user" className="flex items-center gap-2 w-full">
+                    <User className="h-4 w-4" />
+                    Login como Usuário
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/login/company" className="flex items-center gap-2 w-full">
+                    <Building2 className="h-4 w-4" />
+                    Login como Empresa
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </main>
