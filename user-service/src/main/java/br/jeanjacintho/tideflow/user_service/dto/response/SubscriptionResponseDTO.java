@@ -1,9 +1,6 @@
 package br.jeanjacintho.tideflow.user_service.dto.response;
 
-import br.jeanjacintho.tideflow.user_service.model.BillingCycle;
 import br.jeanjacintho.tideflow.user_service.model.CompanySubscription;
-import br.jeanjacintho.tideflow.user_service.model.SubscriptionPlan;
-import br.jeanjacintho.tideflow.user_service.model.SubscriptionStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,9 +18,13 @@ public record SubscriptionResponseDTO(
     BigDecimal monthlyBill
 ) {
     public static SubscriptionResponseDTO fromEntity(CompanySubscription subscription, BigDecimal monthlyBill) {
+        UUID companyId = subscription.getCompany() != null 
+            ? subscription.getCompany().getId() 
+            : null;
+        
         return new SubscriptionResponseDTO(
             subscription.getId(),
-            subscription.getCompany().getId(),
+            companyId,
             subscription.getPlanType().name(),
             subscription.getPricePerUser(),
             subscription.getTotalUsers(),

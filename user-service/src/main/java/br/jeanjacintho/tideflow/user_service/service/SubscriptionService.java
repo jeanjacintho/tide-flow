@@ -1,6 +1,5 @@
 package br.jeanjacintho.tideflow.user_service.service;
 
-import br.jeanjacintho.tideflow.user_service.config.TenantContext;
 import br.jeanjacintho.tideflow.user_service.exception.AccessDeniedException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
 import br.jeanjacintho.tideflow.user_service.model.BillingCycle;

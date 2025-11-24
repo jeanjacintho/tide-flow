@@ -14,14 +14,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
-import java.time.YearMonth;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -49,7 +47,7 @@ public class SubscriptionController {
      */
     @PostMapping("/companies/{companyId}")
     public ResponseEntity<SubscriptionResponseDTO> createSubscription(
-            @PathVariable UUID companyId,
+            @PathVariable @NonNull UUID companyId,
             @RequestParam SubscriptionPlan planType) {
         logger.info("POST /api/subscriptions/companies/{} - planType: {}", companyId, planType);
         
@@ -69,7 +67,7 @@ public class SubscriptionController {
      * Obtém a assinatura de uma empresa.
      */
     @GetMapping("/companies/{companyId}")
-    public ResponseEntity<SubscriptionResponseDTO> getSubscription(@PathVariable UUID companyId) {
+    public ResponseEntity<SubscriptionResponseDTO> getSubscription(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}", companyId);
         
         try {
@@ -89,7 +87,7 @@ public class SubscriptionController {
      */
     @PutMapping("/companies/{companyId}/upgrade")
     public ResponseEntity<SubscriptionResponseDTO> upgradeSubscription(
-            @PathVariable UUID companyId,
+            @PathVariable @NonNull UUID companyId,
             @Valid @RequestBody UpgradeSubscriptionRequestDTO request) {
         logger.info("PUT /api/subscriptions/companies/{}/upgrade - planType: {}", companyId, request.planType());
         
@@ -112,7 +110,7 @@ public class SubscriptionController {
      * Calcula a fatura mensal de uma empresa.
      */
     @GetMapping("/companies/{companyId}/bill")
-    public ResponseEntity<BigDecimal> getMonthlyBill(@PathVariable UUID companyId) {
+    public ResponseEntity<BigDecimal> getMonthlyBill(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/bill", companyId);
         
         try {
@@ -130,7 +128,7 @@ public class SubscriptionController {
      */
     @GetMapping("/companies/{companyId}/invoice")
     public ResponseEntity<InvoiceResponseDTO> generateInvoice(
-            @PathVariable UUID companyId,
+            @PathVariable @NonNull UUID companyId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String period) {
         logger.info("GET /api/subscriptions/companies/{}/invoice - period: {}", companyId, period);
         
@@ -150,7 +148,7 @@ public class SubscriptionController {
      */
     @PostMapping("/companies/{companyId}/payment")
     public ResponseEntity<Void> processPayment(
-            @PathVariable UUID companyId,
+            @PathVariable @NonNull UUID companyId,
             @RequestParam BigDecimal amount) {
         logger.info("POST /api/subscriptions/companies/{}/payment - amount: {}", companyId, amount);
         
@@ -172,7 +170,7 @@ public class SubscriptionController {
      * Obtém informações de uso da empresa.
      */
     @GetMapping("/companies/{companyId}/usage")
-    public ResponseEntity<UsageInfoResponseDTO> getUsageInfo(@PathVariable UUID companyId) {
+    public ResponseEntity<UsageInfoResponseDTO> getUsageInfo(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/usage", companyId);
         
         try {
@@ -190,7 +188,7 @@ public class SubscriptionController {
      * Verifica se a empresa pode adicionar mais usuários.
      */
     @GetMapping("/companies/{companyId}/can-add-users")
-    public ResponseEntity<Boolean> canAddUsers(@PathVariable UUID companyId) {
+    public ResponseEntity<Boolean> canAddUsers(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/can-add-users", companyId);
         
         try {

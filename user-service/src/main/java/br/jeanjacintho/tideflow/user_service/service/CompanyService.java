@@ -58,12 +58,16 @@ public class CompanyService {
         Company savedCompany = companyRepository.save(company);
         
         // Cria assinatura automaticamente com plano FREE
-        try {
-            subscriptionService.createSubscription(savedCompany.getId(), SubscriptionPlan.FREE);
-        } catch (Exception e) {
-            // Log mas não falha a criação da empresa
-            org.slf4j.LoggerFactory.getLogger(CompanyService.class)
-                .warn("Erro ao criar assinatura para empresa {}: {}", savedCompany.getId(), e.getMessage());
+        UUID companyId = savedCompany.getId();
+        if (companyId != null) {
+            final UUID finalCompanyId = companyId; // Final variable for null safety
+            try {
+                subscriptionService.createSubscription(finalCompanyId, SubscriptionPlan.FREE);
+            } catch (Exception e) {
+                // Log mas não falha a criação da empresa
+                org.slf4j.LoggerFactory.getLogger(CompanyService.class)
+                    .warn("Erro ao criar assinatura para empresa {}: {}", finalCompanyId, e.getMessage());
+            }
         }
         
         return CompanyResponseDTO.fromEntity(savedCompany);
