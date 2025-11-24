@@ -1,6 +1,7 @@
 package br.jeanjacintho.tideflow.ai_service.scheduler;
 
 import br.jeanjacintho.tideflow.ai_service.repository.EmotionalAnalysisRepository;
+import br.jeanjacintho.tideflow.ai_service.service.DepartmentKeywordAnalysisService;
 import br.jeanjacintho.tideflow.ai_service.service.EmotionalAggregationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +19,15 @@ public class EmotionalAggregationScheduler {
 
     private final EmotionalAggregationService aggregationService;
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
+    private final DepartmentKeywordAnalysisService keywordAnalysisService;
 
     public EmotionalAggregationScheduler(
             EmotionalAggregationService aggregationService,
-            EmotionalAnalysisRepository emotionalAnalysisRepository) {
+            EmotionalAnalysisRepository emotionalAnalysisRepository,
+            DepartmentKeywordAnalysisService keywordAnalysisService) {
         this.aggregationService = aggregationService;
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
+        this.keywordAnalysisService = keywordAnalysisService;
     }
 
     /**
@@ -63,6 +67,14 @@ public class EmotionalAggregationScheduler {
                 } catch (Exception e) {
                     logger.error("Erro ao agregar dados da empresa {}: {}", companyId, e.getMessage(), e);
                 }
+            }
+
+            // Analisa keywords e triggers agregados por departamento
+            logger.info("Iniciando análise de keywords e triggers para o dia anterior");
+            try {
+                keywordAnalysisService.analyzeAllDepartmentsForDate(yesterday);
+            } catch (Exception e) {
+                logger.error("Erro ao analisar keywords e triggers: {}", e.getMessage(), e);
             }
 
             logger.info("Agregação diária de dados emocionais concluída");
