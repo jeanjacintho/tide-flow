@@ -30,10 +30,10 @@ public class KeywordExtractionService {
         "que", "qual", "quais", "quando", "onde", "como", "porque",
         "é", "são", "foi", "ser", "estar", "ter", "haver",
         "eu", "você", "ele", "ela", "nós", "eles", "elas",
-        "me", "te", "se", "nos", "vos", "lhe", "lhes",
+        "me", "te", "se", "vos", "lhe", "lhes",
         "meu", "minha", "teu", "tua", "seu", "sua", "nosso", "nossa",
         "isso", "isto", "aquilo", "este", "esta", "esse", "essa",
-        "muito", "mais", "menos", "muito", "pouco", "bastante",
+        "muito", "mais", "menos", "pouco", "bastante",
         "já", "ainda", "sempre", "nunca", "agora", "hoje", "ontem", "amanhã",
         "também", "tampouco", "nem", "ou", "e", "mas", "porém"
     );
