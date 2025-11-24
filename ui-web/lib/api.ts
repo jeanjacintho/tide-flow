@@ -313,5 +313,273 @@ export interface ConversationSummaryResponse {
   lastMessagePreview: string;
 }
 
+  // Corporate Dashboard APIs
+  async getDashboardOverview(companyId: string, date?: string): Promise<DashboardOverviewDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const params = date ? `?date=${date}` : '';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/dashboard/${companyId}${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getStressTimeline(
+    companyId: string,
+    startDate: string,
+    endDate: string,
+    granularity: string = 'day'
+  ): Promise<StressTimelineDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(
+      `${AI_SERVICE_URL}/api/corporate/stress-timeline/${companyId}?startDate=${startDate}&endDate=${endDate}&granularity=${granularity}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getDepartmentHeatmap(companyId: string, date?: string): Promise<DepartmentHeatmapDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const params = date ? `?date=${date}` : '';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department-heatmap/${companyId}${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getTurnoverPrediction(companyId: string, departmentId?: string): Promise<TurnoverPredictionDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const params = departmentId ? `?departmentId=${departmentId}` : '';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/turnover-prediction/${companyId}${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getImpactAnalysis(
+    companyId: string,
+    eventDate: string,
+    eventDescription: string
+  ): Promise<ImpactAnalysisDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(
+      `${AI_SERVICE_URL}/api/corporate/impact-analysis/${companyId}?eventDate=${eventDate}&eventDescription=${encodeURIComponent(eventDescription)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getDepartmentInsights(departmentId: string, date?: string): Promise<DepartmentInsightsDTO> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const params = date ? `?date=${date}` : '';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department/${departmentId}/insights${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+}
+
 export const apiService = new ApiService();
+
+// Dashboard DTOs
+export interface DashboardOverviewDTO {
+  companyId: string;
+  date: string;
+  averageStressLevel: number | null;
+  averageEmotionalIntensity: number | null;
+  totalActiveUsers: number | null;
+  totalConversations: number | null;
+  totalMessages: number | null;
+  riskAlertsCount: number | null;
+  departmentBreakdown: Record<string, any> | null;
+  topKeywords: Record<string, number> | null;
+  topTriggers: Record<string, any> | null;
+}
+
+export interface StressTimelineDTO {
+  companyId: string;
+  startDate: string;
+  endDate: string;
+  granularity: string;
+  points: StressTimelinePoint[];
+  alerts: StressAlert[];
+}
+
+export interface StressTimelinePoint {
+  timestamp: string;
+  stressLevel: number | null;
+  activeUsers: number | null;
+  conversations: number | null;
+}
+
+export interface StressAlert {
+  timestamp: string;
+  type: string;
+  message: string;
+  stressLevel: number | null;
+  changePercentage: number | null;
+}
+
+export interface DepartmentHeatmapDTO {
+  companyId: string;
+  date: string;
+  departments: DepartmentHeatmapItem[];
+}
+
+export interface DepartmentHeatmapItem {
+  departmentId: string;
+  departmentName: string | null;
+  stressLevel: number | null;
+  stressColor: string;
+  activeUsers: number | null;
+  conversations: number | null;
+  riskAlerts: number | null;
+  topKeywords: Record<string, any> | null;
+  topTriggers: Record<string, any> | null;
+}
+
+export interface TurnoverPredictionDTO {
+  companyId: string;
+  departmentId: string | null;
+  departmentName: string | null;
+  riskScore: number;
+  riskLevel: string;
+  probabilities: TurnoverProbability[];
+  riskFactors: RiskFactor[];
+  recommendations: string[];
+}
+
+export interface TurnoverProbability {
+  days: number;
+  probability: number;
+}
+
+export interface RiskFactor {
+  factor: string;
+  description: string;
+  impact: number;
+  weight: number;
+}
+
+export interface ImpactAnalysisDTO {
+  companyId: string;
+  eventDate: string;
+  eventDescription: string;
+  beforeMetrics: ImpactMetrics;
+  afterMetrics: ImpactMetrics;
+  changes: ImpactChanges;
+  departmentImpacts: DepartmentImpact[];
+  overallAssessment: string;
+}
+
+export interface ImpactMetrics {
+  averageStressLevel: number;
+  averageEmotionalIntensity: number;
+  moraleScore: number;
+  engagementScore: number;
+  totalConversations: number;
+  activeUsers: number;
+}
+
+export interface ImpactChanges {
+  stressChangePercentage: number;
+  moraleChangePercentage: number;
+  engagementChangePercentage: number;
+  trend: string;
+}
+
+export interface DepartmentImpact {
+  departmentId: string;
+  departmentName: string | null;
+  stressChangePercentage: number;
+  moraleChangePercentage: number;
+  impactLevel: string;
+}
+
+export interface DepartmentInsightsDTO {
+  departmentId: string;
+  departmentName: string | null;
+  stressLevel: number | null;
+  stressColor: string;
+  activeUsers: number | null;
+  conversations: number | null;
+  riskAlerts: number | null;
+  topKeywords: Record<string, any> | null;
+  topTriggers: Record<string, any> | null;
+}
 

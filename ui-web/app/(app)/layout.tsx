@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
   Sidebar,
@@ -11,10 +11,14 @@ import {
   SidebarContent,
   SidebarInset,
   SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { HeartIcon } from "lucide-react";
+import { HeartIcon, LayoutDashboard, MessageSquare, User } from "lucide-react";
+import Link from "next/link";
 
 export default function AppLayout({
   children,
@@ -23,6 +27,7 @@ export default function AppLayout({
 }) {
   const { isLoading, isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -51,7 +56,34 @@ export default function AppLayout({
             <HeartIcon className="w-6 h-6" />
             <h1 className="text-lg font-semibold">tideflow</h1>
           </SidebarHeader>
-          <SidebarContent />
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/chat'}>
+                  <Link href="/chat">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Chat</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/profile'}>
+                  <Link href="/profile">
+                    <User className="w-4 h-4" />
+                    <span>Perfil</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
           <SidebarFooter>
             {user && (
               <NavUser
