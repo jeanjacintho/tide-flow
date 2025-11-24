@@ -29,9 +29,12 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             
+            // Usa username como subject, fallback para email se username não existir (compatibilidade)
+            String subject = user.getUsername() != null ? user.getUsername() : user.getEmail();
+            
             var builder = JWT.create()
                     .withIssuer("tideflow-user-service")
-                    .withSubject(user.getEmail())
+                    .withSubject(subject)
                     .withClaim("user_id", user.getId().toString())
                     .withExpiresAt(generateExpirationDate());
             

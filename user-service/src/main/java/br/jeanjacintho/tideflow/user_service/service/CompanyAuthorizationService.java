@@ -132,7 +132,8 @@ public class CompanyAuthorizationService {
             return Optional.empty();
         }
 
-        Optional<User> user = userRepository.findByEmail(authentication.getName());
+        String username = authentication.getName();
+        Optional<User> user = userRepository.findByUsernameOrEmail(username);
         if (user.isEmpty()) {
             return Optional.empty();
         }

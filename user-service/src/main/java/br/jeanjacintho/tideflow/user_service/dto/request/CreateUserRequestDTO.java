@@ -9,7 +9,8 @@ public class CreateUserRequestDTO {
     @Size(min = 2, max = 100, message = "Nome deve ter entre 2 e 100 caracteres")
     private String name;
     
-    @NotBlank(message = "Email é obrigatório")
+    private String username;
+    
     @Email(message = "Email deve ser válido")
     private String email;
 
@@ -37,6 +38,14 @@ public class CreateUserRequestDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {

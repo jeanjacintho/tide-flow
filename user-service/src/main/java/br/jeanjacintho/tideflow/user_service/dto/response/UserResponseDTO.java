@@ -7,26 +7,30 @@ import br.jeanjacintho.tideflow.user_service.model.User;
 public class UserResponseDTO {
     private UUID id;
     private String name;
+    private String username;
     private String email;
     private String phone;
     private String avatarUrl;
     private String trustedEmail;
     private String city;
     private String state;
+    private Boolean mustChangePassword;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
+        this.username = username;
         this.email = email;
         this.phone = phone;
         this.avatarUrl = avatarUrl;
         this.trustedEmail = trustedEmail;
         this.city = city;
         this.state = state;
+        this.mustChangePassword = mustChangePassword;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -35,12 +39,14 @@ public class UserResponseDTO {
         return new UserResponseDTO(
             user.getId(),
             user.getName(),
+            user.getUsername(),
             user.getEmail(),
             user.getPhone(),
             user.getAvatarUrl(),
             user.getTrustedEmail(),
             user.getCity(),
             user.getState(),
+            user.getMustChangePassword(),
             user.getCreatedAt(),
             user.getUpdatedAt()
         );
@@ -60,6 +66,14 @@ public class UserResponseDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
     
     public String getEmail() {
@@ -124,5 +138,13 @@ public class UserResponseDTO {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Boolean getMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(Boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 }

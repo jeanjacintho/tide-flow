@@ -2,8 +2,10 @@ package br.jeanjacintho.tideflow.user_service.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
 
-public record RegisterDTO(
+public record InviteUserRequestDTO(
     @NotBlank(message = "Nome é obrigatório")
     String name,
     
@@ -12,8 +14,9 @@ public record RegisterDTO(
     @Email(message = "Email deve ser válido")
     String email,
     
-    @NotBlank(message = "Senha é obrigatória")
-    String password
-) {
+    @NotNull(message = "ID do departamento é obrigatório")
+    UUID departmentId,
     
+    String employeeId
+) {
 }

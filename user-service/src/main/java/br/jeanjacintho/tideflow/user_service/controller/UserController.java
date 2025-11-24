@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.jeanjacintho.tideflow.user_service.dto.request.ChangePasswordRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.UpdateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.UserResponseDTO;
@@ -64,5 +65,11 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable @NonNull UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequestDTO requestDTO) {
+        userService.changePassword(requestDTO);
+        return ResponseEntity.ok().build();
     }
 }

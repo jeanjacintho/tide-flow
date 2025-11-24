@@ -35,13 +35,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody AuthenticationDTO authenticationDTO) {
-        var userPassword = new UsernamePasswordAuthenticationToken(authenticationDTO.email(), authenticationDTO.password());
+        var userPassword = new UsernamePasswordAuthenticationToken(authenticationDTO.username(), authenticationDTO.password());
         var auth = authenticationManager.authenticate(userPassword);
         
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         
         // Busca o usuário completo do banco com relacionamentos para incluir informações de tenant no token
-        User user = userRepository.findByEmailWithCompanyAndDepartment(userDetails.getUsername())
+        User user = userRepository.findByUsernameOrEmailWithCompanyAndDepartment(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         
         String token = tokenService.generateToken(user);

@@ -23,11 +23,14 @@ public class AuthorizationService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + username));
+        User user = userRepository.findByUsernameOrEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+
+        // Usa username como identificador principal
+        String userIdentifier = user.getUsername() != null ? user.getUsername() : user.getEmail();
 
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
+                .username(userIdentifier)
                 .password(user.getPassword())
                 .authorities(getAuthorities(user))
                 .build();

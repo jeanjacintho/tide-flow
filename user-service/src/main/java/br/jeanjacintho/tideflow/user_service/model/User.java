@@ -21,7 +21,10 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
+
+    @Column(unique = true, length = 255)
     private String email;
 
     @Column(nullable = false)
@@ -67,6 +70,9 @@ public class User {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @Column(name = "must_change_password", nullable = false)
+    private Boolean mustChangePassword;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -97,6 +103,9 @@ public class User {
         if (isActive == null) {
             isActive = true;
         }
+        if (mustChangePassword == null) {
+            mustChangePassword = false;
+        }
         if (anonymizedId == null) {
             anonymizedId = UUID.randomUUID();
         }
@@ -105,6 +114,12 @@ public class User {
         }
         if (systemRole == null) {
             systemRole = SystemRole.NORMAL;
+        }
+        // Gera username único se não fornecido (para compatibilidade com registros antigos)
+        if (username == null || username.isEmpty()) {
+            // Gera username baseado em timestamp + random para garantir unicidade
+            username = "user_" + System.currentTimeMillis() + "_" + 
+                      String.valueOf(Math.abs(UUID.randomUUID().hashCode())).substring(0, 6);
         }
     }
 
@@ -127,6 +142,14 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {
@@ -248,6 +271,14 @@ public class User {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Boolean getMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(Boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
     }
 
     public SystemRole getSystemRole() {
