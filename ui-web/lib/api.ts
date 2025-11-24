@@ -275,43 +275,6 @@ class ApiService {
       throw error;
     }
   }
-}
-
-export interface ConversationResponse {
-  response: string;
-  conversationId: string;
-  isComplete: boolean;
-  emotionalAnalysis?: {
-    emotion?: string;
-    intensity?: number;
-    sentiment?: string;
-  };
-}
-
-export interface Message {
-  id: string;
-  role: 'USER' | 'ASSISTANT';
-  content: string;
-  createdAt: string;
-  sequenceNumber: number;
-}
-
-export interface ConversationHistoryResponse {
-  conversationId: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-  messages: Message[];
-}
-
-export interface ConversationSummaryResponse {
-  conversationId: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-  messageCount: number;
-  lastMessagePreview: string;
-}
 
   // Corporate Dashboard APIs
   async getDashboardOverview(companyId: string, date?: string): Promise<DashboardOverviewDTO> {
@@ -452,6 +415,42 @@ export interface ConversationSummaryResponse {
 
     return response.json();
   }
+}
+
+export interface ConversationResponse {
+  response: string;
+  conversationId: string;
+  isComplete: boolean;
+  emotionalAnalysis?: {
+    emotion?: string;
+    intensity?: number;
+    sentiment?: string;
+  };
+}
+
+export interface Message {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  createdAt: string;
+  sequenceNumber: number;
+}
+
+export interface ConversationHistoryResponse {
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Message[];
+}
+
+export interface ConversationSummaryResponse {
+  conversationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessagePreview: string;
 }
 
 export const apiService = new ApiService();
