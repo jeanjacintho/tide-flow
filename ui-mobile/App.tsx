@@ -1,20 +1,45 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { ChatScreen } from './screens/ChatScreen';
+import { LoginScreen } from './screens/LoginScreen';
+import { useAuth } from './hooks/useAuth';
+
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Durante o carregamento inicial, mostra loading
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  // Primeira tela sempre é LoginScreen se não estiver autenticado
+  // Só vai para ChatScreen se o usuário já estiver logado
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
+
+  return <ChatScreen />;
+}
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <AppContent />
+      <StatusBar style="dark" />
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
 });
