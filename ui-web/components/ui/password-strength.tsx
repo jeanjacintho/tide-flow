@@ -124,3 +124,4 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
     </div>
   );
 }
+

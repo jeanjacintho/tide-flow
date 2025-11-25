@@ -36,3 +36,4 @@ public class PublicController {
         return ResponseEntity.status(HttpStatus.CREATED).body(company);
     }
 }
+

@@ -26,3 +26,4 @@ public record RegisterCompanyRequestDTO(
     String password
 ) {
 }
+
