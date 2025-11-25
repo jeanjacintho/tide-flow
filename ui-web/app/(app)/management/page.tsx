@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { apiService, Department, User, CreateDepartmentRequest, CreateCompanyUserRequest, UsageInfo } from '@/lib/api';
 import { Building2, Users, Plus, Loader2, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,8 +38,22 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 export default function ManagementPage() {
+  // PROTEÇÃO DA ROTA: Apenas OWNER pode acessar
+  // Este hook DEVE ser o primeiro a ser chamado
+  const { hasAccess, isChecking } = useRequireRole({ 
+    companyRole: 'OWNER',
+    redirectTo: '/chat'
+  });
+  
+  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
+  if (isChecking || !hasAccess) {
+    return null;
+  }
+  
   const { user } = useAuth();
   const router = useRouter();
+  
+  // Todos os hooks devem ser chamados após a verificação de acesso
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,10 +79,8 @@ export default function ManagementPage() {
   useEffect(() => {
     if (user?.companyRole === 'OWNER' && user?.companyId) {
       loadData();
-    } else if (user && user.companyRole !== 'OWNER') {
-      router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user]);
 
   const loadData = async () => {
     if (!user?.companyId) return;
@@ -218,16 +231,8 @@ export default function ManagementPage() {
     );
   }
 
-  if (user?.companyRole !== 'OWNER') {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-lg font-semibold">Acesso negado</p>
-          <p className="text-muted-foreground">Apenas o dono da empresa pode acessar esta página</p>
-        </div>
-      </div>
-    );
-  }
+  // O hook useRequireRole já faz o redirecionamento se não tiver permissão
+  // Não é necessário verificar novamente aqui
 
   return (
     <div className="flex flex-col h-full p-6">
@@ -541,3 +546,4 @@ export default function ManagementPage() {
     </div>
   );
 }
+

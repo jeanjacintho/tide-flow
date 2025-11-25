@@ -247,7 +247,16 @@ public class CompanyService {
 
         // 5. Criar CompanyAdmin com role OWNER
         CompanyAdmin companyAdmin = new CompanyAdmin(savedOwner, savedCompany, CompanyAdminRole.OWNER, null);
-        companyAdminRepository.save(companyAdmin);
+        CompanyAdmin savedCompanyAdmin = companyAdminRepository.save(companyAdmin);
+        
+        // Garante que o CompanyAdmin foi salvo corretamente
+        if (savedCompanyAdmin == null || savedCompanyAdmin.getRole() != CompanyAdminRole.OWNER) {
+            throw new IllegalStateException("Erro ao criar CompanyAdmin com role OWNER para o primeiro usuário");
+        }
+        
+        org.slf4j.LoggerFactory.getLogger(CompanyService.class)
+            .info("CompanyAdmin criado com sucesso: userId={}, companyId={}, role={}", 
+                savedOwner.getId(), savedCompany.getId(), savedCompanyAdmin.getRole());
 
         return CompanyResponseDTO.fromEntity(savedCompany);
     }

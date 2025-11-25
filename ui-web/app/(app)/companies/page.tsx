@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { apiService, Company, CreateCompanyRequest } from '@/lib/api';
 import { Building2, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,21 @@ import {
 import { toast } from 'sonner';
 
 export default function CompaniesPage() {
+  // PROTEÇÃO DA ROTA: Apenas SYSTEM_ADMIN pode acessar
+  // Este hook DEVE ser o primeiro a ser chamado
+  const { hasAccess, isChecking } = useRequireRole({ 
+    systemRole: 'SYSTEM_ADMIN',
+    redirectTo: '/chat'
+  });
+  
+  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
+  if (isChecking || !hasAccess) {
+    return null;
+  }
+  
   const { user } = useAuth();
+  
+  // Todos os hooks devem ser chamados após a verificação de acesso
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

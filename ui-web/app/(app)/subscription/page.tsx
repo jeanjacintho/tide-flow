@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +32,19 @@ interface UsageInfo {
 }
 
 export default function SubscriptionPage() {
+  // PROTEÇÃO DA ROTA: Apenas OWNER e ADMIN podem acessar
+  // Este hook DEVE ser o primeiro a ser chamado
+  const { hasAccess, isChecking } = useRequireRole({ 
+    companyRole: ['OWNER', 'ADMIN'],
+    redirectTo: '/chat'
+  });
+  
+  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
+  if (isChecking || !hasAccess) {
+    return null;
+  }
+  
+  // Todos os hooks devem ser chamados após a verificação de acesso
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(true);

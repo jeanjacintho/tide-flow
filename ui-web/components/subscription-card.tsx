@@ -14,9 +14,12 @@ export function SubscriptionCard() {
   const [loading, setLoading] = useState(true);
 
   const companyId = user?.companyId;
+  
+  // Apenas OWNER e ADMIN podem ver o card de assinatura
+  const canViewSubscription = user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN';
 
   const fetchSubscription = useCallback(async () => {
-    if (!companyId) {
+    if (!companyId || !canViewSubscription) {
       setLoading(false);
       return;
     }
@@ -29,19 +32,19 @@ export function SubscriptionCard() {
     } finally {
       setLoading(false);
     }
-  }, [companyId]);
+  }, [companyId, canViewSubscription]);
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewSubscription) {
       fetchSubscription();
     } else {
       setLoading(false);
     }
-  }, [companyId, fetchSubscription]);
+  }, [companyId, canViewSubscription, fetchSubscription]);
 
   const shouldShow = useMemo(() => {
-    return !loading && subscription && subscription.planType === 'FREE';
-  }, [loading, subscription]);
+    return canViewSubscription && !loading && subscription && subscription.planType === 'FREE';
+  }, [canViewSubscription, loading, subscription]);
 
   if (!shouldShow) {
     return null;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRequireRole } from '@/hooks/useRequireRole';
 import { useDashboardData, useStressTimeline, useDepartmentHeatmap, useTurnoverPrediction } from '@/hooks/use-dashboard';
 import { StressSeismograph } from '@/components/dashboard/stress-seismograph';
 import { DepartmentHeatmap } from '@/components/dashboard/department-heatmap';
@@ -18,6 +19,20 @@ import { Calendar, Users, MessageSquare, AlertTriangle, TrendingUp } from 'lucid
 const MOCK_COMPANY_ID = '00000000-0000-0000-0000-000000000000';
 
 export default function DashboardPage() {
+  // PROTEÇÃO DA ROTA: Apenas HR_MANAGER, ADMIN e OWNER podem acessar
+  // Este hook DEVE ser o primeiro a ser chamado
+  const { hasAccess, isChecking } = useRequireRole({ 
+    companyRole: ['HR_MANAGER', 'ADMIN', 'OWNER'],
+    redirectTo: '/chat'
+  });
+  
+  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
+  // O hook já fez o redirecionamento, mas garantimos que nada seja renderizado
+  if (isChecking || !hasAccess) {
+    return null;
+  }
+  
+  // Todos os hooks devem ser chamados após a verificação de acesso
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(undefined);

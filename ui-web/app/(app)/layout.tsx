@@ -18,7 +18,7 @@ import {
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SubscriptionCard } from "@/components/subscription-card";
-import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp, Building2, Settings } from "lucide-react";
+import { HeartIcon, LayoutDashboard, MessageSquare, TrendingUp, Building2, Settings } from "lucide-react";
 import Link from "next/link";
 
 export default function AppLayout({
@@ -36,12 +36,33 @@ export default function AppLayout({
     }
   }, [isLoading, isAuthenticated]);
 
-  const menuItems = useMemo(() => [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', pathname: '/dashboard' },
-    { href: '/chat', icon: MessageSquare, label: 'Chat', pathname: '/chat' },
-    { href: '/subscription', icon: TrendingUp, label: 'Assinatura', pathname: '/subscription' },
-    { href: '/profile', icon: User, label: 'Perfil', pathname: '/profile' },
-  ], []);
+  const menuItems = useMemo(() => {
+    const baseItems = [
+      { href: '/chat', icon: MessageSquare, label: 'Chat', pathname: '/chat' },
+    ];
+    
+    // Apenas HR_MANAGER, ADMIN e OWNER podem ver o Dashboard
+    if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
+      baseItems.unshift({ 
+        href: '/dashboard', 
+        icon: LayoutDashboard, 
+        label: 'Dashboard', 
+        pathname: '/dashboard' 
+      });
+    }
+    
+    // Apenas OWNER e ADMIN podem ver a página de assinatura
+    if (user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN') {
+      baseItems.push({ 
+        href: '/subscription', 
+        icon: TrendingUp, 
+        label: 'Assinatura', 
+        pathname: '/subscription' 
+      });
+    }
+    
+    return baseItems;
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -98,7 +119,10 @@ export default function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <SubscriptionCard />
+            {/* Apenas OWNER e ADMIN podem ver o card de assinatura */}
+            {(user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN') && (
+              <SubscriptionCard />
+            )}
             {user && (
               <NavUser
                 user={{
