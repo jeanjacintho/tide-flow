@@ -1,8 +1,11 @@
 package br.jeanjacintho.tideflow.user_service.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -24,6 +27,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -35,17 +40,30 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody AuthenticationDTO authenticationDTO) {
-        var userPassword = new UsernamePasswordAuthenticationToken(authenticationDTO.username(), authenticationDTO.password());
-        var auth = authenticationManager.authenticate(userPassword);
-        
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
-        
-        // Busca o usuário completo do banco com relacionamentos para incluir informações de tenant no token
-        User user = userRepository.findByUsernameOrEmailWithCompanyAndDepartment(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        
-        String token = tokenService.generateToken(user);
-        return ResponseEntity.ok(new LoginResponseDTO(token));
+        try {
+            var userPassword = new UsernamePasswordAuthenticationToken(
+                    authenticationDTO.username() != null ? authenticationDTO.username().trim() : null, 
+                    authenticationDTO.password());
+            
+            var auth = authenticationManager.authenticate(userPassword);
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            
+            // Busca o usuário completo do banco com relacionamentos para incluir informações de tenant no token
+            User fullUser = userRepository.findByUsernameOrEmailWithCompanyAndDepartment(userDetails.getUsername())
+                    .orElseThrow(() -> {
+                        logger.error("Usuário não encontrado após autenticação: {}", userDetails.getUsername());
+                        return new RuntimeException("Usuário não encontrado");
+                    });
+            
+            String token = tokenService.generateToken(fullUser);
+            return ResponseEntity.ok(new LoginResponseDTO(token));
+        } catch (BadCredentialsException e) {
+            logger.warn("Tentativa de login com credenciais inválidas para: {}", authenticationDTO.username());
+            throw new BadCredentialsException("Credenciais inválidas");
+        } catch (Exception e) {
+            logger.error("Erro inesperado durante login: {}", e.getMessage(), e);
+            throw new BadCredentialsException("Erro ao fazer login");
+        }
     }
 
     @PostMapping("/register")

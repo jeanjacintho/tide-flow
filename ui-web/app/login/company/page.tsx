@@ -11,10 +11,9 @@ import { z } from "zod";
 import { Building2, User } from "lucide-react";
 
 const loginSchema = z.object({
-    email: z
+    username: z
         .string()
-        .min(1, 'O email é obrigatório')
-        .email('Email inválido'),
+        .min(1, 'O email ou username é obrigatório'),
     password: z
         .string()
         .min(1, 'A senha é obrigatória'),
@@ -23,7 +22,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function CompanyLoginPage() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
     const [isPending, startTransition] = useTransition();
@@ -34,7 +33,7 @@ export default function CompanyLoginPage() {
         setErrors({});
 
         const formData: LoginFormData = {
-            email,
+            username,
             password,
         };
 
@@ -55,10 +54,10 @@ export default function CompanyLoginPage() {
         startTransition(() => {
             (async () => {
                 try {
-                    await login(email, password);
+                    await login(username, password);
                 } catch (err) {
                     const errorMessage = err instanceof Error ? err.message : 'Erro ao fazer login. Verifique suas credenciais.';
-                    setErrors({ email: errorMessage });
+                    setErrors({ username: errorMessage });
                 }
             })();
         });
@@ -82,30 +81,30 @@ export default function CompanyLoginPage() {
                     <CardHeader>
                         <CardTitle>Login como Empresa</CardTitle>
                         <CardDescription>
-                            Acesse o painel administrativo da sua empresa
+                            Digite seu email ou username e senha para acessar o painel administrativo
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit}>
                             <FieldGroup>
                                 <Field>
-                                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                                    <FieldLabel htmlFor="username">Email ou Username</FieldLabel>
                                     <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="admin@empresa.com"
-                                        value={email}
+                                        id="username"
+                                        type="text"
+                                        placeholder="admin@empresa.com ou admin.empresa"
+                                        value={username}
                                         onChange={(e) => {
-                                            setEmail(e.target.value);
-                                            if (errors.email) {
-                                                setErrors(prev => ({ ...prev, email: undefined }));
+                                            setUsername(e.target.value);
+                                            if (errors.username) {
+                                                setErrors(prev => ({ ...prev, username: undefined }));
                                             }
                                         }}
                                         required
                                         disabled={isPending}
-                                        aria-invalid={!!errors.email}
+                                        aria-invalid={!!errors.username}
                                     />
-                                    <FieldError>{errors.email}</FieldError>
+                                    <FieldError>{errors.username}</FieldError>
                                 </Field>
                                 <Field>
                                     <div className="flex justify-between items-center">

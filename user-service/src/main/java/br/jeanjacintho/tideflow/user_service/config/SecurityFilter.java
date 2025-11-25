@@ -26,41 +26,43 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        try {
-            var token = this.recoverToken(request);
-            if(token != null) {
-                try {
-                    var login = tokenService.validateToken(token);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(login);
+        // Ignora requisições de login e registro - não precisam de token
+        String path = request.getRequestURI();
+        if (path != null && (path.equals("/auth/login") || path.equals("/auth/register"))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        var token = this.recoverToken(request);
+        if(token != null) {
+            try {
+                var login = tokenService.validateToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(login);
 
-                    var authHeader = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    SecurityContextHolder.getContext().setAuthentication(authHeader);
+                var authHeader = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authHeader);
 
-                    // Extrai informações de tenant do token e armazena no TenantContext
-                    UUID companyId = tokenService.getCompanyIdFromToken(token);
-                    UUID departmentId = tokenService.getDepartmentIdFromToken(token);
-                    String companyRole = tokenService.getCompanyRoleFromToken(token);
-                    String systemRole = tokenService.getSystemRoleFromToken(token);
+                // Extrai informações de tenant do token e armazena no TenantContext
+                UUID companyId = tokenService.getCompanyIdFromToken(token);
+                UUID departmentId = tokenService.getDepartmentIdFromToken(token);
+                String companyRole = tokenService.getCompanyRoleFromToken(token);
+                String systemRole = tokenService.getSystemRoleFromToken(token);
 
-                    if (companyId != null) {
-                        TenantContext.setCompanyId(companyId);
-                    }
-                    if (departmentId != null) {
-                        TenantContext.setDepartmentId(departmentId);
-                    }
-                    if (companyRole != null) {
-                        TenantContext.setCompanyRole(companyRole);
-                    }
-                    if (systemRole != null) {
-                        TenantContext.setSystemRole(systemRole);
-                    }
-                } catch (Exception e) {
-                    // Token inválido ou usuário não encontrado - continua sem autenticação
+                if (companyId != null) {
+                    TenantContext.setCompanyId(companyId);
                 }
+                if (departmentId != null) {
+                    TenantContext.setDepartmentId(departmentId);
+                }
+                if (companyRole != null) {
+                    TenantContext.setCompanyRole(companyRole);
+                }
+                if (systemRole != null) {
+                    TenantContext.setSystemRole(systemRole);
+                }
+            } catch (Exception e) {
+                // Token inválido ou usuário não encontrado - continua sem autenticação
             }
-        } finally {
-            // Garante que o contexto é limpo após o processamento
-            // Isso será feito no TenantFilter que será executado depois
         }
         filterChain.doFilter(request, response);
     }

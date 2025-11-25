@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -90,7 +90,10 @@ class ApiService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     return this.request<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({
+        username: credentials.username,
+        password: credentials.password,
+      }),
     });
   }
 
@@ -108,20 +111,8 @@ class ApiService {
     }
 
     try {
-      const email = this.decodeTokenEmail(token);
-      const response = await this.request<{
-        content: User[];
-        totalElements: number;
-        totalPages: number;
-        size: number;
-        number: number;
-      }>(`/users?email=${encodeURIComponent(email)}&page=0&size=1`);
-      
-      if (response.content && response.content.length > 0) {
-        return response.content[0];
-      }
-      
-      throw new Error('User not found');
+      const userId = this.decodeTokenUserId(token);
+      return this.request<User>(`/users/${userId}`);
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -130,10 +121,14 @@ class ApiService {
     }
   }
 
-  private decodeTokenEmail(token: string): string {
+  private decodeTokenUserId(token: string): string {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.sub;
+      const userId = payload.user_id;
+      if (!userId) {
+        throw new Error('User ID not found in token');
+      }
+      return userId;
     } catch {
       throw new Error('Invalid token format');
     }
