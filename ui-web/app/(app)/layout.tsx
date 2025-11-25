@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Sidebar,
   SidebarProvider,
@@ -32,9 +32,16 @@ export default function AppLayout({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/login/user');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated]);
+
+  const menuItems = useMemo(() => [
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', pathname: '/dashboard' },
+    { href: '/chat', icon: MessageSquare, label: 'Chat', pathname: '/chat' },
+    { href: '/subscription', icon: TrendingUp, label: 'Assinatura', pathname: '/subscription' },
+    { href: '/profile', icon: User, label: 'Perfil', pathname: '/profile' },
+  ], []);
 
   if (isLoading) {
     return (
@@ -50,8 +57,7 @@ export default function AppLayout({
 
   return (
     <div className="flex min-h-screen w-full">
-    <SidebarProvider>
-      
+      <SidebarProvider>
         <Sidebar variant="inset" collapsible="offcanvas">
           <SidebarHeader className="p-4 flex flex-row items-center">
             <HeartIcon className="w-6 h-6" />
@@ -59,38 +65,16 @@ export default function AppLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
-                  <Link href="/dashboard">
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/chat'}>
-                  <Link href="/chat">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Chat</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
-                  <Link href="/subscription">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>Assinatura</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/profile'}>
-                  <Link href="/profile">
-                    <User className="w-4 h-4" />
-                    <span>Perfil</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname === item.pathname}>
+                    <Link href={item.href}>
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
               {user?.systemRole === 'SYSTEM_ADMIN' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === '/companies'}>
@@ -126,9 +110,7 @@ export default function AppLayout({
             {children}
           </main>
         </SidebarInset>
-    
-    </SidebarProvider>
+      </SidebarProvider>
     </div>
   );
 }
-

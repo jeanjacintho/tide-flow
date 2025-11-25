@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService, SubscriptionResponse } from '@/lib/api';
 import { Card } from '@/components/ui/card';
@@ -13,28 +13,37 @@ export function SubscriptionCard() {
   const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.companyId) {
-      fetchSubscription();
-    } else {
-      setLoading(false);
-    }
-  }, [user?.companyId]);
+  const companyId = user?.companyId;
 
-  const fetchSubscription = async () => {
-    if (!user?.companyId) return;
+  const fetchSubscription = useCallback(async () => {
+    if (!companyId) {
+      setLoading(false);
+      return;
+    }
     
     try {
-      const data = await apiService.getSubscription(user.companyId);
+      const data = await apiService.getSubscription(companyId);
       setSubscription(data);
     } catch (error) {
       console.error('Erro ao buscar assinatura:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
 
-  if (loading || !subscription || subscription.planType !== 'FREE') {
+  useEffect(() => {
+    if (companyId) {
+      fetchSubscription();
+    } else {
+      setLoading(false);
+    }
+  }, [companyId, fetchSubscription]);
+
+  const shouldShow = useMemo(() => {
+    return !loading && subscription && subscription.planType === 'FREE';
+  }, [loading, subscription]);
+
+  if (!shouldShow) {
     return null;
   }
 

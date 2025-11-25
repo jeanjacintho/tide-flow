@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { apiService, User } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -22,28 +22,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadUser = async () => {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
         return;
       }
 
       try {
         const userData = await apiService.getCurrentUser();
-        setUser(userData);
+        if (isMounted) {
+          setUser(userData);
+        }
       } catch (error) {
-        localStorage.removeItem('auth_token');
-        setUser(null);
+        if (isMounted) {
+          localStorage.removeItem('auth_token');
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     try {
       const response = await apiService.login({ username, password });
       localStorage.setItem('auth_token', response.token);
@@ -52,8 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       
       // Redireciona baseado no tipo de usuário
-      // Se tiver companyId, provavelmente é admin da empresa -> dashboard
-      // Caso contrário, é usuário normal -> chat
       if (userData.companyId) {
         router.push('/dashboard');
       } else {
@@ -62,9 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       throw error;
     }
-  };
+  }, [router]);
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string) => {
     try {
       await apiService.register({
         name,
@@ -77,15 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       throw error;
     }
-  };
+  }, [login]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
     setUser(null);
     router.push('/login/user');
-  };
+  }, [router]);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
       setUser(null);
@@ -99,20 +111,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('auth_token');
       setUser(null);
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    login,
+    register,
+    logout,
+    refreshUser,
+  }), [user, isLoading, login, register, logout, refreshUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -125,4 +137,3 @@ export function useAuth() {
   }
   return context;
 }
-

@@ -15,17 +15,25 @@ export function useDashboardData(companyId: string | null, date?: Date) {
       return;
     }
 
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (isMounted) {
+          setLoading(true);
+          setError(null);
+        }
         const dateStr = date ? format(date, 'yyyy-MM-dd') : undefined;
         const result = await apiService.getDashboardOverview(companyId, dateStr);
-        setData(result);
+        if (isMounted) {
+          setData(result);
+          setLoading(false);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard');
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard');
+          setLoading(false);
+        }
       }
     };
 
@@ -33,7 +41,11 @@ export function useDashboardData(companyId: string | null, date?: Date) {
     
     // Refresh a cada 5 minutos
     const interval = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [companyId, date]);
 
   return { data, loading, error };
@@ -55,6 +67,8 @@ export function useStressTimeline(
       return;
     }
 
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -65,15 +79,25 @@ export function useStressTimeline(
           format(endDate, 'yyyy-MM-dd'),
           granularity
         );
-        setData(result);
+        if (isMounted) {
+          setData(result);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar timeline de stress');
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar timeline de stress');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [companyId, startDate, endDate, granularity]);
 
   return { data, loading, error };
@@ -121,20 +145,32 @@ export function useTurnoverPrediction(companyId: string | null, departmentId?: s
       return;
     }
 
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (isMounted) {
+          setLoading(true);
+          setError(null);
+        }
         const result = await apiService.getTurnoverPrediction(companyId, departmentId);
-        setData(result);
+        if (isMounted) {
+          setData(result);
+          setLoading(false);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar predição de turnover');
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar predição de turnover');
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [companyId, departmentId]);
 
   return { data, loading, error };
@@ -189,21 +225,33 @@ export function useDepartmentInsights(departmentId: string | null, date?: Date) 
       return;
     }
 
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (isMounted) {
+          setLoading(true);
+          setError(null);
+        }
         const dateStr = date ? format(date, 'yyyy-MM-dd') : undefined;
         const result = await apiService.getDepartmentInsights(departmentId, dateStr);
-        setData(result);
+        if (isMounted) {
+          setData(result);
+          setLoading(false);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar insights do departamento');
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar insights do departamento');
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [departmentId, date]);
 
   return { data, loading, error };
