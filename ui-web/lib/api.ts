@@ -440,6 +440,13 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
+  // Subscription APIs
+  async getSubscription(companyId: string): Promise<SubscriptionResponse> {
+    return this.request<SubscriptionResponse>(`/api/subscriptions/companies/${companyId}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export interface ConversationResponse {
@@ -628,5 +635,17 @@ export interface CreateCompanyRequest {
   billingEmail?: string;
   billingAddress?: string;
   taxId?: string;
+}
+
+export interface SubscriptionResponse {
+  id: string;
+  companyId: string;
+  planType: 'FREE' | 'ENTERPRISE';
+  pricePerUser: number;
+  totalUsers: number;
+  billingCycle: string;
+  nextBillingDate: string;
+  status: string;
+  monthlyBill: number;
 }
 

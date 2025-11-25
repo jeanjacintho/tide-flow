@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SubscriptionCard } from "@/components/subscription-card";
 import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp, Building2 } from "lucide-react";
 import Link from "next/link";
 
@@ -103,6 +104,7 @@ export default function AppLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
+            <SubscriptionCard />
             {user && (
               <NavUser
                 user={{
