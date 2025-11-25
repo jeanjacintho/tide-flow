@@ -447,6 +447,14 @@ class ApiService {
       method: 'GET',
     });
   }
+
+  // Public company registration
+  async registerCompany(data: RegisterCompanyRequest): Promise<Company> {
+    return this.request<Company>('/api/public/register-company', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export interface ConversationResponse {
@@ -647,5 +655,13 @@ export interface SubscriptionResponse {
   nextBillingDate: string;
   status: string;
   monthlyBill: number;
+}
+
+export interface RegisterCompanyRequest {
+  companyName: string;
+  companyDomain?: string;
+  ownerName: string;
+  ownerEmail: string;
+  password: string;
 }
 

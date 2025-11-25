@@ -56,10 +56,29 @@ export default function Home() {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Tideflow é um aplicativo completo para você gerenciar sua saúde e bem-estar de forma simples e eficiente.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/register">
-              <Button size="lg">Começar agora</Button>
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  Começar agora
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/register/user" className="flex items-center gap-2 w-full">
+                    <User className="h-4 w-4" />
+                    Registrar como Usuário
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/register/company" className="flex items-center gap-2 w-full">
+                    <Building2 className="h-4 w-4" />
+                    Registrar como Empresa
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="lg" variant="outline" className="gap-2">

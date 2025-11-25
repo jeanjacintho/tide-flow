@@ -11,13 +11,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.jeanjacintho.tideflow.user_service.config.TenantContext;
 import br.jeanjacintho.tideflow.user_service.dto.request.CompanyRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.RegisterCompanyRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.CompanyResponseDTO;
 import br.jeanjacintho.tideflow.user_service.exception.AccessDeniedException;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
+import br.jeanjacintho.tideflow.user_service.model.BillingCycle;
 import br.jeanjacintho.tideflow.user_service.model.Company;
+import br.jeanjacintho.tideflow.user_service.model.CompanyAdmin;
+import br.jeanjacintho.tideflow.user_service.model.CompanyAdminRole;
 import br.jeanjacintho.tideflow.user_service.model.CompanyStatus;
+import br.jeanjacintho.tideflow.user_service.model.CompanySubscription;
+import br.jeanjacintho.tideflow.user_service.model.Department;
 import br.jeanjacintho.tideflow.user_service.model.SubscriptionPlan;
+import br.jeanjacintho.tideflow.user_service.model.SubscriptionStatus;
+import br.jeanjacintho.tideflow.user_service.model.SystemRole;
+import br.jeanjacintho.tideflow.user_service.model.User;
+import br.jeanjacintho.tideflow.user_service.repository.CompanyAdminRepository;
 import br.jeanjacintho.tideflow.user_service.repository.CompanyRepository;
+import br.jeanjacintho.tideflow.user_service.repository.CompanySubscriptionRepository;
+import br.jeanjacintho.tideflow.user_service.repository.DepartmentRepository;
+import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 public class CompanyService {
@@ -25,15 +41,32 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyAuthorizationService authorizationService;
     private final SubscriptionService subscriptionService;
+    private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
+    private final CompanyAdminRepository companyAdminRepository;
+    private final CompanySubscriptionRepository subscriptionRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    private static final BigDecimal FREE_PLAN_PRICE = BigDecimal.ZERO;
 
     @Autowired
     public CompanyService(
             CompanyRepository companyRepository, 
             CompanyAuthorizationService authorizationService,
-            SubscriptionService subscriptionService) {
+            SubscriptionService subscriptionService,
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository,
+            CompanyAdminRepository companyAdminRepository,
+            CompanySubscriptionRepository subscriptionRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.companyRepository = companyRepository;
         this.authorizationService = authorizationService;
         this.subscriptionService = subscriptionService;
+        this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+        this.companyAdminRepository = companyAdminRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -133,5 +166,89 @@ public class CompanyService {
                     .map(company -> List.of(CompanyResponseDTO.fromEntity(company)))
                     .orElse(List.of());
         }
+    }
+
+    /**
+     * Registro público de empresa (Self-Service).
+     * Cria empresa, subscription, departamento padrão, usuário OWNER e CompanyAdmin em uma transação atômica.
+     */
+    @Transactional
+    public CompanyResponseDTO registerCompanyPublic(RegisterCompanyRequestDTO requestDTO) {
+        // Valida unicidade de email
+        if (userRepository.existsByEmail(requestDTO.ownerEmail())) {
+            throw new IllegalArgumentException("Email já está em uso: " + requestDTO.ownerEmail());
+        }
+
+        // Valida unicidade de domínio (se fornecido)
+        if (requestDTO.companyDomain() != null && !requestDTO.companyDomain().isEmpty()) {
+            if (companyRepository.existsByDomain(requestDTO.companyDomain())) {
+                throw new IllegalArgumentException("Domínio já está em uso: " + requestDTO.companyDomain());
+            }
+        }
+
+        // 1. Criar Company
+        Company company = new Company();
+        company.setName(requestDTO.companyName());
+        company.setDomain(requestDTO.companyDomain());
+        company.setBillingEmail(requestDTO.ownerEmail());
+        company.setSubscriptionPlan(SubscriptionPlan.FREE);
+        company.setMaxEmployees(20);
+        company.setStatus(CompanyStatus.TRIAL);
+        
+        Company savedCompany = companyRepository.save(company);
+        UUID companyId = savedCompany.getId();
+        
+        if (companyId == null) {
+            throw new IllegalStateException("Erro ao criar empresa: ID não gerado");
+        }
+
+        // 2. Criar Subscription FREE diretamente (sem validação de acesso para registro público)
+        CompanySubscription subscription = new CompanySubscription(
+            savedCompany,
+            SubscriptionPlan.FREE,
+            FREE_PLAN_PRICE,
+            0, // Inicialmente 0 usuários
+            BillingCycle.MONTHLY,
+            LocalDate.now().plusMonths(1)
+        );
+        subscription.setStatus(SubscriptionStatus.TRIAL);
+        subscriptionRepository.save(subscription);
+
+        // 3. Criar Departamento Padrão "Geral"
+        Department defaultDepartment = new Department(savedCompany, "Geral", "Departamento padrão");
+        Department savedDepartment = departmentRepository.save(defaultDepartment);
+
+        // 4. Criar Usuário OWNER
+        // Gera username único baseado no email (se já existir, adiciona sufixo)
+        String baseUsername = requestDTO.ownerEmail().split("@")[0];
+        String username = baseUsername;
+        int attempts = 0;
+        while (userRepository.existsByUsername(username) && attempts < 10) {
+            username = baseUsername + "_" + attempts;
+            attempts++;
+        }
+        if (userRepository.existsByUsername(username)) {
+            // Fallback: usa timestamp
+            username = baseUsername + "_" + System.currentTimeMillis();
+        }
+        
+        User owner = new User();
+        owner.setName(requestDTO.ownerName());
+        owner.setEmail(requestDTO.ownerEmail());
+        owner.setUsername(username);
+        owner.setPassword(passwordEncoder.encode(requestDTO.password()));
+        owner.setCompany(savedCompany);
+        owner.setDepartment(savedDepartment);
+        owner.setSystemRole(SystemRole.NORMAL);
+        owner.setIsActive(true);
+        owner.setMustChangePassword(false);
+        
+        User savedOwner = userRepository.save(owner);
+
+        // 5. Criar CompanyAdmin com role OWNER
+        CompanyAdmin companyAdmin = new CompanyAdmin(savedOwner, savedCompany, CompanyAdminRole.OWNER, null);
+        companyAdminRepository.save(companyAdmin);
+
+        return CompanyResponseDTO.fromEntity(savedCompany);
     }
 }

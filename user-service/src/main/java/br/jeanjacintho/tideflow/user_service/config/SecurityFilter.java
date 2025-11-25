@@ -28,7 +28,11 @@ public class SecurityFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         // Ignora requisições de login e registro - não precisam de token
         String path = request.getRequestURI();
-        if (path != null && (path.equals("/auth/login") || path.equals("/auth/register"))) {
+        if (path != null && (
+            path.equals("/auth/login") || 
+            path.equals("/auth/register") ||
+            path.equals("/api/public/register-company")
+        )) {
             filterChain.doFilter(request, response);
             return;
         }
