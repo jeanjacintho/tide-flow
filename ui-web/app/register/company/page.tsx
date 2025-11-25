@@ -19,22 +19,27 @@ import { cn } from "@/lib/utils";
 const registerCompanySchema = z.object({
   companyName: z
     .string()
+    .trim()
     .min(2, 'O nome da empresa deve ter pelo menos 2 caracteres')
     .max(255, 'O nome da empresa deve ter no máximo 255 caracteres')
     .regex(/^[a-zA-ZÀ-ÿ0-9\s&.,-]+$/, 'Nome da empresa contém caracteres inválidos'),
   companyDomain: z
     .string()
+    .trim()
     .optional()
-    .refine((val) => !val || val.length === 0 || /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$/.test(val), {
-      message: 'Domínio inválido (ex: exemplo.com)',
-    }),
+    .refine(
+      (val) => !val || val === '' || /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$/.test(val),
+      { message: 'Domínio inválido (ex: exemplo.com)' }
+    ),
   ownerName: z
     .string()
+    .trim()
     .min(2, 'O nome deve ter pelo menos 2 caracteres')
     .max(100, 'O nome deve ter no máximo 100 caracteres')
     .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'O nome deve conter apenas letras, espaços, hífens e apóstrofos'),
   ownerEmail: z
     .string()
+    .trim()
     .min(1, 'O email é obrigatório')
     .email('Email inválido'),
   password: z
@@ -125,9 +130,23 @@ export default function RegisterCompanyPage() {
     e.preventDefault();
     setErrors({});
 
-    const result = registerCompanySchema.safeParse(formData);
+    // Prepara dados para validação (trim e trata campos vazios)
+    const trimmedDomain = formData.companyDomain?.trim();
+    const dataToValidate = {
+      companyName: formData.companyName.trim(),
+      companyDomain: trimmedDomain && trimmedDomain.length > 0 ? trimmedDomain : undefined,
+      ownerName: formData.ownerName.trim(),
+      ownerEmail: formData.ownerEmail.trim(),
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    };
+
+    console.log('Validating data:', dataToValidate);
+
+    const result = registerCompanySchema.safeParse(dataToValidate);
 
     if (!result.success) {
+      console.log('Validation errors:', result.error.issues);
       const fieldErrors: Partial<Record<keyof RegisterCompanyFormData, string>> = {};
       result.error.issues.forEach((issue) => {
         const field = issue.path[0] as keyof RegisterCompanyFormData;
@@ -136,6 +155,16 @@ export default function RegisterCompanyPage() {
         }
       });
       setErrors(fieldErrors);
+      
+      // Mostra toast com erros de validação
+      const errorMessages = Object.values(fieldErrors).filter(Boolean);
+      if (errorMessages.length > 0) {
+        toast.error('Erro de validação', {
+          description: errorMessages[0],
+        });
+      }
+      
+      // Navega para o step com erro
       if (Object.keys(fieldErrors).some(f => ['companyName', 'companyDomain'].includes(f))) {
         setCurrentStep(1);
       } else if (Object.keys(fieldErrors).some(f => ['ownerName', 'ownerEmail'].includes(f))) {
@@ -146,18 +175,23 @@ export default function RegisterCompanyPage() {
       return;
     }
 
+    console.log('Validation passed, submitting...');
+
     startTransition(() => {
       (async () => {
         try {
           const request: RegisterCompanyRequest = {
-            companyName: formData.companyName,
-            companyDomain: formData.companyDomain || undefined,
-            ownerName: formData.ownerName,
-            ownerEmail: formData.ownerEmail,
+            companyName: formData.companyName.trim(),
+            companyDomain: trimmedDomain && trimmedDomain.length > 0 ? trimmedDomain : undefined,
+            ownerName: formData.ownerName.trim(),
+            ownerEmail: formData.ownerEmail.trim(),
             password: formData.password,
           };
 
+          console.log('Sending request:', request);
           await apiService.registerCompany(request);
+          console.log('Registration successful');
+          
           toast.success('Empresa cadastrada com sucesso!', {
             description: 'Redirecionando para login...',
             icon: <CheckCircle2 className="w-5 h-5" />,
@@ -167,6 +201,7 @@ export default function RegisterCompanyPage() {
             router.push('/login/company');
           }, 1500);
         } catch (err) {
+          console.error('Registration error:', err);
           const errorMessage = err instanceof Error ? err.message : 'Erro ao cadastrar empresa. Tente novamente.';
           toast.error('Erro ao cadastrar empresa', {
             description: errorMessage,
