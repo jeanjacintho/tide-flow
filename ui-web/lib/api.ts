@@ -27,6 +27,7 @@ export interface User {
   state?: string;
   companyId?: string;
   departmentId?: string;
+  systemRole?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -412,6 +413,33 @@ class ApiService {
 
     return response.json();
   }
+
+  // Company management APIs
+  async getAllCompanies(): Promise<Company[]> {
+    return this.request<Company[]>('/api/companies', {
+      method: 'GET',
+    });
+  }
+
+  async getCompanyById(id: string): Promise<Company> {
+    return this.request<Company>(`/api/companies/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createCompany(data: CreateCompanyRequest): Promise<Company> {
+    return this.request<Company>('/api/companies', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCompany(id: string, data: CreateCompanyRequest): Promise<Company> {
+    return this.request<Company>(`/api/companies/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export interface ConversationResponse {
@@ -577,5 +605,28 @@ export interface DepartmentInsightsDTO {
   riskAlerts: number | null;
   topKeywords: Record<string, any> | null;
   topTriggers: Record<string, any> | null;
+}
+
+// Company DTOs
+export interface Company {
+  id: string;
+  name: string;
+  domain?: string;
+  subscriptionPlan: string;
+  maxEmployees: number;
+  status: string;
+  billingEmail?: string;
+  billingAddress?: string;
+  taxId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCompanyRequest {
+  name: string;
+  domain?: string;
+  billingEmail?: string;
+  billingAddress?: string;
+  taxId?: string;
 }
 

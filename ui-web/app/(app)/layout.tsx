@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp } from "lucide-react";
+import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp, Building2 } from "lucide-react";
 import Link from "next/link";
 
 export default function AppLayout({
@@ -90,6 +90,16 @@ export default function AppLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {user?.systemRole === 'SYSTEM_ADMIN' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === '/companies'}>
+                    <Link href="/companies">
+                      <Building2 className="w-4 h-4" />
+                      <span>Empresas</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>

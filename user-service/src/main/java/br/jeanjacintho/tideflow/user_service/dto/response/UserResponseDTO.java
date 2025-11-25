@@ -17,12 +17,13 @@ public class UserResponseDTO {
     private Boolean mustChangePassword;
     private UUID companyId;
     private UUID departmentId;
+    private String systemRole;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, String systemRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.username = username;
@@ -35,6 +36,7 @@ public class UserResponseDTO {
         this.mustChangePassword = mustChangePassword;
         this.companyId = companyId;
         this.departmentId = departmentId;
+        this.systemRole = systemRole;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -53,6 +55,7 @@ public class UserResponseDTO {
             user.getMustChangePassword(),
             user.getCompany() != null ? user.getCompany().getId() : null,
             user.getDepartment() != null ? user.getDepartment().getId() : null,
+            user.getSystemRole() != null ? user.getSystemRole().name() : null,
             user.getCreatedAt(),
             user.getUpdatedAt()
         );
@@ -168,5 +171,13 @@ public class UserResponseDTO {
 
     public void setDepartmentId(UUID departmentId) {
         this.departmentId = departmentId;
+    }
+
+    public String getSystemRole() {
+        return systemRole;
+    }
+
+    public void setSystemRole(String systemRole) {
+        this.systemRole = systemRole;
     }
 }

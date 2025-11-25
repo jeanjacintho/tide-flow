@@ -38,6 +38,11 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponseDTO createCompany(CompanyRequestDTO requestDTO) {
+        // Apenas SYSTEM_ADMIN pode criar empresas
+        if (!TenantContext.isSystemAdmin()) {
+            throw new AccessDeniedException("Empresa", null, "Apenas SYSTEM_ADMIN pode criar empresas");
+        }
+
         // Verifica se domain já existe
         if (requestDTO.domain() != null && !requestDTO.domain().isEmpty()) {
             if (companyRepository.existsByDomain(requestDTO.domain())) {
