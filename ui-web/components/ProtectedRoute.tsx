@@ -9,20 +9,6 @@ interface ProtectedRouteProps extends RequireRoleOptions {
   fallback?: ReactNode;
 }
 
-/**
- * Componente para proteger rotas baseado em roles do usuário.
- * Não renderiza o conteúdo até verificar a permissão.
- * 
- * @example
- * <ProtectedRoute companyRole="OWNER">
- *   <ManagementPage />
- * </ProtectedRoute>
- * 
- * @example
- * <ProtectedRoute companyRole={['OWNER', 'ADMIN']} fallback={<AccessDenied />}>
- *   <AdminPage />
- * </ProtectedRoute>
- */
 export function ProtectedRoute({
   children,
   fallback = null,

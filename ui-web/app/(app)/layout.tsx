@@ -79,12 +79,12 @@ export default function AppLayout({
   return (
     <div className="flex min-h-screen w-full">
       <SidebarProvider>
-        <Sidebar variant="inset" collapsible="offcanvas">
-          <SidebarHeader className="p-4 flex flex-row items-center">
-            <HeartIcon className="w-6 h-6" />
-            <h1 className="text-lg font-semibold">tideflow</h1>
+        <Sidebar>
+          <SidebarHeader className="p-4 flex flex-col gap-0">
+            <h1 className="text-lg font-bold">tideflow</h1>
+            <span className="text-sm text-muted-foreground">Seu assistente de gestão</span>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="p-4">
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
@@ -135,7 +135,7 @@ export default function AppLayout({
             )}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="flex flex-col overflow-hidden border border-border">
+        <SidebarInset className="flex flex-col overflow-hidden">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background p-2 shrink-0">
             <SidebarTrigger />
             <ThemeToggle />

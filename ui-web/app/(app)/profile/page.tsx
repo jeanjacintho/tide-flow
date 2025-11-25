@@ -235,7 +235,6 @@ export default function ProfilePage() {
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
                   Salvar Alterações
                 </>
               )}
@@ -246,5 +245,6 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
 

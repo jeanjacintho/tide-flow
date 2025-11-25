@@ -32,19 +32,15 @@ interface UsageInfo {
 }
 
 export default function SubscriptionPage() {
-  // PROTEÇÃO DA ROTA: Apenas OWNER e ADMIN podem acessar
-  // Este hook DEVE ser o primeiro a ser chamado
   const { hasAccess, isChecking } = useRequireRole({ 
     companyRole: ['OWNER', 'ADMIN'],
     redirectTo: '/chat'
   });
   
-  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
   if (isChecking || !hasAccess) {
     return null;
   }
   
-  // Todos os hooks devem ser chamados após a verificação de acesso
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -311,7 +307,7 @@ export default function SubscriptionPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <div className="text-3xl font-bold">€6</div>
+              <div className="text-3xl font-bold">R$ 49.90</div>
               <div className="text-sm text-muted-foreground">por usuário/mês</div>
             </div>
             <ul className="space-y-2">
