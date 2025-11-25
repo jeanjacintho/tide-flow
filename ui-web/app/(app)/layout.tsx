@@ -18,7 +18,7 @@ import {
 import { NavUser } from "@/components/nav-user";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SubscriptionCard } from "@/components/subscription-card";
-import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp, Building2 } from "lucide-react";
+import { HeartIcon, LayoutDashboard, MessageSquare, User, TrendingUp, Building2, Settings } from "lucide-react";
 import Link from "next/link";
 
 export default function AppLayout({
@@ -75,6 +75,16 @@ export default function AppLayout({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {user?.companyRole === 'OWNER' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === '/management'}>
+                    <Link href="/management">
+                      <Settings className="w-4 h-4" />
+                      <span>Gerenciamento</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {user?.systemRole === 'SYSTEM_ADMIN' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === '/companies'}>

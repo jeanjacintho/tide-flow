@@ -28,6 +28,7 @@ export interface User {
   companyId?: string;
   departmentId?: string;
   systemRole?: string;
+  companyRole?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -451,6 +452,47 @@ class ApiService {
   // Public company registration
   async registerCompany(data: RegisterCompanyRequest): Promise<Company> {
     return this.request<Company>('/api/public/register-company', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Department management APIs
+  async getCompanyDepartments(companyId: string): Promise<Department[]> {
+    return this.request<Department[]>(`/api/companies/${companyId}/departments`, {
+      method: 'GET',
+    });
+  }
+
+  async createDepartment(companyId: string, data: CreateDepartmentRequest): Promise<Department> {
+    return this.request<Department>(`/api/companies/${companyId}/departments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateDepartment(departmentId: string, data: CreateDepartmentRequest): Promise<Department> {
+    return this.request<Department>(`/api/departments/${departmentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDepartment(departmentId: string): Promise<void> {
+    return this.request<void>(`/api/departments/${departmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // User management APIs
+  async getCompanyUsers(companyId: string): Promise<User[]> {
+    return this.request<User[]>(`/api/companies/${companyId}/users`, {
+      method: 'GET',
+    });
+  }
+
+  async inviteUser(companyId: string, data: InviteUserRequest): Promise<InviteUserResponse> {
+    return this.request<InviteUserResponse>(`/api/companies/${companyId}/invite`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

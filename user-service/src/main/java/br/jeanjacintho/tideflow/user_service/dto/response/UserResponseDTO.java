@@ -3,6 +3,7 @@ package br.jeanjacintho.tideflow.user_service.dto.response;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import br.jeanjacintho.tideflow.user_service.model.User;
+import br.jeanjacintho.tideflow.user_service.repository.CompanyAdminRepository;
 
 public class UserResponseDTO {
     private UUID id;
@@ -18,12 +19,13 @@ public class UserResponseDTO {
     private UUID companyId;
     private UUID departmentId;
     private String systemRole;
+    private String companyRole;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, String systemRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, String systemRole, String companyRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.username = username;
@@ -37,11 +39,23 @@ public class UserResponseDTO {
         this.companyId = companyId;
         this.departmentId = departmentId;
         this.systemRole = systemRole;
+        this.companyRole = companyRole;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
     public static UserResponseDTO fromEntity(User user) {
+        return fromEntity(user, null);
+    }
+
+    public static UserResponseDTO fromEntity(User user, CompanyAdminRepository companyAdminRepository) {
+        String companyRole = null;
+        if (user.getCompany() != null && companyAdminRepository != null) {
+            companyRole = companyAdminRepository.findByUserIdAndCompanyId(user.getId(), user.getCompany().getId())
+                .map(admin -> admin.getRole().name())
+                .orElse(null);
+        }
+        
         return new UserResponseDTO(
             user.getId(),
             user.getName(),
@@ -56,6 +70,7 @@ public class UserResponseDTO {
             user.getCompany() != null ? user.getCompany().getId() : null,
             user.getDepartment() != null ? user.getDepartment().getId() : null,
             user.getSystemRole() != null ? user.getSystemRole().name() : null,
+            companyRole,
             user.getCreatedAt(),
             user.getUpdatedAt()
         );
@@ -179,5 +194,13 @@ public class UserResponseDTO {
 
     public void setSystemRole(String systemRole) {
         this.systemRole = systemRole;
+    }
+
+    public String getCompanyRole() {
+        return companyRole;
+    }
+
+    public void setCompanyRole(String companyRole) {
+        this.companyRole = companyRole;
     }
 }

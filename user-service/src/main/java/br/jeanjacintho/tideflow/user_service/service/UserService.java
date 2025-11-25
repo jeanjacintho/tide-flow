@@ -34,6 +34,7 @@ import br.jeanjacintho.tideflow.user_service.model.Company;
 import br.jeanjacintho.tideflow.user_service.model.Department;
 import br.jeanjacintho.tideflow.user_service.model.SystemRole;
 import br.jeanjacintho.tideflow.user_service.model.User;
+import br.jeanjacintho.tideflow.user_service.repository.CompanyAdminRepository;
 import br.jeanjacintho.tideflow.user_service.repository.CompanyRepository;
 import br.jeanjacintho.tideflow.user_service.repository.DepartmentRepository;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
@@ -55,6 +56,7 @@ public class UserService {
     private final EmailService emailService;
     private final CompanyRepository companyRepository;
     private final DepartmentRepository departmentRepository;
+    private final CompanyAdminRepository companyAdminRepository;
     private final UsageTrackingService usageTrackingService;
     private final SubscriptionService subscriptionService;
     private final SecureRandom secureRandom;
@@ -62,12 +64,14 @@ public class UserService {
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService,
                       CompanyRepository companyRepository, DepartmentRepository departmentRepository,
+                      CompanyAdminRepository companyAdminRepository,
                       UsageTrackingService usageTrackingService, SubscriptionService subscriptionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.companyRepository = companyRepository;
         this.departmentRepository = departmentRepository;
+        this.companyAdminRepository = companyAdminRepository;
         this.usageTrackingService = usageTrackingService;
         this.subscriptionService = subscriptionService;
         this.secureRandom = new SecureRandom();
@@ -123,7 +127,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
         sendWelcomeEmailIfProvided(savedUser);
         
-        return UserResponseDTO.fromEntity(savedUser);
+        return UserResponseDTO.fromEntity(savedUser, companyAdminRepository);
     }
 
     public UserResponseDTO findById(@NonNull UUID id) {
@@ -132,7 +136,7 @@ public class UserService {
         
         validateTenantAccess(user);
         
-        return UserResponseDTO.fromEntity(user);
+        return UserResponseDTO.fromEntity(user, companyAdminRepository);
     }
 
     public Page<UserResponseDTO> findAll(String name, String email, String phone, String city, String state, @NonNull Pageable pageable) {
@@ -148,7 +152,8 @@ public class UserService {
             }
         }
         
-        return userRepository.findAll(specification, pageable).map(UserResponseDTO::fromEntity);
+        return userRepository.findAll(specification, pageable)
+                .map(user -> UserResponseDTO.fromEntity(user, companyAdminRepository));
     }
 
     @Transactional
@@ -173,7 +178,7 @@ public class UserService {
         existingUser.setState(requestDTO.getState());
 
         User updatedUser = userRepository.save(existingUser);
-        return UserResponseDTO.fromEntity(updatedUser);
+        return UserResponseDTO.fromEntity(updatedUser, companyAdminRepository);
     }
 
     @Transactional
@@ -269,7 +274,7 @@ public class UserService {
         validateCompanyAccess(companyId);
 
         return userRepository.findByCompanyId(companyId).stream()
-                .map(UserResponseDTO::fromEntity)
+                .map(user -> UserResponseDTO.fromEntity(user, companyAdminRepository))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -281,7 +286,7 @@ public class UserService {
         validateCompanyAccess(companyId);
 
         return userRepository.findByDepartmentId(departmentId).stream()
-                .map(UserResponseDTO::fromEntity)
+                .map(user -> UserResponseDTO.fromEntity(user, companyAdminRepository))
                 .collect(java.util.stream.Collectors.toList());
     }
 
