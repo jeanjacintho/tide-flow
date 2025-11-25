@@ -497,6 +497,33 @@ class ApiService {
       body: JSON.stringify(data),
     });
   }
+
+  async createCompanyUser(companyId: string, data: CreateCompanyUserRequest): Promise<User> {
+    return this.request<User>(`/api/companies/${companyId}/users`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    return this.request<void>(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Usage tracking APIs
+  async getUsageInfo(companyId: string): Promise<UsageInfo> {
+    return this.request<UsageInfo>(`/api/subscriptions/companies/${companyId}/usage`, {
+      method: 'GET',
+    });
+  }
+}
+
+export interface UsageInfo {
+  activeUsers: number;
+  maxUsers: number;
+  atLimit: boolean;
+  remainingSlots: number;
 }
 
 export interface ConversationResponse {
@@ -705,5 +732,17 @@ export interface RegisterCompanyRequest {
   ownerName: string;
   ownerEmail: string;
   password: string;
+}
+
+export interface CreateCompanyUserRequest {
+  name: string;
+  username?: string;
+  email: string;
+  password: string;
+  departmentId: string;
+  employeeId?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
 }
 

@@ -258,7 +258,7 @@ export default function SubscriptionPage() {
             <ul className="space-y-2">
               <li className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-600" />
-                <span>Até 20 usuários</span>
+                <span>Até 7 usuários</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-600" />

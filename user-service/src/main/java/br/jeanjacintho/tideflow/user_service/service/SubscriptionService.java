@@ -28,7 +28,7 @@ public class SubscriptionService {
     
     private static final BigDecimal FREE_PLAN_PRICE = BigDecimal.ZERO;
     private static final BigDecimal ENTERPRISE_PLAN_PRICE_PER_USER = new BigDecimal("6.00"); // €6 por usuário/mês
-    private static final int FREE_PLAN_MAX_EMPLOYEES = 20;
+    private static final int FREE_PLAN_MAX_EMPLOYEES = 7;
     private static final int ENTERPRISE_PLAN_MAX_EMPLOYEES = Integer.MAX_VALUE;
 
     private final CompanySubscriptionRepository subscriptionRepository;

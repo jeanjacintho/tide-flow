@@ -90,7 +90,7 @@ public class CompanyService {
         company.setBillingAddress(requestDTO.billingAddress());
         company.setTaxId(requestDTO.taxId());
         company.setSubscriptionPlan(SubscriptionPlan.FREE);
-        company.setMaxEmployees(20);
+        company.setMaxEmployees(7);
         company.setStatus(CompanyStatus.TRIAL);
 
         Company savedCompany = companyRepository.save(company);
@@ -192,7 +192,7 @@ public class CompanyService {
         company.setDomain(requestDTO.companyDomain());
         company.setBillingEmail(requestDTO.ownerEmail());
         company.setSubscriptionPlan(SubscriptionPlan.FREE);
-        company.setMaxEmployees(20);
+        company.setMaxEmployees(7);
         company.setStatus(CompanyStatus.TRIAL);
         
         Company savedCompany = companyRepository.save(company);

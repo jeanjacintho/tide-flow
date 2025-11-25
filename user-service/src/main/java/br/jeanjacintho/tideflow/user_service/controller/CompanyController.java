@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.jeanjacintho.tideflow.user_service.dto.request.CompanyRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.CreateCompanyUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.InviteUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.CompanyResponseDTO;
 import br.jeanjacintho.tideflow.user_service.dto.response.DepartmentResponseDTO;
@@ -89,5 +90,11 @@ public class CompanyController {
     public ResponseEntity<InviteUserResponseDTO> inviteUser(@PathVariable @NonNull UUID id, @Valid @RequestBody InviteUserRequestDTO requestDTO) {
         InviteUserResponseDTO response = userService.inviteUser(id, requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{id}/users")
+    public ResponseEntity<UserResponseDTO> createCompanyUser(@PathVariable @NonNull UUID id, @Valid @RequestBody CreateCompanyUserRequestDTO requestDTO) {
+        UserResponseDTO user = userService.createCompanyUser(id, requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 }

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.jeanjacintho.tideflow.user_service.config.TenantContext;
 import br.jeanjacintho.tideflow.user_service.dto.request.ChangePasswordRequestDTO;
+import br.jeanjacintho.tideflow.user_service.dto.request.CreateCompanyUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.CreateUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.InviteUserRequestDTO;
 import br.jeanjacintho.tideflow.user_service.dto.request.RegisterDTO;
@@ -192,7 +193,8 @@ public class UserService {
     }
 
     public Optional<UserResponseDTO> findByEmail(String email) {
-        return userRepository.findByEmail(email).map(UserResponseDTO::fromEntity);
+        return userRepository.findByEmail(email)
+                .map(user -> UserResponseDTO.fromEntity(user, companyAdminRepository));
     }
 
     @Transactional
@@ -236,6 +238,48 @@ public class UserService {
             temporaryPassword,
             "Usuário criado com sucesso. Passe as credenciais pessoalmente ao funcionário."
         );
+    }
+
+    @Transactional
+    public UserResponseDTO createCompanyUser(@NonNull UUID companyId, CreateCompanyUserRequestDTO requestDTO) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
+
+        Department department = departmentRepository.findByIdAndCompanyId(requestDTO.departmentId(), companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Departamento", requestDTO.departmentId()));
+
+        validateCompanyAccess(companyId);
+        
+        // Valida limites de uso do plano ANTES de criar o usuário
+        // Força flush para garantir que a contagem esteja atualizada
+        userRepository.flush();
+        usageTrackingService.validateUsageLimits(companyId);
+        
+        String username = resolveUsername(requestDTO.username(), companyId);
+        validateUsernameAndEmail(username, requestDTO.email());
+        validateEmployeeId(companyId, requestDTO.employeeId());
+        
+        User user = new User();
+        user.setName(requestDTO.name());
+        user.setUsername(username);
+        user.setEmail(requestDTO.email());
+        user.setPassword(passwordEncoder.encode(requestDTO.password()));
+        user.setCompany(company);
+        user.setDepartment(department);
+        user.setEmployeeId(requestDTO.employeeId());
+        user.setPhone(requestDTO.phone());
+        user.setCity(requestDTO.city());
+        user.setState(requestDTO.state());
+        user.setSystemRole(SystemRole.NORMAL);
+        user.setMustChangePassword(false);
+        user.setIsActive(true); // Garante que o usuário está ativo
+
+        User savedUser = userRepository.save(user);
+        
+        // Atualiza contagem de usuários na assinatura
+        subscriptionService.updateUserCount(companyId);
+
+        return UserResponseDTO.fromEntity(savedUser, companyAdminRepository);
     }
 
     private String generateNumericUsername(UUID companyId) {

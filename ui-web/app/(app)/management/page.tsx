@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiService, Department, User, CreateDepartmentRequest, InviteUserRequest } from '@/lib/api';
+import { apiService, Department, User, CreateDepartmentRequest, CreateCompanyUserRequest, UsageInfo } from '@/lib/api';
 import { Building2, Users, Plus, Loader2, Trash2, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,12 +49,16 @@ export default function ManagementPage() {
     name: '',
     description: '',
   });
-  const [userFormData, setUserFormData] = useState<InviteUserRequest>({
+  const [userFormData, setUserFormData] = useState<CreateCompanyUserRequest>({
     name: '',
     email: '',
+    password: '',
     departmentId: '',
     username: '',
     employeeId: '',
+    phone: '',
+    city: '',
+    state: '',
   });
 
   useEffect(() => {
@@ -105,7 +109,7 @@ export default function ManagementPage() {
     }
   };
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.companyId) return;
 
@@ -114,24 +118,30 @@ export default function ManagementPage() {
       return;
     }
 
+    if (!userFormData.password || userFormData.password.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await apiService.inviteUser(user.companyId, userFormData);
-      toast.success('Funcionário convidado com sucesso', {
-        description: `Usuário: ${response.username}, Senha temporária: ${response.temporaryPassword}`,
-        duration: 10000,
-      });
+      await apiService.createCompanyUser(user.companyId, userFormData);
+      toast.success('Funcionário criado com sucesso');
       setIsUserDialogOpen(false);
       setUserFormData({
         name: '',
         email: '',
+        password: '',
         departmentId: '',
         username: '',
         employeeId: '',
+        phone: '',
+        city: '',
+        state: '',
       });
       loadData();
     } catch (error) {
-      toast.error('Erro ao convidar funcionário', {
+      toast.error('Erro ao criar funcionário', {
         description: error instanceof Error ? error.message : 'Erro desconhecido',
       });
     } finally {
@@ -152,6 +162,51 @@ export default function ManagementPage() {
       toast.error('Erro ao excluir departamento', {
         description: error instanceof Error ? error.message : 'Erro desconhecido',
       });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este funcionário?')) {
+      return;
+    }
+
+    try {
+      await apiService.deleteUser(userId);
+      toast.success('Funcionário excluído com sucesso');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao excluir funcionário', {
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+      });
+    }
+  };
+
+  const handleCheckLimitBeforeCreate = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!user?.companyId) return;
+
+    try {
+      const usageInfo: UsageInfo = await apiService.getUsageInfo(user.companyId);
+      
+      if (usageInfo.atLimit || usageInfo.remainingSlots === 0) {
+        toast.error('Limite de funcionários atingido', {
+          description: `Você possui ${usageInfo.activeUsers} funcionários de ${usageInfo.maxUsers} permitidos no plano atual. Faça upgrade para o plano Enterprise para adicionar mais funcionários.`,
+          duration: 6000,
+          action: {
+            label: 'Ver Assinaturas',
+            onClick: () => router.push('/subscription'),
+          },
+        });
+        return;
+      }
+      
+      // Se não está no limite, abre o diálogo normalmente
+      setIsUserDialogOpen(true);
+    } catch (error) {
+      // Se houver erro ao verificar, permite abrir o diálogo (a validação será feita no backend)
+      console.error('Erro ao verificar limite:', error);
+      setIsUserDialogOpen(true);
     }
   };
 
@@ -295,16 +350,14 @@ export default function ManagementPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Funcionários</h2>
             <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Convidar Funcionário
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <form onSubmit={handleInviteUser}>
+              <Button onClick={handleCheckLimitBeforeCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Funcionário
+              </Button>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleCreateUser}>
                   <DialogHeader>
-                    <DialogTitle>Convidar Funcionário</DialogTitle>
+                    <DialogTitle>Criar Funcionário</DialogTitle>
                     <DialogDescription>
                       Adicione um novo funcionário à sua empresa
                     </DialogDescription>
@@ -331,6 +384,19 @@ export default function ManagementPage() {
                           setUserFormData({ ...userFormData, email: e.target.value })
                         }
                         required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="user-password">Senha *</Label>
+                      <Input
+                        id="user-password"
+                        type="password"
+                        value={userFormData.password}
+                        onChange={(e) =>
+                          setUserFormData({ ...userFormData, password: e.target.value })
+                        }
+                        required
+                        minLength={8}
                       />
                     </div>
                     <div className="grid gap-2">
@@ -374,6 +440,40 @@ export default function ManagementPage() {
                         }
                       />
                     </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="user-phone">Telefone (opcional)</Label>
+                      <Input
+                        id="user-phone"
+                        type="tel"
+                        value={userFormData.phone}
+                        onChange={(e) =>
+                          setUserFormData({ ...userFormData, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="user-city">Cidade (opcional)</Label>
+                        <Input
+                          id="user-city"
+                          value={userFormData.city}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, city: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="user-state">Estado (opcional)</Label>
+                        <Input
+                          id="user-state"
+                          value={userFormData.state}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, state: e.target.value })
+                          }
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsUserDialogOpen(false)}>
@@ -381,7 +481,7 @@ export default function ManagementPage() {
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Convidar
+                      Criar
                     </Button>
                   </DialogFooter>
                 </form>
@@ -398,12 +498,13 @@ export default function ManagementPage() {
                   <TableHead>Departamento</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Data de Criação</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                       Nenhum funcionário cadastrado
                     </TableCell>
                   </TableRow>
@@ -418,6 +519,15 @@ export default function ManagementPage() {
                         <TableCell>{userItem.username || '-'}</TableCell>
                         <TableCell>
                           {new Date(userItem.createdAt).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(userItem.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
