@@ -49,11 +49,13 @@ public class UserResponseDTO {
     }
 
     public static UserResponseDTO fromEntity(User user, CompanyAdminRepository companyAdminRepository) {
-        String companyRole = null;
+        final String companyRole;
         if (user.getCompany() != null && companyAdminRepository != null) {
             companyRole = companyAdminRepository.findByUserIdAndCompanyId(user.getId(), user.getCompany().getId())
                 .map(admin -> admin.getRole().name())
                 .orElse(null);
+        } else {
+            companyRole = null;
         }
         
         return new UserResponseDTO(
