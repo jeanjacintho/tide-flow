@@ -29,6 +29,8 @@ export function SubscriptionCard() {
       setSubscription(data);
     } catch (error) {
       console.error('Erro ao buscar assinatura:', error);
+      // Se não conseguir buscar, assume que não tem assinatura (null)
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,11 @@ export function SubscriptionCard() {
   }, [companyId, canViewSubscription, fetchSubscription]);
 
   const shouldShow = useMemo(() => {
-    return canViewSubscription && !loading && subscription && subscription.planType === 'FREE';
+    // Mostra o card se:
+    // 1. Usuário pode ver (OWNER ou ADMIN)
+    // 2. Não está carregando
+    // 3. Não tem assinatura OU a assinatura é FREE
+    return canViewSubscription && !loading && (!subscription || subscription.planType === 'FREE');
   }, [canViewSubscription, loading, subscription]);
 
   if (!shouldShow) {
@@ -52,26 +58,21 @@ export function SubscriptionCard() {
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <Sparkles className="h-4 w-4 text-primary" />
-        </div>
-        <div className="flex-1 space-y-1">
-          <p className="text-sm font-medium leading-none">
-            Upgrade para Enterprise
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Desbloqueie recursos avançados e aumente seus limites
-          </p>
-        </div>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold leading-none">
+          Upgrade to Premium Plan
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Unlock advanced AI analytics, priority support, and exclusive HR tools.
+        </p>
       </div>
       <Button
         asChild
         size="sm"
-        className="mt-3 w-full"
+        className="mt-4 w-full"
       >
         <Link href="/subscription">
-          Fazer Upgrade
+          Upgrade Now
         </Link>
       </Button>
     </Card>

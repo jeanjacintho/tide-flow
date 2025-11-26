@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building2, User, ChevronDown, ChevronRight } from "lucide-react";
+import { Building2, User } from "lucide-react";
 import { LightRays } from "@/components/ui/light-rays";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { cn } from "@/lib/utils";

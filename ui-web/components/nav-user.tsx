@@ -1,6 +1,6 @@
 "use client"
 
-import { User, LogOut, MoreVertical } from "lucide-react"
+import { User, LogOut, ChevronsUpDown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import {
   Avatar,
@@ -52,7 +52,7 @@ export function NavUser({ user, onLogout }: NavUserProps) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground border border-border"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -66,7 +66,7 @@ export function NavUser({ user, onLogout }: NavUserProps) {
                   {user.email}
                 </span>
               </div>
-              <MoreVertical className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -93,7 +93,7 @@ export function NavUser({ user, onLogout }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push('/profile')}>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <User className="mr-2 h-4 w-4" />
                 Perfil
               </DropdownMenuItem>
