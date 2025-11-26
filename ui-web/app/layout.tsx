@@ -33,11 +33,12 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="tideflow-theme"
         >
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
