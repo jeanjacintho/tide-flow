@@ -449,6 +449,17 @@ class ApiService {
     });
   }
 
+  async createCheckoutSession(companyId: string, successUrl?: string, cancelUrl?: string): Promise<{ checkoutUrl: string; sessionId: string | null }> {
+    return this.request<{ checkoutUrl: string; sessionId: string | null }>('/api/subscriptions/checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({
+        companyId,
+        successUrl,
+        cancelUrl,
+      }),
+    });
+  }
+
   // Public company registration
   async registerCompany(data: RegisterCompanyRequest): Promise<Company> {
     return this.request<Company>('/api/public/register-company', {

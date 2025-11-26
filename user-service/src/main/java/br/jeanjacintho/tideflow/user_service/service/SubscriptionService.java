@@ -214,4 +214,154 @@ public class SubscriptionService {
         return subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
     }
+
+    /**
+     * Atualiza uma assinatura existente.
+     */
+    @Transactional
+    public CompanySubscription updateSubscription(@NonNull CompanySubscription subscription) {
+        return subscriptionRepository.save(subscription);
+    }
+
+    /**
+     * Ativa uma assinatura após checkout do Stripe ser completado.
+     */
+    @Transactional
+    public void activateStripeSubscription(@NonNull UUID companyId, @NonNull String stripeCustomerId, @NonNull com.stripe.model.Subscription stripeSubscription) {
+        logger.info("Activating Stripe subscription for company: {} with subscription: {}", companyId, stripeSubscription.getId());
+        
+        CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
+        
+        subscription.setStripeCustomerId(stripeCustomerId);
+        subscription.setStripeSubscriptionId(stripeSubscription.getId());
+        subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+        
+        // Obtém o price ID da subscription
+        if (!stripeSubscription.getItems().getData().isEmpty()) {
+            String priceId = stripeSubscription.getItems().getData().get(0).getPrice().getId();
+            subscription.setStripePriceId(priceId);
+            
+            // Atualiza quantidade de usuários baseado na subscription
+            Long quantity = stripeSubscription.getItems().getData().get(0).getQuantity();
+            if (quantity != null) {
+                subscription.setTotalUsers(quantity.intValue());
+            }
+        }
+        
+        Company company = subscription.getCompany();
+        company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
+        company.setMaxEmployees(ENTERPRISE_PLAN_MAX_EMPLOYEES);
+        companyRepository.save(company);
+        
+        subscriptionRepository.save(subscription);
+        logger.info("Stripe subscription activated successfully - Plan: {}, Status: {}", subscription.getPlanType(), subscription.getStatus());
+    }
+
+    /**
+     * Método sobrecarregado para compatibilidade com código antigo.
+     */
+    @Transactional
+    public void activateStripeSubscription(@NonNull UUID companyId, @NonNull String stripeCustomerId, @NonNull String stripeSubscriptionId) {
+        logger.info("Activating Stripe subscription for company: {} with subscription ID: {}", companyId, stripeSubscriptionId);
+        
+        CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
+        
+        subscription.setStripeCustomerId(stripeCustomerId);
+        subscription.setStripeSubscriptionId(stripeSubscriptionId);
+        subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+        
+        Company company = subscription.getCompany();
+        company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
+        company.setMaxEmployees(ENTERPRISE_PLAN_MAX_EMPLOYEES);
+        companyRepository.save(company);
+        
+        subscriptionRepository.save(subscription);
+        logger.info("Stripe subscription activated successfully");
+    }
+
+    /**
+     * Sincroniza assinatura com dados do Stripe.
+     */
+    @Transactional
+    public void syncSubscriptionFromStripe(@NonNull String customerId, com.stripe.model.Subscription stripeSubscription) {
+        logger.info("Syncing subscription from Stripe - customerId: {}", customerId);
+        
+        CompanySubscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assinatura", "customerId: " + customerId));
+        
+        subscription.setStripeSubscriptionId(stripeSubscription.getId());
+        
+        // Atualiza quantidade de usuários e PLANO baseado na subscription do Stripe
+        if (!stripeSubscription.getItems().getData().isEmpty()) {
+            com.stripe.model.SubscriptionItem item = stripeSubscription.getItems().getData().get(0);
+            
+            // Atualiza quantidade
+            Long quantity = item.getQuantity();
+            if (quantity != null) {
+                subscription.setTotalUsers(quantity.intValue());
+            }
+            
+            // Atualiza Price ID
+            String priceId = item.getPrice().getId();
+            subscription.setStripePriceId(priceId);
+            
+            // CRÍTICO: Se tem um Price ID configurado, assume que é o plano ENTERPRISE (pago)
+            // Isso garante que o plano seja atualizado mesmo se o evento de checkout falhar
+            if (priceId != null && !priceId.isEmpty()) {
+                subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
+                subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+                
+                // Atualiza também a empresa
+                Company company = subscription.getCompany();
+                if (company.getSubscriptionPlan() != SubscriptionPlan.ENTERPRISE) {
+                    company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
+                    company.setMaxEmployees(ENTERPRISE_PLAN_MAX_EMPLOYEES);
+                    companyRepository.save(company);
+                    logger.info("Company plan updated to ENTERPRISE via sync");
+                }
+            }
+        }
+        
+        // Atualiza status baseado no status do Stripe
+        String stripeStatus = stripeSubscription.getStatus();
+        if ("active".equals(stripeStatus) || "trialing".equals(stripeStatus)) {
+            subscription.setStatus(SubscriptionStatus.ACTIVE);
+        } else if ("past_due".equals(stripeStatus) || "unpaid".equals(stripeStatus)) {
+            subscription.setStatus(SubscriptionStatus.SUSPENDED);
+        } else if ("canceled".equals(stripeStatus) || "incomplete_expired".equals(stripeStatus)) {
+            subscription.setStatus(SubscriptionStatus.CANCELLED);
+        }
+        
+        subscriptionRepository.save(subscription);
+        logger.info("Subscription synced successfully - Plan: {}, Status: {}", subscription.getPlanType(), subscription.getStatus());
+    }
+
+    /**
+     * Cancela assinatura quando deletada no Stripe.
+     */
+    @Transactional
+    public void cancelStripeSubscription(@NonNull String customerId) {
+        logger.info("Canceling subscription for customerId: {}", customerId);
+        
+        CompanySubscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assinatura", "customerId: " + customerId));
+        
+        subscription.setStatus(SubscriptionStatus.CANCELLED);
+        subscription.setPlanType(SubscriptionPlan.FREE);
+        subscription.setPricePerUser(FREE_PLAN_PRICE);
+        
+        Company company = subscription.getCompany();
+        company.setSubscriptionPlan(SubscriptionPlan.FREE);
+        company.setMaxEmployees(FREE_PLAN_MAX_EMPLOYEES);
+        companyRepository.save(company);
+        
+        subscriptionRepository.save(subscription);
+        logger.info("Subscription canceled successfully");
+    }
 }

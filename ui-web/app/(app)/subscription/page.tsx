@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, X, AlertCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiService } from '@/lib/api';
 
-// TODO: Obter companyId do contexto do usuário ou token
-const MOCK_COMPANY_ID = '00000000-0000-0000-0000-000000000000';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 interface Subscription {
   id: string;
@@ -36,6 +35,7 @@ export default function SubscriptionPage() {
     companyRole: ['OWNER', 'ADMIN'],
     redirectTo: '/chat'
   });
+  const { user } = useAuth();
   
   if (isChecking || !hasAccess) {
     return null;
@@ -48,36 +48,25 @@ export default function SubscriptionPage() {
   const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
-    fetchSubscriptionData();
-  }, []);
+    if (user?.companyId) {
+      fetchSubscriptionData();
+    }
+  }, [user?.companyId]);
 
   const fetchSubscriptionData = async () => {
+    if (!user?.companyId) return;
+    
     try {
       setLoading(true);
       setError(null);
-      
-      const token = localStorage.getItem('auth_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
-      const [subscriptionRes, usageRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/subscriptions/companies/${MOCK_COMPANY_ID}`, { headers }),
-        fetch(`${API_BASE_URL}/api/subscriptions/companies/${MOCK_COMPANY_ID}/usage`, { headers }),
+      const [subData, usageData] = await Promise.all([
+        apiService.getSubscription(user.companyId),
+        apiService.getUsageInfo(user.companyId),
       ]);
 
-      if (subscriptionRes.ok) {
-        const subData = await subscriptionRes.json();
-        setSubscription(subData);
-      }
-
-      if (usageRes.ok) {
-        const usageData = await usageRes.json();
-        setUsageInfo(usageData);
-      }
+      setSubscription(subData);
+      setUsageInfo(usageData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados da assinatura');
     } finally {
@@ -86,34 +75,86 @@ export default function SubscriptionPage() {
   };
 
   const handleUpgrade = async () => {
+    if (!user?.companyId) return;
+    
     try {
       setUpgrading(true);
-      const token = localStorage.getItem('auth_token');
+      setError(null);
       
-      const response = await fetch(
-        `${API_BASE_URL}/api/subscriptions/companies/${MOCK_COMPANY_ID}/upgrade`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-          },
-          body: JSON.stringify({ planType: 'ENTERPRISE' }),
-        }
+      const successUrl = `${window.location.origin}/subscription?success=true`;
+      const cancelUrl = `${window.location.origin}/subscription?canceled=true`;
+      
+      const { checkoutUrl } = await apiService.createCheckoutSession(
+        user.companyId,
+        successUrl,
+        cancelUrl
       );
-
-      if (response.ok) {
-        await fetchSubscriptionData();
-      } else {
-        const errorText = await response.text();
-        setError(errorText || 'Erro ao fazer upgrade');
-      }
+      
+      // Redireciona para o Stripe Checkout
+      window.location.href = checkoutUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer upgrade');
-    } finally {
+      setError(err instanceof Error ? err.message : 'Erro ao criar sessão de checkout');
       setUpgrading(false);
     }
   };
+  
+  // Verifica se há parâmetros de sucesso ou cancelamento na URL
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setError(null);
+      setLoading(true);
+      
+      // Remove o parâmetro da URL
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Faz polling para verificar se o plano foi atualizado
+      if (user?.companyId) {
+        let attempts = 0;
+        const maxAttempts = 10; // Tenta por até 20 segundos (10 tentativas * 2 segundos)
+        
+        const checkSubscription = async () => {
+          try {
+            const subData = await apiService.getSubscription(user.companyId!);
+            
+            // Se o plano foi atualizado para ENTERPRISE, para o polling
+            if (subData.planType === 'ENTERPRISE') {
+              setSubscription(subData);
+              setLoading(false);
+              return;
+            }
+            
+            // Se ainda não atualizou e não excedeu tentativas, tenta novamente
+            attempts++;
+            if (attempts < maxAttempts) {
+              setTimeout(checkSubscription, 2000);
+            } else {
+              // Após todas as tentativas, atualiza mesmo assim
+              setSubscription(subData);
+              setLoading(false);
+              setError('O pagamento foi processado, mas pode levar alguns minutos para o plano ser atualizado. Recarregue a página em alguns instantes.');
+            }
+          } catch (err) {
+            attempts++;
+            if (attempts < maxAttempts) {
+              setTimeout(checkSubscription, 2000);
+            } else {
+              setLoading(false);
+              setError('Erro ao verificar atualização do plano. Recarregue a página.');
+            }
+          }
+        };
+        
+        // Inicia a verificação após 2 segundos
+        setTimeout(checkSubscription, 2000);
+      }
+    } else if (params.get('canceled') === 'true') {
+      setError('Checkout cancelado');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [user?.companyId]);
 
   if (loading) {
     return (

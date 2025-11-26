@@ -31,7 +31,8 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (path != null && (
             path.equals("/auth/login") || 
             path.equals("/auth/register") ||
-            path.equals("/api/public/register-company")
+            path.equals("/api/public/register-company") ||
+            path.equals("/api/subscriptions/webhook")
         )) {
             filterChain.doFilter(request, response);
             return;
