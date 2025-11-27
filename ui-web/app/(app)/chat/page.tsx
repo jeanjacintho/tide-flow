@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { apiService, ConversationResponse, Message } from "@/lib/api";
 import { ArrowUp, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,11 @@ export default function Chat() {
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const loadConversationHistory = useCallback(async () => {
@@ -266,192 +271,178 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative min-h-0">
-        {messages.length === 0 && showExamples ? (
-          // Initial state - centered layout with input
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-20">
-            <div className="w-full max-w-5xl space-y-12">
-              {/* Title Section */}
-              <div className="text-left space-y-3">
-                <h2 className="text-5xl font-bold bg-gradient-to-r from-zinc-800 via-primary to-purple-500 bg-clip-text text-transparent">
-                  Olá, {user?.name || 'usuário'}
-                </h2>
-                <p className="text-5xl font-medium bg-gradient-to-r from-zinc-800 via-primary to-purple-500 bg-clip-text text-transparent">
-                  Como posso ajudar você hoje?
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                  Use uma das perguntas mais comuns abaixo ou escreva sua própria para começar.
-                </p>
-              </div>
+    <div className="h-full flex flex-col overflow-hidden">
+      {messages.length === 0 && showExamples ? (
+        // Estado inicial - centralizado verticalmente, alinhado à esquerda
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-5xl space-y-6">
+            {/* Header */}
+            <div className="text-left">
+              <h1 className="text-3xl font-bold">Chat</h1>
+              <p className="text-muted-foreground mt-1">
+                Converse com o assistente de bem-estar emocional
+              </p>
+            </div>
 
-              {/* Example Cards - Horizontal Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {EXAMPLE_QUERIES.map((example, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleExampleClick(example)}
-                    className="flex flex-col items-start p-5 text-left bg-white dark:bg-gray-800 rounded-lg transition-all duration-200 group border border-gray-200 dark:border-gray-700"
-                  >
-                    <span className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed">{example}</span>
-                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mt-auto group-hover:bg-gray-200 dark:group-hover:bg-gray-600 transition-colors">
-                      <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Input Area - Centered with examples */}
-              <div className="w-full">
-                <form onSubmit={handleSubmit}>
-                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-                    {/* Input */}
-                    <Input
-                      type="text"
-                      placeholder="Pergunte qualquer coisa..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      disabled={isPending || isAiThinking}
-                      className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
-                    />
-
-                    {/* Right side - Character count and send button */}
-                    <div className="flex items-center gap-3 ml-3">
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {message.length}/1000
-                      </span>
-                      <SpeechInput 
-                        onTranscriptChange={(transcript) => setMessage(transcript)}
-                        disabled={isPending || isAiThinking}
-                        conversationId={conversationId}
-                        userId={user?.id}
-                      />
-                      <Button
-                        type="submit"
-                        size="icon"
-                        disabled={!message.trim() || isPending || isAiThinking}
-                        className="h-9 w-9 bg-primary text-white rounded-lg"
-                      >
-                        <ArrowUp className="w-4 h-4" />
-                      </Button>
+            {/* Example Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {EXAMPLE_QUERIES.map((example, index) => (
+                <Card
+                  key={index}
+                  onClick={() => handleExampleClick(example)}
+                  className="flex flex-col items-start cursor-pointer transition-all duration-200 group hover:bg-accent h-full"
+                >
+                  <div className="w-full flex flex-col h-full">
+                    <span className="text-sm text-foreground mb-3 leading-relaxed">{example}</span>
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mt-auto group-hover:bg-muted/80 transition-colors">
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
-                </form>
-              </div>
+                </Card>
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
-            {/* Chat messages - animated expansion with fade effect */}
-            <div 
-              ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-8 pb-32 transition-all duration-500 ease-in-out min-h-0"
-            >
-              <div className="max-w-4xl mx-auto space-y-6">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    ref={(el) => {
-                      if (el) {
-                        messageRefs.current.set(msg.id, el);
-                      } else {
-                        messageRefs.current.delete(msg.id);
-                      }
-                    }}
-                    className={cn(
-                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 transition-opacity",
-                      msg.role === 'USER' ? 'justify-end' : 'justify-start'
-                    )}
-                    style={{ opacity: 1 }}
+
+            {/* Input Area */}
+            <form onSubmit={handleSubmit}>
+              <div className="relative flex items-center bg-card border border-border rounded-xl p-4">
+                <Input
+                  type="text"
+                  placeholder="Pergunte qualquer coisa..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  disabled={isPending || isAiThinking}
+                  className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-muted-foreground py-2"
+                />
+                <div className="flex items-center gap-3 ml-3">
+                  <span className="text-xs text-muted-foreground">
+                    {message.length}/1000
+                  </span>
+                  <SpeechInput 
+                    onTranscriptChange={(transcript) => setMessage(transcript)}
+                    disabled={isPending || isAiThinking}
+                    conversationId={conversationId}
+                    userId={user?.id}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!message.trim() || isPending || isAiThinking}
+                    className="h-9 w-9 bg-primary text-primary-foreground rounded-lg"
                   >
-                    <div className={cn(
-                      "flex flex-col max-w-[75%]",
-                      msg.role === 'USER' ? 'items-end' : 'items-start'
-                    )}>
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : (
+        // Estado com chat - título no topo, input no bottom
+        <div className="h-full flex flex-col overflow-hidden">
+          {/* Header - Top */}
+          <div className="flex-shrink-0 p-6 pb-4 border-b border-border">
+            <h1 className="text-3xl font-bold">Chat</h1>
+            <p className="text-muted-foreground mt-1">
+              Converse com o assistente de bem-estar emocional
+            </p>
+          </div>
+
+          {/* Chat messages - Middle (flexible) */}
+          <div 
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto px-6 py-6 min-h-0"
+          >
+            <div className="max-w-4xl mx-auto space-y-6">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  ref={(el) => {
+                    if (el) {
+                      messageRefs.current.set(msg.id, el);
+                    } else {
+                      messageRefs.current.delete(msg.id);
+                    }
+                  }}
+                  className={cn(
+                    "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 transition-opacity",
+                    msg.role === 'USER' ? 'justify-end' : 'justify-start'
+                  )}
+                  style={{ opacity: 1 }}
+                >
+                  <div className={cn(
+                    "flex flex-col max-w-[75%]",
+                    msg.role === 'USER' ? 'items-end' : 'items-start'
+                  )}>
                     <div
                       className={cn(
-                          "px-5 py-4",
+                        "px-5 py-4",
                         msg.role === 'USER'
-                            ? 'bg-primary border border-[color-mix(in_srgb,theme(colors.primary),black_10%)] dark:bg-gray-200 text-white dark:text-gray-900 rounded-md'
-                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md'
+                          ? 'bg-primary text-primary-foreground rounded-md'
+                          : 'bg-card border border-border text-foreground rounded-md'
                       )}
                     >
                       <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          "text-[10px] mt-0.5 px-1 select-none",
-                          msg.role === 'USER'
-                            ? 'text-gray-400 dark:text-gray-400'
-                            : 'text-gray-400 dark:text-gray-500'
-                        )}
-                      >
-                        {formatMessageTime(msg.createdAt)}
-                      </span>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[10px] mt-0.5 px-1 select-none text-muted-foreground"
+                      )}
+                    >
+                      {formatMessageTime(msg.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {isAiThinking && (
+                <div className="flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-start">
+                  <div className="bg-card border border-border text-foreground rounded-md px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="inline-block w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-muted-foreground">Pensando...</span>
                     </div>
                   </div>
-                ))}
-                {isAiThinking && (
-                  <div
-                    className={cn(
-                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-start"
-                    )}
-                  >
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="inline-block w-4 h-4 border-2 border-gray-400 dark:border-gray-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Pensando...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-            {/* Input Area - Fixed at bottom when chat is active */}
-            <div className="absolute bottom-0 left-0 right-0 z-10 w-full bg-gray-100 dark:bg-gray-900 pb-6 pt-4 transition-all duration-500 ease-in-out border-t border-gray-200 dark:border-gray-800">
-              <div className="max-w-4xl mx-auto px-6">
-                <form onSubmit={handleSubmit}>
-                  <div className="relative flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-                    {/* Input */}
-                    <Input
-                      type="text"
-                      placeholder="Pergunte qualquer coisa..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      disabled={isPending || isAiThinking}
-                      className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 py-2"
-                    />
-
-                    {/* Right side - Character count and send button */}
-                    <div className="flex items-center gap-3 ml-3">
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {message.length}/1000
-                      </span>
-                      <SpeechInput 
-                        onTranscriptChange={(transcript) => setMessage(transcript)}
-                        disabled={isPending || isAiThinking}
-                        conversationId={conversationId}
-                        userId={user?.id}
-                      />
-                      <Button
-                        type="submit"
-                        size="icon"
-                        disabled={!message.trim() || isPending || isAiThinking}
-                        className="h-9 w-9 bg-primary text-white rounded-full"
-                      >
-                        <ArrowUp className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
           </div>
-        )}
-      </main>
+
+          {/* Input Area - Bottom (fixed) */}
+          <div className="flex-shrink-0 p-6 pt-4 bg-background">
+            <form onSubmit={handleSubmit}>
+              <div className="relative flex items-center bg-card border border-border rounded-xl p-4 max-w-4xl mx-auto">
+                <Input
+                  type="text"
+                  placeholder="Pergunte qualquer coisa..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  disabled={isPending || isAiThinking}
+                  className="flex-1 border-0 shadow-none focus-visible:ring-0 text-base bg-transparent placeholder:text-muted-foreground py-2"
+                />
+                <div className="flex items-center gap-3 ml-3">
+                  <span className="text-xs text-muted-foreground">
+                    {message.length}/1000
+                  </span>
+                  <SpeechInput 
+                    onTranscriptChange={(transcript) => setMessage(transcript)}
+                    disabled={isPending || isAiThinking}
+                    conversationId={conversationId}
+                    userId={user?.id}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!message.trim() || isPending || isAiThinking}
+                    className="h-9 w-9 bg-primary text-primary-foreground rounded-lg"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
