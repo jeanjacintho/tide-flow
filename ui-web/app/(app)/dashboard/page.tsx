@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/use-dashboard';
@@ -26,6 +27,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, UserPlus, CheckCircle2, Search, MoreVertical, ArrowUpDown, Briefcase, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AccountInfoCard } from '@/components/dashboard/account-info-card';
+import { CompanyInfoCard } from '@/components/dashboard/company-info-card';
+import { ReportsSection } from '@/components/dashboard/reports-section';
+import { apiService, Company, UsageInfo } from '@/lib/api';
 
 const MOCK_COMPANY_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -96,6 +101,8 @@ export default function DashboardPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="hr">HR Dashboard</TabsTrigger>
           <TabsTrigger value="recruitment">Recruitment Dashboard</TabsTrigger>
+          <TabsTrigger value="account">Conta & Empresa</TabsTrigger>
+          <TabsTrigger value="reports">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hr" className="space-y-6">
@@ -363,7 +370,62 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Recruitment Dashboard coming soon...</p>
           </div>
         </TabsContent>
+
+        <TabsContent value="account" className="space-y-6">
+          <AccountAndCompanyInfo user={user} companyId={user?.companyId} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          {user?.companyId ? (
+            <ReportsSection companyId={user.companyId} />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">Nenhuma empresa associada</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function AccountAndCompanyInfo({ user, companyId }: { user: any; companyId?: string }) {
+  const [company, setCompany] = useState<Company | null>(null);
+  const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (companyId) {
+      loadCompanyInfo();
+    } else {
+      setLoading(false);
+    }
+  }, [companyId]);
+
+  const loadCompanyInfo = async () => {
+    if (!companyId) return;
+    
+    try {
+      setLoading(true);
+      const [companyData, usage] = await Promise.all([
+        apiService.getCompanyById(companyId),
+        apiService.getUsageInfo(companyId).catch(() => null),
+      ]);
+      setCompany(companyData);
+      setUsageInfo(usage);
+    } catch (error) {
+      console.error('Erro ao carregar informações da empresa:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AccountInfoCard user={user} loading={!user} />
+      <CompanyInfoCard company={company} usageInfo={usageInfo} loading={loading} />
     </div>
   );
 }
