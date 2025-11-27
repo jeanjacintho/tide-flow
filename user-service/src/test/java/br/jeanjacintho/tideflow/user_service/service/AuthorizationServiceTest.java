@@ -45,6 +45,7 @@ class AuthorizationServiceTest {
         testUser.setEmail("test@example.com");
         testUser.setName("Test User");
         testUser.setPassword("$2a$10$encodedPassword");
+        testUser.setIsActive(true);
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }
@@ -52,7 +53,7 @@ class AuthorizationServiceTest {
     @Test
     @DisplayName("loadUserByUsername - Deve carregar UserDetails com sucesso")
     void testLoadUserByUsernameSuccess() {
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsernameOrEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         UserDetails userDetails = authorizationService.loadUserByUsername(testUser.getEmail());
 
@@ -67,7 +68,7 @@ class AuthorizationServiceTest {
     @DisplayName("loadUserByUsername - Deve lançar UsernameNotFoundException quando usuário não encontrado")
     void testLoadUserByUsernameNotFound() {
         String nonExistentEmail = "notfound@example.com";
-        when(userRepository.findByEmail(nonExistentEmail)).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameOrEmail(nonExistentEmail)).thenReturn(Optional.empty());
 
         assertThrows(UsernameNotFoundException.class, 
                 () -> authorizationService.loadUserByUsername(nonExistentEmail));
@@ -76,7 +77,7 @@ class AuthorizationServiceTest {
     @Test
     @DisplayName("loadUserByUsername - Deve sempre retornar ROLE_USER")
     void testLoadUserByUsernameAlwaysReturnsUserRole() {
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsernameOrEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         UserDetails userDetails = authorizationService.loadUserByUsername(testUser.getEmail());
 
@@ -87,7 +88,7 @@ class AuthorizationServiceTest {
     @Test
     @DisplayName("loadUserByUsername - Deve retornar UserDetails com authorities corretas")
     void testLoadUserByUsernameAuthorities() {
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsernameOrEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
 
         UserDetails userDetails = authorizationService.loadUserByUsername(testUser.getEmail());
 

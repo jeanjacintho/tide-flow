@@ -5,12 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.jeanjacintho.tideflow.ai_service.client.LLMClient;
 import br.jeanjacintho.tideflow.ai_service.dto.request.ConversationRequest;
 import br.jeanjacintho.tideflow.ai_service.model.Conversation;
+import br.jeanjacintho.tideflow.ai_service.dto.response.RiskAnalysisResponse;
 import br.jeanjacintho.tideflow.ai_service.model.ConversationMessage;
 import br.jeanjacintho.tideflow.ai_service.model.EmotionalAnalysis;
 import br.jeanjacintho.tideflow.ai_service.model.MessageRole;
@@ -56,6 +59,18 @@ class ConversationServiceTest {
     @Mock
     private EmotionalAnalysisRepository emotionalAnalysisRepository;
 
+    @Mock
+    private RiskDetectionService riskDetectionService;
+
+    @Mock
+    private RiskAlertPublisher riskAlertPublisher;
+
+    @Mock
+    private EmotionalAggregationService aggregationService;
+
+    @Mock
+    private UserInfoService userInfoService;
+
     @InjectMocks
     private ConversationService conversationService;
 
@@ -87,11 +102,17 @@ class ConversationServiceTest {
         when(conversationMessageRepository.findByConversationIdOrderBySequenceNumberAsc(any(UUID.class)))
                 .thenReturn(new ArrayList<>());
         when(conversationMessageRepository.save(any(ConversationMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(emotionalAnalysisRepository.save(any(EmotionalAnalysis.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(memoriaService.recuperarMemoriasRelevantesAsync(anyString(), anyString()))
                 .thenReturn(Mono.just(""));
+        when(riskDetectionService.analyzeRisk(anyString(), anyString()))
+                .thenReturn(Mono.just(new RiskAnalysisResponse(false, "NONE", "No risk detected", null, 0.0)));
         when(llmClient.chatWithHistory(anyList())).thenReturn(Mono.just("Resposta da IA"));
-        when(llmClient.extractEmotionalAnalysis(anyString())).thenReturn(Mono.just("{\"primaryEmotional\":\"neutro\",\"intensity\":50}"));
-        when(objectMapper.readValue(anyString(), any(Class.class))).thenReturn(createEmotionalAnalysisMap());
+        when(llmClient.extractEmotionalAnalysisAndMemories(anyString(), anyString()))
+                .thenReturn(Mono.just(createConsolidatedResponseJson()));
+        doAnswer(invocation -> createConsolidatedResponseMap())
+                .when(objectMapper).readValue(anyString(), any(com.fasterxml.jackson.core.type.TypeReference.class));
+        when(userInfoService.getUserInfo(anyString(), any())).thenReturn(java.util.Optional.empty());
 
         StepVerifier.create(conversationService.processConversation(request))
                 .assertNext(response -> {
@@ -113,12 +134,18 @@ class ConversationServiceTest {
         when(conversationMessageRepository.findByConversationIdOrderBySequenceNumberAsc(conversationId))
                 .thenReturn(new ArrayList<>());
         when(conversationMessageRepository.save(any(ConversationMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(emotionalAnalysisRepository.save(any(EmotionalAnalysis.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(conversationRepository.save(any(Conversation.class))).thenReturn(conversation);
         when(memoriaService.recuperarMemoriasRelevantesAsync(anyString(), anyString()))
                 .thenReturn(Mono.just(""));
+        when(riskDetectionService.analyzeRisk(anyString(), anyString()))
+                .thenReturn(Mono.just(new RiskAnalysisResponse(false, "NONE", "No risk detected", null, 0.0)));
         when(llmClient.chatWithHistory(anyList())).thenReturn(Mono.just("Resposta da IA"));
-        when(llmClient.extractEmotionalAnalysis(anyString())).thenReturn(Mono.just("{\"primaryEmotional\":\"neutro\",\"intensity\":50}"));
-        when(objectMapper.readValue(anyString(), any(Class.class))).thenReturn(createEmotionalAnalysisMap());
+        when(llmClient.extractEmotionalAnalysisAndMemories(anyString(), anyString()))
+                .thenReturn(Mono.just(createConsolidatedResponseJson()));
+        doAnswer(invocation -> createConsolidatedResponseMap())
+                .when(objectMapper).readValue(anyString(), any(com.fasterxml.jackson.core.type.TypeReference.class));
+        when(userInfoService.getUserInfo(anyString(), any())).thenReturn(java.util.Optional.empty());
 
         StepVerifier.create(conversationService.processConversation(request))
                 .assertNext(response -> {
@@ -137,11 +164,17 @@ class ConversationServiceTest {
         when(conversationMessageRepository.findByConversationIdOrderBySequenceNumberAsc(any(UUID.class)))
                 .thenReturn(new ArrayList<>());
         when(conversationMessageRepository.save(any(ConversationMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(emotionalAnalysisRepository.save(any(EmotionalAnalysis.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(memoriaService.recuperarMemoriasRelevantesAsync(anyString(), anyString()))
                 .thenReturn(Mono.just(""));
+        when(riskDetectionService.analyzeRisk(anyString(), anyString()))
+                .thenReturn(Mono.just(new RiskAnalysisResponse(false, "NONE", "No risk detected", null, 0.0)));
         when(llmClient.chatWithHistory(anyList())).thenReturn(Mono.just("Resposta da IA"));
-        when(llmClient.extractEmotionalAnalysis(anyString())).thenReturn(Mono.just("{\"primaryEmotional\":\"tristeza\",\"intensity\":75}"));
-        when(objectMapper.readValue(anyString(), any(Class.class))).thenReturn(createEmotionalAnalysisMap());
+        when(llmClient.extractEmotionalAnalysisAndMemories(anyString(), anyString()))
+                .thenReturn(Mono.just(createConsolidatedResponseJson()));
+        doAnswer(invocation -> createConsolidatedResponseMap())
+                .when(objectMapper).readValue(anyString(), any(com.fasterxml.jackson.core.type.TypeReference.class));
+        when(userInfoService.getUserInfo(anyString(), any())).thenReturn(java.util.Optional.empty());
 
         StepVerifier.create(conversationService.processConversation(request))
                 .assertNext(response -> {
@@ -150,7 +183,7 @@ class ConversationServiceTest {
                 })
                 .verifyComplete();
 
-        verify(emotionalAnalysisRepository).save(any(EmotionalAnalysis.class));
+        verify(emotionalAnalysisRepository, org.mockito.Mockito.atLeastOnce()).save(any(EmotionalAnalysis.class));
     }
 
     @Test
@@ -160,10 +193,15 @@ class ConversationServiceTest {
         when(conversationMessageRepository.findByConversationIdOrderBySequenceNumberAsc(any(UUID.class)))
                 .thenReturn(new ArrayList<>());
         when(conversationMessageRepository.save(any(ConversationMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(emotionalAnalysisRepository.save(any(EmotionalAnalysis.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(memoriaService.recuperarMemoriasRelevantesAsync(anyString(), anyString()))
                 .thenReturn(Mono.just(""));
+        when(riskDetectionService.analyzeRisk(anyString(), anyString()))
+                .thenReturn(Mono.just(new RiskAnalysisResponse(false, "NONE", "No risk detected", null, 0.0)));
         when(llmClient.chatWithHistory(anyList())).thenReturn(Mono.just("Resposta da IA"));
-        when(llmClient.extractEmotionalAnalysis(anyString())).thenReturn(Mono.empty());
+        when(llmClient.extractEmotionalAnalysisAndMemories(anyString(), anyString()))
+                .thenReturn(Mono.error(new RuntimeException("Extraction failed")));
+        lenient().when(userInfoService.getUserInfo(anyString(), any())).thenReturn(java.util.Optional.empty());
 
         StepVerifier.create(conversationService.processConversation(request))
                 .assertNext(response -> {
@@ -237,6 +275,17 @@ class ConversationServiceTest {
         map.put("context", "");
         map.put("suggestion", "Continue conversando");
         return map;
+    }
+
+    private String createConsolidatedResponseJson() {
+        return "{\"analiseEmocional\":{\"primaryEmotional\":\"neutro\",\"intensity\":50,\"triggers\":[],\"context\":\"\",\"suggestion\":\"Continue conversando\"},\"memorias\":[]}";
+    }
+
+    private java.util.Map<String, Object> createConsolidatedResponseMap() {
+        java.util.Map<String, Object> consolidated = new java.util.HashMap<>();
+        consolidated.put("analiseEmocional", createEmotionalAnalysisMap());
+        consolidated.put("memorias", new ArrayList<>());
+        return consolidated;
     }
 }
 

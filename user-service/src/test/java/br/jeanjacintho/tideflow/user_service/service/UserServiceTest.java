@@ -283,11 +283,11 @@ class UserServiceTest {
     @Test
     @DisplayName("deleteUser - Deve deletar usuário com sucesso")
     void testDeleteUserSuccess() {
-        when(userRepository.existsById(testUserId)).thenReturn(true);
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
 
         userService.deleteUser(testUserId);
 
-        verify(userRepository).existsById(testUserId);
+        verify(userRepository).findById(testUserId);
         verify(userRepository).deleteById(testUserId);
     }
 
@@ -295,7 +295,7 @@ class UserServiceTest {
     @DisplayName("deleteUser - Deve lançar ResourceNotFoundException quando usuário não encontrado")
     void testDeleteUserNotFound() {
         UUID nonExistentId = UUID.randomUUID();
-        when(userRepository.existsById(nonExistentId)).thenReturn(false);
+        when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(nonExistentId));
         verify(userRepository, never()).deleteById(any(UUID.class));

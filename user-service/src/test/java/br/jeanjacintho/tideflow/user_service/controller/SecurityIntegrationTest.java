@@ -99,7 +99,7 @@ class SecurityIntegrationTest {
         
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(userRepository.findByEmail("test@example.com"))
+        when(userRepository.findByUsernameOrEmailWithCompanyAndDepartment("test@example.com"))
                 .thenReturn(Optional.of(testUser));
         when(tokenService.generateToken(any(User.class)))
                 .thenReturn("mocked-jwt-token");

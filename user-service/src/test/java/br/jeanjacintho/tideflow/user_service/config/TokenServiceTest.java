@@ -50,12 +50,16 @@ class TokenServiceTest {
     @DisplayName("generateToken - Deve gerar token diferente para usuários diferentes")
     void testGenerateTokenDifferentUsers() {
         User user1 = new User();
+        user1.setId(UUID.randomUUID());
         user1.setEmail("user1@example.com");
         user1.setName("User 1");
+        user1.setUsername("user1");
 
         User user2 = new User();
+        user2.setId(UUID.randomUUID());
         user2.setEmail("user2@example.com");
         user2.setName("User 2");
+        user2.setUsername("user2");
 
         String token1 = tokenService.generateToken(user1);
         String token2 = tokenService.generateToken(user2);

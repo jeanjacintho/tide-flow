@@ -92,7 +92,7 @@ class AuthControllerTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(userRepository.findByEmail("test@example.com"))
+        when(userRepository.findByUsernameOrEmailWithCompanyAndDepartment("test@example.com"))
                 .thenReturn(Optional.of(testUser));
         when(tokenService.generateToken(any(User.class)))
                 .thenReturn(testToken);
@@ -168,6 +168,8 @@ class AuthControllerTest {
                 testUser.getMustChangePassword(),
                 testUser.getCompany() != null ? testUser.getCompany().getId() : null,
                 testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
+                testUser.getSystemRole() != null ? testUser.getSystemRole().name() : null,
+                null,
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
@@ -212,6 +214,8 @@ class AuthControllerTest {
                 testUser.getMustChangePassword(),
                 testUser.getCompany() != null ? testUser.getCompany().getId() : null,
                 testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
+                testUser.getSystemRole() != null ? testUser.getSystemRole().name() : null,
+                null,
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
@@ -265,6 +269,8 @@ class AuthControllerTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
+        when(userRepository.findByUsernameOrEmailWithCompanyAndDepartment("test@example.com"))
+                .thenReturn(Optional.of(testUser));
         when(tokenService.generateToken(any(User.class)))
                 .thenReturn(testToken);
 

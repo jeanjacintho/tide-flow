@@ -16,6 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import br.jeanjacintho.tideflow.user_service.model.Company;
+import br.jeanjacintho.tideflow.user_service.model.CompanyStatus;
+import br.jeanjacintho.tideflow.user_service.model.Department;
+import br.jeanjacintho.tideflow.user_service.model.SubscriptionPlan;
+import br.jeanjacintho.tideflow.user_service.model.SystemRole;
 import br.jeanjacintho.tideflow.user_service.model.User;
 
 @DataJpaTest
@@ -30,17 +35,43 @@ class UserRepositoryTest {
     private UserRepository userRepository;
 
     private User testUser;
+    private Company testCompany;
+    private Department testDepartment;
 
     @BeforeEach
     void setUp() {
+        testCompany = new Company();
+        testCompany.setName("Test Company");
+        testCompany.setDomain("test.com");
+        testCompany.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
+        testCompany.setMaxEmployees(100);
+        testCompany.setStatus(CompanyStatus.ACTIVE);
+        testCompany.setCreatedAt(LocalDateTime.now());
+        testCompany.setUpdatedAt(LocalDateTime.now());
+        entityManager.persistAndFlush(testCompany);
+
+        testDepartment = new Department();
+        testDepartment.setCompany(testCompany);
+        testDepartment.setName("Test Department");
+        testDepartment.setDescription("Test Department Description");
+        entityManager.persistAndFlush(testDepartment);
+
         testUser = new User();
         testUser.setName("John Doe");
         testUser.setEmail("john@example.com");
+        testUser.setUsername("johndoe");
         testUser.setPassword("$2a$10$encodedPassword");
         testUser.setPhone("1234567890");
         testUser.setAvatarUrl("https://example.com/avatar.jpg");
         testUser.setCity("São Paulo");
         testUser.setState("SP");
+        testUser.setCompany(testCompany);
+        testUser.setDepartment(testDepartment);
+        testUser.setAnonymizedId(UUID.randomUUID());
+        testUser.setIsActive(true);
+        testUser.setMustChangePassword(false);
+        testUser.setSystemRole(SystemRole.NORMAL);
+        testUser.setJoinedAt(LocalDateTime.now());
         testUser.setCreatedAt(LocalDateTime.now());
         testUser.setUpdatedAt(LocalDateTime.now());
     }
