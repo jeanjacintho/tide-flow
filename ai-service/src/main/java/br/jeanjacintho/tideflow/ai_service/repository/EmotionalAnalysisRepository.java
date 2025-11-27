@@ -70,6 +70,13 @@ public interface EmotionalAnalysisRepository extends JpaRepository<EmotionalAnal
     @Query(value = "SELECT DISTINCT e.company_id FROM emotional_analysis e " +
            "WHERE e.company_id IS NOT NULL AND DATE(e.created_at) = :date", nativeQuery = true)
     List<UUID> findDistinctCompanyIdsByDate(@Param("date") java.time.LocalDate date);
+    
+    @Query(value = "SELECT DISTINCT e.company_id FROM emotional_analysis e " +
+           "WHERE e.company_id IS NOT NULL AND DATE(e.created_at) BETWEEN :startDate AND :endDate", 
+           nativeQuery = true)
+    List<UUID> findDistinctCompanyIdsByDateRange(
+        @Param("startDate") java.time.LocalDate startDate,
+        @Param("endDate") java.time.LocalDate endDate);
 }
 
 
