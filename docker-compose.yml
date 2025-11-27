@@ -138,6 +138,130 @@ services:
       retries: 5
       start_period: 180s
 
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: tideflow-user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres-user-service
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-minimum-256-bits
+      - RESEND_DEVMODE=false
+    depends_on:
+      postgres-user-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: tideflow-notification-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=postgres-notification-service
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - MAIL_ENABLED=false
+    depends_on:
+      postgres-notification-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: tideflow-ai-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-ai-service:5432/tideflow_db_aiservice
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - USER_SERVICE_URL=http://user-service:8080
+      - WHISPER_SERVICE_URL=http://faster-whisper:8000
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - LLM_PROVIDER=ollama
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-minimum-256-bits
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      postgres-ai-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      faster-whisper:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  ui-web:
+    build:
+      context: ./ui-web
+      dockerfile: Dockerfile
+    container_name: tideflow-ui-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8082
+      - NEXT_PUBLIC_NOTIFICATION_SERVICE_URL=http://localhost:8081
+    depends_on:
+      - user-service
+      - ai-service
+      - notification-service
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   postgres_user_data:
   postgres_notification_data:
