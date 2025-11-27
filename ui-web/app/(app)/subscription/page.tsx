@@ -228,41 +228,43 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Plan Comparison */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <PlanCard
-          title="Free"
-          price="Free"
-          priceUnit=""
-          description="Ideal for small teams"
-          features={[
-            { text: 'Up to 7 users', included: true },
-            { text: 'Basic dashboard', included: true },
-            { text: 'Emotional analysis', included: true },
-            { text: 'Slack/Teams integration', included: false },
-            { text: 'Priority support', included: false },
-          ]}
-          isCurrent={subscription?.planType === 'FREE'}
-        />
+      {/* Plan Comparison - Only show when plan is FREE */}
+      {subscription?.planType === 'FREE' && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <PlanCard
+            title="Free"
+            price="Free"
+            priceUnit=""
+            description="Ideal for small teams"
+            features={[
+              { text: 'Up to 7 users', included: true },
+              { text: 'Basic dashboard', included: true },
+              { text: 'Emotional analysis', included: true },
+              { text: 'Slack/Teams integration', included: false },
+              { text: 'Priority support', included: false },
+            ]}
+            isCurrent={true}
+          />
 
-        <PlanCard
-          title="Enterprise"
-          price="R$ 199,90"
-          priceUnit="/user/mo."
-          description="For companies that need more"
-          features={[
-            { text: 'Unlimited users', included: true },
-            { text: 'Complete dashboard', included: true },
-            { text: 'Advanced emotional analysis', included: true },
-            { text: 'Slack/Teams integration', included: true },
-            { text: 'Priority support', included: true },
-          ]}
-          isCurrent={subscription?.planType === 'ENTERPRISE'}
-          onUpgrade={subscription?.planType !== 'ENTERPRISE' ? handleUpgrade : undefined}
-          upgradeLabel="Upgrade to Enterprise"
-          upgrading={upgrading}
-        />
-      </div>
+          <PlanCard
+            title="Enterprise"
+            price="R$ 199,90"
+            priceUnit="/user/mo."
+            description="For companies that need more"
+            features={[
+              { text: 'Unlimited users', included: true },
+              { text: 'Complete dashboard', included: true },
+              { text: 'Advanced emotional analysis', included: true },
+              { text: 'Slack/Teams integration', included: true },
+              { text: 'Priority support', included: true },
+            ]}
+            isCurrent={false}
+            onUpgrade={handleUpgrade}
+            upgradeLabel="Upgrade to Enterprise"
+            upgrading={upgrading}
+          />
+        </div>
+      )}
 
       {/* Payment History */}
       {user?.companyId && (

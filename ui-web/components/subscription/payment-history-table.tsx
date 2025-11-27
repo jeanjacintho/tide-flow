@@ -1,15 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -61,10 +52,22 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -121,121 +124,239 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
 
   if (loading) {
     return (
-      <Card className={cn('rounded-lg', className)}>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div
+        className={cn(
+          'rounded-lg p-4',
+          'bg-card border border-border/50',
+          className
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-0.5">
+            <div className="text-base font-medium">Payment History</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              Transaction history and payment records
+            </div>
+          </div>
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className={cn('rounded-lg', className)}>
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div
+        className={cn(
+          'rounded-lg p-4',
+          'bg-card border border-border/50',
+          className
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-0.5">
+            <div className="text-base font-medium">Payment History</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              Transaction history and payment records
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground">{error}</div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={cn('rounded-lg', className)}>
-      <CardHeader>
-        <CardTitle>Payment History</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div
+      className={cn(
+        'rounded-lg p-4',
+        'bg-card border border-border/50',
+        className
+      )}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-0.5">
+          <div className="text-base font-medium">Payment History</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            Transaction history and payment records
+          </div>
+        </div>
+
         {payments.length === 0 ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground text-center py-8">
             No payment history available
           </div>
         ) : (
-          <div className="rounded-lg border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border/50 hover:bg-transparent">
-                  <TableHead className="h-10 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Date
-                  </TableHead>
-                  <TableHead className="h-10 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Invoice
-                  </TableHead>
-                  <TableHead className="h-10 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Amount
-                  </TableHead>
-                  <TableHead className="h-10 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </TableHead>
-                  <TableHead className="h-10 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">
-                    Period
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment, index) => (
-                  <TableRow
-                    key={payment.id}
-                    className={cn(
-                      'border-b border-border/50 transition-colors',
-                      index === payments.length - 1 && 'border-b-0',
-                      'hover:bg-muted/30'
-                    )}
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <table 
+                className="w-full" 
+                role="table" 
+                aria-label="Payment history"
+                style={{ borderCollapse: 'separate', borderSpacing: 0 }}
+              >
+                <thead>
+                  <tr 
+                    role="row"
+                    className="border-b border-border/50"
                   >
-                    <TableCell className="px-4 py-3 text-sm">
-                      <div className="font-medium text-foreground">
-                        {formatDate(payment.paymentDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-foreground">
-                          {payment.invoiceNumber || payment.stripeInvoiceId?.slice(-8) || 'N/A'}
-                        </span>
-                        {payment.description && (
-                          <span className="text-xs text-muted-foreground">
-                            {payment.description}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-4 py-3">
-                      <span className="text-sm font-medium text-foreground">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="px-4 py-3">{getStatusBadge(payment.status)}</TableCell>
-                    <TableCell className="px-4 py-3 text-right">
-                      {payment.billingPeriodStart && payment.billingPeriodEnd ? (
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(payment.billingPeriodStart)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            to {formatDate(payment.billingPeriodEnd)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+                    <th 
+                      role="columnheader"
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                      style={{ 
+                        width: '130px',
+                        flexShrink: 0,
+                        flexGrow: 0
+                      }}
+                    >
+                      Date
+                    </th>
+                    <th 
+                      role="columnheader"
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                      style={{ 
+                        minWidth: '120px',
+                        flex: '1 0 0px'
+                      }}
+                    >
+                      Invoice
+                    </th>
+                    <th 
+                      role="columnheader"
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                      style={{ 
+                        minWidth: '120px',
+                        flex: '1 0 0px'
+                      }}
+                    >
+                      Amount
+                    </th>
+                    <th 
+                      role="columnheader"
+                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                      style={{ 
+                        minWidth: '120px',
+                        flex: '1 0 0px'
+                      }}
+                    >
+                      Status
+                    </th>
+                    <th 
+                      role="columnheader"
+                      className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                      style={{ 
+                        width: '200px',
+                        flexShrink: 0,
+                        flexGrow: 0
+                      }}
+                    >
+                      Period
+                    </th>
+                  </tr>
+                </thead>
+                <tbody role="rowgroup">
+                  {payments.map((payment, index) => (
+                    <tr
+                      key={payment.id}
+                      role="row"
+                      className={cn(
+                        'border-b border-border/50 transition-colors',
+                        index === payments.length - 1 && 'border-b-0',
+                        'hover:bg-muted/50'
                       )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    >
+                      <td 
+                        role="cell"
+                        className="px-4 py-3 text-sm text-muted-foreground"
+                        style={{ 
+                          width: '130px',
+                          flexShrink: 0,
+                          flexGrow: 0
+                        }}
+                      >
+                        <span title={formatDateTime(payment.paymentDate)}>
+                          {formatDate(payment.paymentDate)}
+                        </span>
+                      </td>
+                      <td 
+                        role="cell"
+                        className="px-4 py-3 text-muted-foreground"
+                        style={{ 
+                          minWidth: '120px',
+                          flex: '1 0 0px'
+                        }}
+                      >
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span 
+                            className="text-sm font-medium truncate"
+                            title={payment.invoiceNumber || payment.stripeInvoiceId || 'N/A'}
+                          >
+                            {payment.invoiceNumber || payment.stripeInvoiceId?.slice(-8) || 'N/A'}
+                          </span>
+                          {payment.description && (
+                            <span className="text-xs truncate">
+                              {payment.description}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td 
+                        role="cell"
+                        className="px-4 py-3 text-muted-foreground"
+                        style={{ 
+                          minWidth: '120px',
+                          flex: '1 0 0px'
+                        }}
+                      >
+                        <span className="text-sm font-medium">
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </span>
+                      </td>
+                      <td 
+                        role="cell"
+                        className="px-4 py-3 text-muted-foreground"
+                        style={{ 
+                          minWidth: '120px',
+                          flex: '1 0 0px'
+                        }}
+                      >
+                        {getStatusBadge(payment.status)}
+                      </td>
+                      <td 
+                        role="cell"
+                        className="px-4 py-3 text-right text-muted-foreground"
+                        style={{ 
+                          width: '200px',
+                          flexShrink: 0,
+                          flexGrow: 0
+                        }}
+                      >
+                        {payment.billingPeriodStart && payment.billingPeriodEnd ? (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-sm">
+                              {formatDate(payment.billingPeriodStart)}
+                            </span>
+                            <span className="text-xs">
+                              to {formatDate(payment.billingPeriodEnd)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

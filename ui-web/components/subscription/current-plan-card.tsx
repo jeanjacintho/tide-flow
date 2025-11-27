@@ -1,7 +1,5 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -39,9 +37,8 @@ export function CurrentPlanCard({
   return (
     <div
       className={cn(
-        'rounded-lg p-6',
-        'bg-card',
-        'border border-border/50',
+        'rounded-lg p-4',
+        'bg-card border border-border/50',
         className
       )}
     >
@@ -50,9 +47,9 @@ export function CurrentPlanCard({
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
               <div className="text-base font-medium">{planName}</div>
-              <Badge variant="secondary" className="text-xs">
-                Current
-              </Badge>
+              <div className="inline-flex items-center rounded-md border border-border/50 px-1.5 py-0.5 text-xs font-medium transition-colors bg-muted/30">
+                <span className="text-xs">Current</span>
+              </div>
               <span className="flex items-end gap-0.5 ml-1 text-muted-foreground">
                 <span className="text-base font-medium">{price}</span>
                 {priceUnit && (
@@ -65,8 +62,12 @@ export function CurrentPlanCard({
             </div>
           </div>
           {onManage && (
-            <Button variant="outline" className="w-fit" onClick={onManage}>
-              Manage Subscription
+            <Button
+              variant="outline"
+              className="w-fit border-border/50 hover:bg-muted/50 rounded-md px-4 py-2 h-auto"
+              onClick={onManage}
+            >
+              <span className="text-sm font-medium">Manage Subscription</span>
             </Button>
           )}
         </div>

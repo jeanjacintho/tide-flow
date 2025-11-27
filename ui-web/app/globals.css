@@ -42,6 +42,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-theme-bg-card: var(--card);
   --color-theme-border-quaternary: var(--border);
+  --color-theme-text-secondary: var(--muted-foreground);
+  --color-theme-bg-quaternary: var(--muted);
   --animate-shiny-text: shiny-text 8s infinite;
   @keyframes shiny-text {
   0%, 90%, 100% {
