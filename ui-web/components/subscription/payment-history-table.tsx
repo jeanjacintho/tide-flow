@@ -40,7 +40,7 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar histórico de pagamentos');
-      console.error('Error fetching payment history:', err);
+      console.error('Erro ao buscar histórico de pagamentos:', err);
     } finally {
       setLoading(false);
     }
@@ -76,31 +76,31 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
   const getStatusBadge = (status: PaymentHistory['status']) => {
     const statusConfig = {
       SUCCEEDED: {
-        label: 'Paid',
+        label: 'Pago',
         variant: 'default' as const,
         icon: CheckCircle2,
         className: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800',
       },
       PENDING: {
-        label: 'Pending',
+        label: 'Pendente',
         variant: 'secondary' as const,
         icon: Clock,
         className: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800',
       },
       FAILED: {
-        label: 'Failed',
+        label: 'Falhou',
         variant: 'destructive' as const,
         icon: XCircle,
         className: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
       },
       REFUNDED: {
-        label: 'Refunded',
+        label: 'Reembolsado',
         variant: 'outline' as const,
         icon: RefreshCw,
         className: 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
       },
       PARTIALLY_REFUNDED: {
-        label: 'Partially Refunded',
+        label: 'Parcialmente Reembolsado',
         variant: 'outline' as const,
         icon: RefreshCw,
         className: 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
@@ -128,9 +128,9 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Payment History</CardTitle>
+          <CardTitle>Histórico de Pagamentos</CardTitle>
           <CardDescription>
-            Transaction history and payment records
+            Histórico de transações e registros de pagamento
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,9 +148,9 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Payment History</CardTitle>
+          <CardTitle>Histórico de Pagamentos</CardTitle>
           <CardDescription>
-            Transaction history and payment records
+            Histórico de transações e registros de pagamento
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -172,17 +172,17 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
 
         {payments.length === 0 ? (
           <div className="text-sm text-muted-foreground text-center py-8">
-            No payment history available
+            Nenhum histórico de pagamento disponível
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Nota Fiscal</TableHead>
+                <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Period</TableHead>
+                <TableHead className="text-right">Período</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -197,9 +197,9 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span 
                         className="text-sm font-medium truncate"
-                        title={payment.invoiceNumber || payment.stripeInvoiceId || 'N/A'}
+                        title={payment.invoiceNumber || payment.stripeInvoiceId || 'N/D'}
                       >
-                        {payment.invoiceNumber || payment.stripeInvoiceId?.slice(-8) || 'N/A'}
+                        {payment.invoiceNumber || payment.stripeInvoiceId?.slice(-8) || 'N/D'}
                       </span>
                       {payment.description && (
                         <span className="text-xs truncate">
@@ -223,7 +223,7 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
                           {formatDate(payment.billingPeriodStart)}
                         </span>
                         <span className="text-xs">
-                          to {formatDate(payment.billingPeriodEnd)}
+                          até {formatDate(payment.billingPeriodEnd)}
                         </span>
                       </div>
                     ) : (

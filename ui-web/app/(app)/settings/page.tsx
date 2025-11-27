@@ -84,7 +84,7 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground mt-1">
           Gerencie suas informações pessoais e configurações de segurança
         </p>

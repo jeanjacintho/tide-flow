@@ -25,7 +25,7 @@ export default function Home() {
           <nav>
             <Link href="/">
               <Button variant="ghost" size="lg" className="gap-2 h-12">
-                Home
+                Início
               </Button>
             </Link>
             <Link href="/about">

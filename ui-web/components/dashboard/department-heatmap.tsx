@@ -117,7 +117,7 @@ export function DepartmentHeatmap({ departments, loading }: DepartmentHeatmapPro
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Stress</span>
                     <span className="text-lg font-semibold">
-                      {dept.stressLevel?.toFixed(1) ?? 'N/A'}%
+                      {dept.stressLevel?.toFixed(1) ?? 'N/D'}%
                     </span>
                   </div>
                   

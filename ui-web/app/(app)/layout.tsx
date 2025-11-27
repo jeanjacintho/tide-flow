@@ -58,7 +58,7 @@ export default function AppLayout({
       items.push({ 
         href: '/dashboard', 
         icon: LayoutDashboard, 
-        label: 'Dashboard', 
+        label: 'Painel', 
         pathname: '/dashboard' 
       });
     }
@@ -68,7 +68,7 @@ export default function AppLayout({
       items.push({ 
         href: '/employees', 
         icon: Users, 
-        label: 'Employee Directory', 
+        label: 'Diretório de Funcionários', 
         pathname: '/employees' 
       });
     }
@@ -78,7 +78,7 @@ export default function AppLayout({
       items.push({ 
         href: '/attendance', 
         icon: Calendar, 
-        label: 'Attendance & Leave', 
+        label: 'Departamentos', 
         pathname: '/attendance' 
       });
     }
@@ -88,7 +88,7 @@ export default function AppLayout({
       items.push({ 
         href: '/subscription', 
         icon: Wallet, 
-        label: 'Payroll', 
+        label: 'Assinatura', 
         pathname: '/subscription' 
       });
     }
@@ -98,7 +98,7 @@ export default function AppLayout({
       items.push({ 
         href: '/reports', 
         icon: PieChart, 
-        label: 'Reports & Analytics', 
+        label: 'Relatórios e Análises', 
         pathname: '/reports' 
       });
     }
@@ -152,7 +152,7 @@ export default function AppLayout({
               </div>
             )}
             <SidebarGroup>
-              <SidebarGroupLabel>MAIN MENU</SidebarGroupLabel>
+              <SidebarGroupLabel>MENU PRINCIPAL</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {mainMenuItems.map((item) => (
@@ -169,14 +169,14 @@ export default function AppLayout({
               </SidebarGroupContent>
             </SidebarGroup>
             <SidebarGroup>
-              <SidebarGroupLabel>OTHER</SidebarGroupLabel>
+              <SidebarGroupLabel>OUTROS</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/settings'}>
                       <Link href="/settings">
                         <Settings className="w-4 h-4" />
-                        <span>Settings</span>
+                        <span>Configurações</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -184,7 +184,7 @@ export default function AppLayout({
                     <SidebarMenuButton asChild isActive={pathname === '/help'}>
                       <Link href="/help">
                         <HelpCircle className="w-4 h-4" />
-                        <span>Help Center</span>
+                        <span>Central de Ajuda</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -170,9 +170,9 @@ export default function SubscriptionPage() {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Subscription</h1>
+        <h1 className="text-3xl font-bold">Assinatura</h1>
         <p className="text-muted-foreground mt-1">
-          Manage your plan and view usage information
+          Gerencie seu plano e visualize informações de uso
         </p>
       </div>
 
@@ -191,14 +191,14 @@ export default function SubscriptionPage() {
       {subscription && (
         <CurrentPlanCard
           planName={
-            subscription.planType === 'FREE' ? 'Free Plan' : 'Enterprise Plan'
+            subscription.planType === 'FREE' ? 'Plano Gratuito' : 'Plano Enterprise'
           }
           price={`R$ ${subscription.monthlyBill.toFixed(2).replace('.', ',')}`}
-          priceUnit="/mo."
+          priceUnit="/mês"
           description={`Status: ${subscription.status}`}
           status={subscription.status}
           billingCycle={
-            subscription.billingCycle === 'MONTHLY' ? 'Monthly' : 'Yearly'
+            subscription.billingCycle === 'MONTHLY' ? 'Mensal' : 'Anual'
           }
           nextBillingDate={
             subscription.planType === 'FREE' 
@@ -232,16 +232,16 @@ export default function SubscriptionPage() {
       {subscription?.planType === 'FREE' && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <PlanCard
-            title="Free"
-            price="Free"
+            title="Gratuito"
+            price="Gratuito"
             priceUnit=""
-            description="Ideal for small teams"
+            description="Ideal para pequenas equipes"
             features={[
-              { text: 'Up to 7 users', included: true },
-              { text: 'Basic dashboard', included: true },
-              { text: 'Emotional analysis', included: true },
-              { text: 'Slack/Teams integration', included: false },
-              { text: 'Priority support', included: false },
+              { text: 'Até 7 usuários', included: true },
+              { text: 'Dashboard básico', included: true },
+              { text: 'Análise emocional', included: true },
+              { text: 'Integração Slack/Teams', included: false },
+              { text: 'Suporte prioritário', included: false },
             ]}
             isCurrent={true}
           />
@@ -249,18 +249,18 @@ export default function SubscriptionPage() {
           <PlanCard
             title="Enterprise"
             price="R$ 199,90"
-            priceUnit="/user/mo."
-            description="For companies that need more"
+            priceUnit="/usuário/mês"
+            description="Para empresas que precisam de mais"
             features={[
-              { text: 'Unlimited users', included: true },
-              { text: 'Complete dashboard', included: true },
-              { text: 'Advanced emotional analysis', included: true },
-              { text: 'Slack/Teams integration', included: true },
-              { text: 'Priority support', included: true },
+              { text: 'Usuários ilimitados', included: true },
+              { text: 'Dashboard completo', included: true },
+              { text: 'Análise emocional avançada', included: true },
+              { text: 'Integração Slack/Teams', included: true },
+              { text: 'Suporte prioritário', included: true },
             ]}
             isCurrent={false}
             onUpgrade={handleUpgrade}
-            upgradeLabel="Upgrade to Enterprise"
+            upgradeLabel="Fazer upgrade para Enterprise"
             upgrading={upgrading}
           />
         </div>

@@ -25,15 +25,15 @@ export function UsageCard({
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Current Usage</CardTitle>
+        <CardTitle>Uso Atual</CardTitle>
         <CardDescription>
-          Information about your company's usage
+          Informações sobre o uso da sua empresa
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Active Users</span>
+            <span className="text-sm text-muted-foreground">Usuários Ativos</span>
             <span className="text-base font-medium">
               {activeUsers} / {isUnlimited ? 'Ilimitado' : maxUsers}
             </span>
@@ -67,20 +67,20 @@ export function UsageCard({
             <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                User limit reached. Upgrade to add more users.
+                Limite de usuários atingido. Faça upgrade para adicionar mais usuários.
               </div>
             </div>
           )}
 
           {!atLimit && !isUnlimited && (
             <div className="text-sm text-muted-foreground">
-              {remainingSlots} slots available
+              {remainingSlots} vagas disponíveis
             </div>
           )}
 
           {isUnlimited && (
             <div className="text-sm text-muted-foreground">
-              Unlimited users available
+              Usuários ilimitados disponíveis
             </div>
           )}
         </div>

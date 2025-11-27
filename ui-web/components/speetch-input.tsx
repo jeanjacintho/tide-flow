@@ -112,7 +112,7 @@ export default function SpeechInput({
               console.log('Conversa processada:', data.conversationResponse);
             }
           } catch (error) {
-            console.error('Error transcribing audio:', error);
+            console.error('Erro ao transcrever áudio:', error);
             alert(error instanceof Error ? error.message : 'Erro ao transcrever áudio');
           } finally {
             setIsProcessing(false);
@@ -123,7 +123,7 @@ export default function SpeechInput({
         mediaRecorder.start();
         setIsRecording(true);
       } catch (error) {
-        console.error('Error starting recording:', error);
+        console.error('Erro ao iniciar gravação:', error);
         alert('Erro ao iniciar gravação. Verifique as permissões do microfone.');
       }
     }

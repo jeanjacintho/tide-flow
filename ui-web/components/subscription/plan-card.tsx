@@ -31,7 +31,7 @@ export function PlanCard({
   features,
   isCurrent = false,
   onUpgrade,
-  upgradeLabel = 'Upgrade',
+            upgradeLabel = 'Fazer Upgrade',
   upgrading = false,
   className,
 }: PlanCardProps) {
@@ -42,7 +42,7 @@ export function PlanCard({
           <CardTitle>{title}</CardTitle>
           {isCurrent && (
             <div className="inline-flex items-center rounded-md border border-border/50 px-1.5 py-0.5 text-xs font-medium transition-colors bg-muted/30">
-              <span className="text-xs">Current</span>
+              <span className="text-xs">Atual</span>
             </div>
           )}
           {priceUnit && (
@@ -103,7 +103,7 @@ export function PlanCard({
             )}
           >
             <span className="text-sm font-medium">
-              {upgrading ? 'Redirecting…' : upgradeLabel}
+              {upgrading ? 'Redirecionando…' : upgradeLabel}
             </span>
           </Button>
         )}

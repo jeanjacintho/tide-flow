@@ -120,7 +120,7 @@ export default function DepartmentInsightsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data.stressLevel?.toFixed(1) ?? 'N/A'}%
+              {data.stressLevel?.toFixed(1) ?? 'N/D'}%
             </div>
             <p className="text-xs mt-1 opacity-80">
               {data.stressColor === 'GREEN' && 'Baixo'}

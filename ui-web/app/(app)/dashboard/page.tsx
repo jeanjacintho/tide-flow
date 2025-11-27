@@ -124,7 +124,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">The Corporate Map</h1>
+          <h1 className="text-3xl font-bold">O Mapa Corporativo</h1>
           <p className="text-muted-foreground mt-1">
             Dashboard de gestão emocional em tempo real - Dados agregados por departamento
           </p>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {avgStress !== null ? `${avgStress}%` : 'N/A'}
+                  {avgStress !== null ? `${avgStress}%` : 'N/D'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {avgStress !== null 

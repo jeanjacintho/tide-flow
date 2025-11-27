@@ -179,7 +179,7 @@ export default function EmployeesPage() {
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Employee Directory</h1>
+          <h1 className="text-3xl font-bold">Diretório de Funcionários</h1>
           <p className="text-muted-foreground mt-1">
             Gerencie os funcionários da sua empresa
           </p>
@@ -327,7 +327,7 @@ export default function EmployeesPage() {
       {loading ? (
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
+            <CardTitle>Diretório de Funcionários</CardTitle>
             <CardDescription>
               Lista de todos os funcionários da empresa
             </CardDescription>
@@ -341,7 +341,7 @@ export default function EmployeesPage() {
       ) : users.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
+            <CardTitle>Diretório de Funcionários</CardTitle>
             <CardDescription>
               Lista de todos os funcionários da empresa
             </CardDescription>
@@ -357,7 +357,7 @@ export default function EmployeesPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
+            <CardTitle>Diretório de Funcionários</CardTitle>
             <CardDescription>
               Lista de todos os funcionários da empresa
             </CardDescription>

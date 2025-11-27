@@ -41,7 +41,7 @@ export function CurrentPlanCard({
         <div className="flex items-center gap-2">
           <CardTitle>{planName}</CardTitle>
           <div className="inline-flex items-center rounded-md border border-border/50 px-1.5 py-0.5 text-xs font-medium transition-colors bg-muted/30">
-            <span className="text-xs">Current</span>
+            <span className="text-xs">Atual</span>
           </div>
           <span className="flex items-end gap-0.5 ml-1 text-muted-foreground">
             <span className="text-base font-medium">{price}</span>
@@ -61,7 +61,7 @@ export function CurrentPlanCard({
                 className="w-fit border-border/50 hover:bg-muted/50 rounded-md px-4 py-2 h-auto"
                 onClick={onManage}
               >
-                <span className="text-sm font-medium">Manage Subscription</span>
+                <span className="text-sm font-medium">Gerenciar Assinatura</span>
               </Button>
             )}
           </div>
@@ -69,13 +69,13 @@ export function CurrentPlanCard({
             <div className={`grid gap-4 ${isFreePlan ? 'grid-cols-2' : 'grid-cols-2'}`}>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">
-                  Total Users
+                  Total de Usuários
                 </div>
                 <div className="text-base font-medium">{totalUsers}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">
-                  Price per User
+                  Preço por Usuário
                 </div>
                 <div className="text-base font-medium">{pricePerUser}</div>
               </div>
@@ -83,16 +83,16 @@ export function CurrentPlanCard({
                 <>
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Billing Cycle
+                      Ciclo de Cobrança
                     </div>
                     <div className="text-base font-medium">{billingCycle}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Next Billing
+                      Próxima Cobrança
                     </div>
                     <div className="text-base font-medium">
-                      {nextBillingDate || 'Not available'}
+                      {nextBillingDate || 'Não disponível'}
                     </div>
                   </div>
                 </>

@@ -77,7 +77,7 @@ export default function Chat() {
       setMessages(history.messages);
       setShowExamples(false);
     } catch (error) {
-      console.error('Error loading conversation history:', error);
+      console.error('Erro ao carregar histórico da conversa:', error);
       // Se a conversa não existir mais, limpa o localStorage
       if (error instanceof Error && error.message.includes('not found')) {
         localStorage.removeItem(CONVERSATION_ID_KEY);
@@ -252,7 +252,7 @@ export default function Chat() {
             await loadConversationHistory();
           }
         } catch (error) {
-          console.error('Error sending message:', error);
+          console.error('Erro ao enviar mensagem:', error);
           setMessage(currentMessage);
           // Remove mensagem temporária do usuário em caso de erro
           setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
