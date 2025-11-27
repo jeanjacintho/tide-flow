@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { User, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { User, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { motion } from "framer-motion";
+import { DotPattern } from "@/components/ui/dot-pattern";
 
 const registerSchema = z.object({
     name: z
@@ -122,45 +123,56 @@ export default function RegisterUserPage() {
     };
 
     return (
-        <div className="flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-gradient-to-b from-background to-muted/20">
+        <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
+            {/* Dot Pattern Background */}
+            <div className="absolute inset-0 opacity-30 pointer-events-none">
+                <DotPattern
+                    className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
+                    width={10}
+                    height={10}
+                    cx={1}
+                    cy={1}
+                    cr={1}
+                />
+            </div>
+            
+            {/* Content */}
             <motion.div
-                className="w-full max-w-md space-y-6"
+                className="relative z-10 w-full max-w-md space-y-6"
+                style={{ willChange: 'transform' }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
                 {/* Header */}
                 <motion.div
-                    className="text-center space-y-2"
+                    className="text-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
                 >
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                        <User className="w-8 h-8 text-primary" />
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                            tideflow
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground">Crie sua conta pessoal</p>
+                    <h1 className="text-3xl font-bold">
+                        tideflow
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Crie sua conta pessoal</p>
                 </motion.div>
 
                 {/* Form Card */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-2xl">Criar uma conta</CardTitle>
+                    <Card>
+                        <CardHeader className="gap-0 pb-0">
+                            <CardTitle>Criar uma conta</CardTitle>
                             <CardDescription>
                                 Digite suas informações abaixo para criar sua conta
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             <form onSubmit={handleSubmit}>
-                                <FieldGroup className="space-y-4">
+                                <FieldGroup className="space-y-2">
                                     <Field>
                                         <FieldLabel htmlFor="name">
                                             Nome completo <span className="text-destructive">*</span>
@@ -304,12 +316,10 @@ export default function RegisterUserPage() {
                                                 {isPending ? (
                                                     <>
                                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                        Criando conta...
                                                     </>
                                                 ) : (
                                                     <>
                                                         Criar Conta
-                                                        <CheckCircle2 className="w-4 h-4 ml-2" />
                                                     </>
                                                 )}
                                             </Button>

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { Building2, User, ArrowRight, Sparkles, Shield, BarChart3, Users, MessageSquare, Heart, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+import { DotPattern } from "@/components/ui/dot-pattern";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,19 +42,33 @@ const featureVariants = {
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-gradient-to-b from-background to-muted/20">
+    <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
+      {/* Dot Pattern Background */}
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <DotPattern
+          className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
+          width={10}
+          height={10}
+          cx={1}
+          cy={1}
+          cr={1}
+        />
+      </div>
+      
+      {/* Content */}
       <motion.div
-        className="w-full max-w-5xl space-y-8"
+        className="relative z-10 w-full max-w-5xl space-y-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
+        style={{ willChange: 'transform' }}
       >
         {/* Header */}
-        <motion.div className="text-center space-y-2" variants={itemVariants}>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-transparent">
+        <motion.div className="text-center" variants={itemVariants}>
+          <h1 className="text-3xl font-bold">
             tideflow
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-muted-foreground mt-1">
             Escolha como deseja começar sua jornada
           </p>
         </motion.div>

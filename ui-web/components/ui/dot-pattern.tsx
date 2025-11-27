@@ -73,6 +73,7 @@ export function DotPattern({
   const id = useId()
   const containerRef = useRef<SVGSVGElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const [isMounted, setIsMounted] = useState(false)
   const [randomValues] = useState(() => {
     // Gera valores aleatórios uma vez durante a inicialização
     const values: Array<{ delay: number; duration: number }> = []
@@ -86,16 +87,30 @@ export function DotPattern({
   })
 
   useEffect(() => {
+    setIsMounted(true)
+    
     const updateDimensions = () => {
       if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect()
-        setDimensions({ width, height })
+        const parent = containerRef.current.parentElement
+        if (parent) {
+          const { width, height } = parent.getBoundingClientRect()
+          setDimensions({ width, height })
+        }
       }
     }
 
-    updateDimensions()
+    // Usa requestAnimationFrame para garantir que o layout está pronto
+    const rafId = requestAnimationFrame(() => {
+      updateDimensions()
+      // Segundo frame para garantir que tudo está renderizado
+      requestAnimationFrame(updateDimensions)
+    })
+    
     window.addEventListener("resize", updateDimensions)
-    return () => window.removeEventListener("resize", updateDimensions)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener("resize", updateDimensions)
+    }
   }, [])
 
   const dots = useMemo(() => {
@@ -117,6 +132,12 @@ export function DotPattern({
     })
   }, [dimensions.width, dimensions.height, width, height, cx, cy, randomValues])
 
+  // Evita renderizar dots se as dimensões ainda não foram calculadas ou não está montado
+  const shouldRender = isMounted && dimensions.width > 0 && dimensions.height > 0
+  // Usa dimensões padrão para viewBox no servidor para evitar hydration mismatch
+  const viewBoxWidth = shouldRender ? dimensions.width : 1920
+  const viewBoxHeight = shouldRender ? dimensions.height : 1080
+
   return (
     <svg
       ref={containerRef}
@@ -125,6 +146,13 @@ export function DotPattern({
         "pointer-events-none absolute inset-0 h-full w-full text-neutral-400/80",
         className
       )}
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        willChange: 'auto'
+      }}
+      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+      preserveAspectRatio="none"
       {...props}
     >
       <defs>
@@ -133,7 +161,7 @@ export function DotPattern({
           <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {dots.map((dot) => (
+      {shouldRender && dots.map((dot) => (
         <motion.circle
           key={`${dot.x}-${dot.y}`}
           cx={dot.x}

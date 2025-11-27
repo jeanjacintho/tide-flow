@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { Building2, Loader2, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { Separator } from "@/components/ui/separator";
 import { DotPattern } from "@/components/ui/dot-pattern";
 
 const loginSchema = z.object({
@@ -101,7 +100,7 @@ export default function UserLoginPage() {
     return (
         <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
             {/* Dot Pattern Background */}
-            <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0 opacity-30 pointer-events-none">
                 <DotPattern
                     className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
                     width={10}
@@ -115,47 +114,40 @@ export default function UserLoginPage() {
             {/* Content */}
             <motion.div
                 className="relative z-10 w-full max-w-md space-y-6"
+                style={{ willChange: 'transform' }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
                 {/* Header */}
                 <motion.div
-                    className="text-center space-y-2"
+                    className="text-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
                 >
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                        <h1 className="text-4xl font-bold">
-                            tideflow
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground">Acesso para funcionários</p>
+                    <h1 className="text-3xl font-bold">
+                        tideflow
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Acesso para funcionários</p>
                 </motion.div>
 
                 {/* Form Card */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <Card className="">
-                        <CardHeader className="flex flex-col gap-4">
-                            <div>
-                            <CardTitle className="text-2xl flex items-center gap-2">
-                                Login como Usuário
-                            </CardTitle>
+                    <Card>
+                        <CardHeader className="gap-0 pb-0">
+                            <CardTitle>Login como Usuário</CardTitle>
                             <CardDescription>
                                 Digite seu email ou username e senha para acessar sua conta
                             </CardDescription>
-                            </div>
-                            <Separator />
                         </CardHeader>
-                        
-                        <CardContent>
+                        <CardContent className="pt-6">
                             <form onSubmit={handleSubmit}>
-                                <FieldGroup className="space-y-4">
+                                <FieldGroup className="space-y-2">
                                     <Field>
                                         <FieldLabel htmlFor="username">
                                             Email ou Username <span className="text-destructive">*</span>

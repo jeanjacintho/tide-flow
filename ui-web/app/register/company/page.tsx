@@ -15,6 +15,7 @@ import { Stepper } from "@/components/ui/stepper";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { DotPattern } from "@/components/ui/dot-pattern";
 
 const registerCompanySchema = z.object({
   companyName: z
@@ -254,22 +255,32 @@ export default function RegisterCompanyPage() {
   };
 
   return (
-    <div className="flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-gradient-to-b from-background to-muted/20">
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
+      {/* Dot Pattern Background */}
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <DotPattern
+          className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
+          width={10}
+          height={10}
+          cx={1}
+          cy={1}
+          cr={1}
+        />
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-2xl space-y-6">
         {/* Header */}
         <motion.div
-          className="text-center space-y-2"
+          className="text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Building2 className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-              tideflow
-            </h1>
-          </div>
-          <p className="text-muted-foreground">Cadastre sua empresa em poucos passos</p>
+          <h1 className="text-3xl font-bold">
+            tideflow
+          </h1>
+          <p className="text-muted-foreground mt-1">Cadastre sua empresa em poucos passos</p>
         </motion.div>
 
         {/* Stepper */}
@@ -286,9 +297,9 @@ export default function RegisterCompanyPage() {
         </motion.div>
 
         {/* Form Card */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl">
+        <Card>
+          <CardHeader className="gap-0 pb-0">
+            <CardTitle>
               {currentStep === 1 && 'Informações da Empresa'}
               {currentStep === 2 && 'Dados do Proprietário'}
               {currentStep === 3 && 'Criar Senha de Acesso'}
@@ -299,7 +310,7 @@ export default function RegisterCompanyPage() {
               {currentStep === 3 && 'Defina uma senha segura para sua conta'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit}>
               <AnimatePresence mode="wait" custom={currentStep}>
                 {/* Step 1: Company Info */}
@@ -313,7 +324,7 @@ export default function RegisterCompanyPage() {
                     exit="exit"
                     transition={{ duration: 0.3 }}
                   >
-                    <FieldGroup className="space-y-4">
+                    <FieldGroup className="space-y-2">
                       <Field>
                         <FieldLabel htmlFor="companyName">
                           Nome da Empresa <span className="text-destructive">*</span>
@@ -379,7 +390,7 @@ export default function RegisterCompanyPage() {
                     exit="exit"
                     transition={{ duration: 0.3 }}
                   >
-                    <FieldGroup className="space-y-4">
+                    <FieldGroup className="space-y-2">
                       <Field>
                         <FieldLabel htmlFor="ownerName">
                           Nome do Proprietário <span className="text-destructive">*</span>
@@ -448,7 +459,7 @@ export default function RegisterCompanyPage() {
                     exit="exit"
                     transition={{ duration: 0.3 }}
                   >
-                    <FieldGroup className="space-y-4">
+                    <FieldGroup className="space-y-2">
                       <Field>
                         <FieldLabel htmlFor="password">
                           Senha <span className="text-destructive">*</span>
@@ -538,12 +549,10 @@ export default function RegisterCompanyPage() {
                     {isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Cadastrando...
                       </>
                     ) : (
                       <>
-                        Cadastrar Empresa
-                        <CheckCircle2 className="w-4 h-4 ml-2" />
+                        Cadastrar
                       </>
                     )}
                   </Button>
