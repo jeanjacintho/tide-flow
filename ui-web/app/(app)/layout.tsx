@@ -91,13 +91,13 @@ export default function AppLayout({
       });
     }
     
-    // Payroll - OWNER e ADMIN
+    // Payroll (Subscription) - OWNER e ADMIN
     if (user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN') {
       items.push({ 
-        href: '/payroll', 
+        href: '/subscription', 
         icon: Wallet, 
         label: 'Payroll', 
-        pathname: '/payroll' 
+        pathname: '/subscription' 
       });
     }
     
