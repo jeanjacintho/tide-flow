@@ -20,12 +20,14 @@ public class UserResponseDTO {
     private UUID departmentId;
     private String systemRole;
     private String companyRole;
+    private String privacyConsentStatus;
+    private Boolean dataSharingEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public UserResponseDTO() {}
 
-    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, String systemRole, String companyRole, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserResponseDTO(UUID id, String name, String username, String email, String phone, String avatarUrl, String trustedEmail, String city, String state, Boolean mustChangePassword, UUID companyId, UUID departmentId, String systemRole, String companyRole, String privacyConsentStatus, Boolean dataSharingEnabled, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.username = username;
@@ -40,6 +42,8 @@ public class UserResponseDTO {
         this.departmentId = departmentId;
         this.systemRole = systemRole;
         this.companyRole = companyRole;
+        this.privacyConsentStatus = privacyConsentStatus;
+        this.dataSharingEnabled = dataSharingEnabled;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -73,6 +77,8 @@ public class UserResponseDTO {
             user.getDepartment() != null ? user.getDepartment().getId() : null,
             user.getSystemRole() != null ? user.getSystemRole().name() : null,
             companyRole,
+            user.getPrivacyConsentStatus() != null ? user.getPrivacyConsentStatus().name() : null,
+            user.getDataSharingEnabled(),
             user.getCreatedAt(),
             user.getUpdatedAt()
         );
@@ -204,5 +210,21 @@ public class UserResponseDTO {
 
     public void setCompanyRole(String companyRole) {
         this.companyRole = companyRole;
+    }
+
+    public String getPrivacyConsentStatus() {
+        return privacyConsentStatus;
+    }
+
+    public void setPrivacyConsentStatus(String privacyConsentStatus) {
+        this.privacyConsentStatus = privacyConsentStatus;
+    }
+
+    public Boolean getDataSharingEnabled() {
+        return dataSharingEnabled;
+    }
+
+    public void setDataSharingEnabled(Boolean dataSharingEnabled) {
+        this.dataSharingEnabled = dataSharingEnabled;
     }
 }

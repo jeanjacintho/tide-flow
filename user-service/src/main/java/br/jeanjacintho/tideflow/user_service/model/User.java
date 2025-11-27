@@ -6,12 +6,27 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Modelo de usuário com garantias explícitas de privacidade.
+ * 
+ * PRIVACIDADE E PROTEÇÃO DE DADOS:
+ * - Dados individuais NUNCA são expostos no dashboard corporativo
+ * - Apenas dados agregados por departamento são compartilhados com a empresa
+ * - O anonymized_id garante que análises emocionais não possam ser rastreadas ao usuário
+ * - O consentimento de privacidade (privacyConsentStatus) controla se dados agregados podem ser compartilhados
+ * 
+ * COMPLIANCE:
+ * - LGPD/GDPR: Consentimento explícito necessário para compartilhamento
+ * - K-anonymity: Agregações só ocorrem com mínimo de 5 usuários por departamento
+ * - Right to be forgotten: Dados podem ser anonimizados/removidos a qualquer momento
+ */
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_user_company", columnList = "company_id"),
     @Index(name = "idx_user_department", columnList = "department_id"),
     @Index(name = "idx_user_anonymized", columnList = "anonymized_id"),
-    @Index(name = "idx_user_active", columnList = "is_active")
+    @Index(name = "idx_user_active", columnList = "is_active"),
+    @Index(name = "idx_user_privacy_consent", columnList = "privacy_consent_status")
 })
 public class User {
     @Id
@@ -73,6 +88,37 @@ public class User {
     @Column(name = "must_change_password", nullable = false)
     private Boolean mustChangePassword;
 
+    /**
+     * Status de consentimento de privacidade do usuário.
+     * Controla se dados agregados podem ser compartilhados com a empresa.
+     * Dados individuais NUNCA são expostos, independente deste status.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "privacy_consent_status", nullable = false)
+    private PrivacyConsentStatus privacyConsentStatus;
+
+    /**
+     * Data em que o usuário leu e aceitou o aviso de privacidade.
+     * Null se o usuário ainda não foi apresentado ao aviso.
+     */
+    @Column(name = "privacy_consent_date")
+    private LocalDateTime privacyConsentDate;
+
+    /**
+     * Indica se o usuário leu e reconheceu o aviso de privacidade.
+     * Diferente de consentimento: reconhecimento é apenas leitura, consentimento é permissão de compartilhamento.
+     */
+    @Column(name = "privacy_notice_acknowledged", nullable = false)
+    private Boolean privacyNoticeAcknowledged;
+
+    /**
+     * Indica se o usuário permite compartilhamento de dados agregados com a empresa.
+     * Este campo é derivado de privacyConsentStatus (true apenas se ACCEPTED).
+     * Mantido como campo separado para facilitar queries e auditoria.
+     */
+    @Column(name = "data_sharing_enabled", nullable = false)
+    private Boolean dataSharingEnabled;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -114,6 +160,16 @@ public class User {
         }
         if (systemRole == null) {
             systemRole = SystemRole.NORMAL;
+        }
+        // Inicializa campos de privacidade com valores padrão seguros
+        if (privacyConsentStatus == null) {
+            privacyConsentStatus = PrivacyConsentStatus.PENDING;
+        }
+        if (privacyNoticeAcknowledged == null) {
+            privacyNoticeAcknowledged = false;
+        }
+        if (dataSharingEnabled == null) {
+            dataSharingEnabled = false; // Por padrão, dados não são compartilhados até consentimento explícito
         }
         // Gera username único se não fornecido (para compatibilidade com registros antigos)
         if (username == null || username.isEmpty()) {
@@ -287,5 +343,57 @@ public class User {
 
     public void setSystemRole(SystemRole systemRole) {
         this.systemRole = systemRole;
+    }
+
+    public PrivacyConsentStatus getPrivacyConsentStatus() {
+        return privacyConsentStatus;
+    }
+
+    public void setPrivacyConsentStatus(PrivacyConsentStatus privacyConsentStatus) {
+        this.privacyConsentStatus = privacyConsentStatus;
+        // Atualiza dataSharingEnabled automaticamente baseado no status
+        this.dataSharingEnabled = privacyConsentStatus != null && privacyConsentStatus.allowsDataSharing();
+        // Atualiza privacyConsentDate se status mudou para ACCEPTED
+        if (privacyConsentStatus == PrivacyConsentStatus.ACCEPTED && this.privacyConsentDate == null) {
+            this.privacyConsentDate = LocalDateTime.now();
+        }
+    }
+
+    public LocalDateTime getPrivacyConsentDate() {
+        return privacyConsentDate;
+    }
+
+    public void setPrivacyConsentDate(LocalDateTime privacyConsentDate) {
+        this.privacyConsentDate = privacyConsentDate;
+    }
+
+    public Boolean getPrivacyNoticeAcknowledged() {
+        return privacyNoticeAcknowledged;
+    }
+
+    public void setPrivacyNoticeAcknowledged(Boolean privacyNoticeAcknowledged) {
+        this.privacyNoticeAcknowledged = privacyNoticeAcknowledged;
+    }
+
+    public Boolean getDataSharingEnabled() {
+        return dataSharingEnabled;
+    }
+
+    public void setDataSharingEnabled(Boolean dataSharingEnabled) {
+        this.dataSharingEnabled = dataSharingEnabled;
+    }
+
+    /**
+     * Verifica se os dados agregados deste usuário podem ser compartilhados com a empresa.
+     * Retorna true apenas se:
+     * - privacyConsentStatus é ACCEPTED
+     * - dataSharingEnabled é true
+     * 
+     * IMPORTANTE: Dados individuais NUNCA são compartilhados, apenas agregados por departamento.
+     */
+    public boolean canShareAggregatedData() {
+        return privacyConsentStatus != null 
+            && privacyConsentStatus.allowsDataSharing() 
+            && Boolean.TRUE.equals(dataSharingEnabled);
     }
 }

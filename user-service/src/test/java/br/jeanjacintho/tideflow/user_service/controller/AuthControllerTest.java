@@ -170,6 +170,8 @@ class AuthControllerTest {
                 testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
                 testUser.getSystemRole() != null ? testUser.getSystemRole().name() : null,
                 null,
+                testUser.getPrivacyConsentStatus() != null ? testUser.getPrivacyConsentStatus().name() : null,
+                testUser.getDataSharingEnabled(),
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
@@ -216,6 +218,8 @@ class AuthControllerTest {
                 testUser.getDepartment() != null ? testUser.getDepartment().getId() : null,
                 testUser.getSystemRole() != null ? testUser.getSystemRole().name() : null,
                 null,
+                testUser.getPrivacyConsentStatus() != null ? testUser.getPrivacyConsentStatus().name() : null,
+                testUser.getDataSharingEnabled(),
                 testUser.getCreatedAt(),
                 testUser.getUpdatedAt()
         );
