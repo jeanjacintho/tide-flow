@@ -2,6 +2,7 @@ package br.jeanjacintho.tideflow.user_service.scheduler;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class SubscriptionScheduler {
      */
     @Scheduled(fixedRate = 60000) // Roda a cada 1 minuto
     @Transactional
+    @SuppressWarnings("null")
     public void checkExpiredSubscriptions() {
         logger.info("Checking for expired subscriptions...");
         
@@ -51,20 +53,30 @@ public class SubscriptionScheduler {
         
         List<CompanySubscription> expiredTrials = subscriptionRepository.findExpiredSubscriptions(today, SubscriptionStatus.TRIAL);
         for (CompanySubscription sub : expiredTrials) {
-            logger.info("Trial expired for company: {}", sub.getCompany().getId());
-            subscriptionService.suspendSubscription(sub.getCompany().getId());
+            if (sub.getCompany() != null && sub.getCompany().getId() != null) {
+                UUID companyId = sub.getCompany().getId();
+                logger.info("Trial expired for company: {}", companyId);
+                subscriptionService.suspendSubscription(companyId);
+            } else {
+                logger.warn("Subscription {} has null company or company ID, skipping", sub.getId());
+            }
         }
 
         List<CompanySubscription> expiredActive = subscriptionRepository.findExpiredSubscriptions(today, SubscriptionStatus.ACTIVE);
         for (CompanySubscription sub : expiredActive) {
-            logger.info("Active subscription expired for company: {}", sub.getCompany().getId());
-            // Aqui poderíamos tentar renovar via Stripe se não fosse automático,
-            // mas como o Stripe é automático, se chegou aqui é porque falhou ou não sincronizou.
-            // Vamos apenas logar ou marcar como pendente de pagamento se necessário.
-            // Por enquanto, mantemos como ACTIVE até o Stripe dizer o contrário (via webhook), 
-            // ou podemos suspender se quisermos ser rigorosos.
-            // Para o teste do usuário, vamos suspender para ele ver o efeito.
-            subscriptionService.suspendSubscription(sub.getCompany().getId());
+            if (sub.getCompany() != null && sub.getCompany().getId() != null) {
+                UUID companyId = sub.getCompany().getId();
+                logger.info("Active subscription expired for company: {}", companyId);
+                // Aqui poderíamos tentar renovar via Stripe se não fosse automático,
+                // mas como o Stripe é automático, se chegou aqui é porque falhou ou não sincronizou.
+                // Vamos apenas logar ou marcar como pendente de pagamento se necessário.
+                // Por enquanto, mantemos como ACTIVE até o Stripe dizer o contrário (via webhook), 
+                // ou podemos suspender se quisermos ser rigorosos.
+                // Para o teste do usuário, vamos suspender para ele ver o efeito.
+                subscriptionService.suspendSubscription(companyId);
+            } else {
+                logger.warn("Subscription {} has null company or company ID, skipping", sub.getId());
+            }
         }
     }
 }

@@ -211,9 +211,17 @@ public class StripeIntegrationService {
             throw new IllegalStateException("Assinatura não possui Stripe Subscription ID");
         }
 
+        String stripeCustomerId = subscription.getStripeCustomerId();
+        if (stripeCustomerId == null || stripeCustomerId.isEmpty()) {
+            throw new IllegalStateException("Assinatura não possui Stripe Customer ID");
+        }
+        
+        // Após a verificação, sabemos que stripeCustomerId não é null
+        final String nonNullCustomerId = stripeCustomerId;
+
         try {
             Subscription stripeSubscription = stripeService.getSubscription(subscription.getStripeSubscriptionId());
-            subscriptionService.syncSubscriptionFromStripe(subscription.getStripeCustomerId(), stripeSubscription);
+            subscriptionService.syncSubscriptionFromStripe(nonNullCustomerId, stripeSubscription);
             syncRecentPaymentsFromStripe(subscription.getStripeSubscriptionId(), companyId);
             result.put("success", true);
             result.put("stripeSubscriptionId", subscription.getStripeSubscriptionId());
@@ -280,10 +288,15 @@ public class StripeIntegrationService {
 
     private CompanySubscription createFreeSubscription(UUID companyId) {
         logger.info("Criando assinatura FREE para companyId {}", companyId);
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
+        if (companyId == null) {
+            throw new IllegalArgumentException("Company ID cannot be null");
+        }
+        // Após a verificação, sabemos que companyId não é null
+        final UUID nonNullCompanyId = companyId;
+        Company company = companyRepository.findById(nonNullCompanyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", nonNullCompanyId));
 
-        int currentUserCount = usageTrackingService.getActiveUserCount(companyId);
+        int currentUserCount = usageTrackingService.getActiveUserCount(nonNullCompanyId);
         CompanySubscription subscription = new CompanySubscription(
                 company,
                 SubscriptionPlan.FREE,
@@ -302,11 +315,16 @@ public class StripeIntegrationService {
         return subscription;
     }
 
+    @SuppressWarnings("null")
     private Company ensureCompanyLoaded(CompanySubscription subscription, UUID companyId) {
         Company company = subscription.getCompany();
         if (company == null) {
-            company = companyRepository.findById(companyId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
+            if (companyId == null) {
+                throw new IllegalArgumentException("Company ID cannot be null");
+            }
+            final UUID nonNullCompanyId = companyId;
+            company = companyRepository.findById(nonNullCompanyId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Empresa", nonNullCompanyId));
             subscription.setCompany(company);
         }
         return company;
@@ -349,6 +367,7 @@ public class StripeIntegrationService {
         }
     }
 
+    @SuppressWarnings("null")
     private void handleCheckoutSessionCompleted(Event event) {
         logger.info("Processing checkout.session.completed - Event {}", event.getId());
         try {
@@ -368,13 +387,15 @@ public class StripeIntegrationService {
             }
 
             UUID companyId = UUID.fromString(companyIdStr);
+            // Após UUID.fromString, sabemos que companyId não é null
+            final UUID nonNullCompanyId = companyId;
             try {
                 Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
-                subscriptionService.activateStripeSubscription(companyId, customerId, stripeSubscription);
-                recordInitialPayment(companyId, customerId, subscriptionId, stripeSubscription);
+                subscriptionService.activateStripeSubscription(nonNullCompanyId, customerId, stripeSubscription);
+                recordInitialPayment(nonNullCompanyId, customerId, subscriptionId, stripeSubscription);
             } catch (StripeException e) {
                 logger.error("Erro Stripe ao ativar assinatura: {}", e.getMessage(), e);
-                subscriptionService.activateStripeSubscription(companyId, customerId, subscriptionId);
+                subscriptionService.activateStripeSubscription(nonNullCompanyId, customerId, subscriptionId);
             }
         } catch (Exception e) {
             logger.error("Erro no handleCheckoutSessionCompleted: {}", e.getMessage(), e);
@@ -580,6 +601,7 @@ public class StripeIntegrationService {
         }
     }
 
+    @SuppressWarnings("null")
     private void handleInvoicePaymentFailed(Event event) {
         logger.info("Processing invoice.payment_failed - Event {}", event.getId());
         try {
@@ -587,6 +609,11 @@ public class StripeIntegrationService {
             String invoiceId = invoice.path("id").asText(null);
             String subscriptionId = invoice.path("subscription").asText(null);
             String customerId = invoice.path("customer").asText(null);
+
+            if (invoiceId == null || invoiceId.isEmpty()) {
+                logger.error("Invoice ID is null or empty, cannot process payment failure");
+                return;
+            }
 
             CompanySubscription subscription = findSubscriptionRobustly(subscriptionId, customerId, invoiceId);
             if (subscription == null) {
@@ -598,14 +625,16 @@ public class StripeIntegrationService {
                     ? BigDecimal.valueOf(invoice.path("amount_due").asLong()).divide(BigDecimal.valueOf(100))
                     : BigDecimal.ZERO;
 
+            // Após verificação, sabemos que invoiceId não é null
+            final String nonNullInvoiceId = invoiceId;
             PaymentHistoryRepository repository = this.paymentHistoryRepository;
-            repository.findByStripeInvoiceId(invoiceId).ifPresentOrElse(
-                    history -> paymentHistoryService.updatePaymentStatus(invoiceId, PaymentStatus.FAILED),
+            repository.findByStripeInvoiceId(nonNullInvoiceId).ifPresentOrElse(
+                    history -> paymentHistoryService.updatePaymentStatus(nonNullInvoiceId, PaymentStatus.FAILED),
                     () -> recordPaymentSafely(
                             subscription.getCompany().getId(),
                             amountDue,
                             PaymentStatus.FAILED,
-                            invoiceId,
+                            nonNullInvoiceId,
                             invoice.path("payment_intent").asText(null),
                             invoice.path("charge").asText(null),
                             customerId,
@@ -730,6 +759,7 @@ public class StripeIntegrationService {
         return null;
     }
 
+    @SuppressWarnings("null")
     private void recordPaymentSafely(UUID companyId,
                                      BigDecimal amount,
                                      PaymentStatus status,
@@ -752,12 +782,31 @@ public class StripeIntegrationService {
             return;
         }
 
+        // Validações de null para parâmetros obrigatórios
+        if (companyId == null) {
+            logger.error("❌ Company ID is null, cannot record payment for invoice {}", invoiceId);
+            throw new IllegalArgumentException("Company ID cannot be null");
+        }
+        if (amount == null) {
+            logger.error("❌ Amount is null, cannot record payment for invoice {}", invoiceId);
+            throw new IllegalArgumentException("Amount cannot be null");
+        }
+        if (status == null) {
+            logger.error("❌ Payment status is null, cannot record payment for invoice {}", invoiceId);
+            throw new IllegalArgumentException("Payment status cannot be null");
+        }
+
+        // Após validações, sabemos que são não-null
+        final UUID nonNullCompanyId = companyId;
+        final BigDecimal nonNullAmount = amount;
+        final PaymentStatus nonNullStatus = status;
+
         logger.info("💾 Calling paymentHistoryService.recordPayment for invoice {}", invoiceId);
         try {
             PaymentHistory saved = paymentHistoryService.recordPayment(
-                    companyId,
-                    amount,
-                    status,
+                    nonNullCompanyId,
+                    nonNullAmount,
+                    nonNullStatus,
                     invoiceId,
                     paymentIntentId,
                     chargeId,
@@ -829,13 +878,18 @@ public class StripeIntegrationService {
         }
     }
 
+    @SuppressWarnings("null")
     private void syncSubscriptionState(CompanySubscription subscription, String customerId, String subscriptionId) {
         try {
             Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
-            subscriptionService.syncSubscriptionFromStripe(
-                    customerId != null ? customerId : stripeSubscription.getCustomer(),
-                    stripeSubscription
-            );
+            String resolvedCustomerId = customerId != null ? customerId : stripeSubscription.getCustomer();
+            if (resolvedCustomerId == null || resolvedCustomerId.isEmpty()) {
+                logger.error("❌ Customer ID is null or empty, cannot sync subscription state for subscription {}", subscriptionId);
+                return;
+            }
+            // Após verificação, sabemos que resolvedCustomerId não é null
+            final String nonNullCustomerId = resolvedCustomerId;
+            subscriptionService.syncSubscriptionFromStripe(nonNullCustomerId, stripeSubscription);
         } catch (Exception e) {
             logger.error("Erro ao sincronizar assinatura: {}", e.getMessage(), e);
         }
