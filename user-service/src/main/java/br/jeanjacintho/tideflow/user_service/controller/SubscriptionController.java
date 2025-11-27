@@ -19,7 +19,6 @@ import br.jeanjacintho.tideflow.user_service.service.PaymentHistoryService;
 import br.jeanjacintho.tideflow.user_service.service.SubscriptionService;
 import br.jeanjacintho.tideflow.user_service.service.StripeIntegrationService;
 import br.jeanjacintho.tideflow.user_service.service.UsageTrackingService;
-import br.jeanjacintho.tideflow.user_service.model.PaymentStatus;
 import br.jeanjacintho.tideflow.user_service.repository.CompanySubscriptionRepository;
 import br.jeanjacintho.tideflow.user_service.dto.response.PaymentHistoryResponseDTO;
 import org.slf4j.Logger;

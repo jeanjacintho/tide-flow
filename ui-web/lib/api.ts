@@ -415,6 +415,122 @@ class ApiService {
     return response.json();
   }
 
+  // Corporate Reports APIs
+  async generateReport(request: ReportGenerationRequest): Promise<CorporateReportResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getReport(reportId: string): Promise<CorporateReportResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/${reportId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async listReports(
+    companyId: string,
+    reportType?: string,
+    status?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<ReportListResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const params = new URLSearchParams({
+      companyId,
+      page: page.toString(),
+      size: size.toString(),
+    });
+    
+    if (reportType) params.append('reportType', reportType);
+    if (status) params.append('status', status);
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async getLatestReport(companyId: string, reportType?: string): Promise<CorporateReportResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const params = reportType ? `?reportType=${reportType}` : '';
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/company/${companyId}/latest${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async deleteReport(reportId: string): Promise<void> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/${reportId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `HTTP error! status: ${response.status}`);
+    }
+  }
+
   // Company management APIs
   async getAllCompanies(): Promise<Company[]> {
     return this.request<Company[]>('/api/companies', {
@@ -791,5 +907,78 @@ export interface CreateCompanyUserRequest {
   phone?: string;
   city?: string;
   state?: string;
+}
+
+// Corporate Reports DTOs
+export interface ReportGenerationRequest {
+  companyId: string;
+  departmentId?: string;
+  reportType: 'STRESS_TIMELINE' | 'DEPARTMENT_HEATMAP' | 'TURNOVER_PREDICTION' | 'IMPACT_ANALYSIS' | 'COMPREHENSIVE' | 'CUSTOM';
+  periodStart?: string;
+  periodEnd?: string;
+  title?: string;
+  includeSections?: string[];
+  generateInsights?: boolean;
+  generateRecommendations?: boolean;
+  customPrompt?: string;
+  eventDescription?: string;
+  eventDate?: string;
+}
+
+export interface CorporateReportResponse {
+  id: string;
+  companyId: string;
+  departmentId?: string;
+  reportType: string;
+  reportDate: string;
+  periodStart: string;
+  periodEnd: string;
+  status: 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED' | 'ARCHIVED';
+  title: string;
+  executiveSummary?: string;
+  insights?: Record<string, any>;
+  metrics?: Record<string, any>;
+  recommendations?: string;
+  generatedByAi: boolean;
+  aiModelVersion?: string;
+  generationTimeMs?: number;
+  sections?: ReportSection[];
+  createdAt: string;
+  updatedAt: string;
+  generatedAt?: string;
+}
+
+export interface ReportSection {
+  id: string;
+  sectionType: string;
+  sectionOrder: number;
+  title: string;
+  content?: string;
+  data?: Record<string, any>;
+  visualizationConfig?: Record<string, any>;
+}
+
+export interface ReportListResponse {
+  reports: ReportSummary[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface ReportSummary {
+  id: string;
+  companyId: string;
+  departmentId?: string;
+  reportType: string;
+  reportDate: string;
+  periodStart: string;
+  periodEnd: string;
+  status: string;
+  title: string;
+  executiveSummary?: string;
+  generatedByAi: boolean;
+  createdAt: string;
+  generatedAt?: string;
 }
 

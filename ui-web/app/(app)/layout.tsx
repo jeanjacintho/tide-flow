@@ -26,9 +26,7 @@ import {
   MessageSquare,
   Users,
   Calendar,
-  Briefcase,
   Wallet,
-  BarChart3,
   PieChart,
   Settings,
   HelpCircle,
@@ -85,16 +83,6 @@ export default function AppLayout({
       });
     }
     
-    // Recruitment - HR_MANAGER, ADMIN e OWNER
-    if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/recruitment', 
-        icon: Briefcase, 
-        label: 'Recruitment', 
-        pathname: '/recruitment' 
-      });
-    }
-    
     // Payroll (Subscription) - OWNER e ADMIN
     if (user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN') {
       items.push({ 
@@ -102,16 +90,6 @@ export default function AppLayout({
         icon: Wallet, 
         label: 'Payroll', 
         pathname: '/subscription' 
-      });
-    }
-    
-    // Performance - HR_MANAGER, ADMIN e OWNER
-    if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/performance', 
-        icon: BarChart3, 
-        label: 'Performance', 
-        pathname: '/performance' 
       });
     }
     

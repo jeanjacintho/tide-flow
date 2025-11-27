@@ -10,6 +10,7 @@ import br.jeanjacintho.tideflow.ai_service.model.CorporateReport.ReportType;
 import br.jeanjacintho.tideflow.ai_service.model.ReportSection;
 import br.jeanjacintho.tideflow.ai_service.repository.CorporateReportRepository;
 import br.jeanjacintho.tideflow.ai_service.repository.ReportSectionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -180,6 +181,12 @@ public class CorporateReportService {
                     metrics.put("turnoverPrediction", turnoverPredictionService.predictTurnoverRisk(
                         report.getCompanyId(), report.getDepartmentId()));
                     break;
+                case CUSTOM:
+                    // Custom reports can have custom metrics
+                    break;
+                default:
+                    logger.warn("Tipo de relatório não suportado: {}", report.getReportType());
+                    break;
             }
         } catch (Exception e) {
             logger.error("Erro ao coletar métricas: {}", e.getMessage(), e);
@@ -309,7 +316,8 @@ public class CorporateReportService {
         prompt.append("Período: ").append(report.getPeriodStart()).append(" a ").append(report.getPeriodEnd()).append("\n");
         try {
             prompt.append("Dados: ").append(objectMapper.writeValueAsString(metrics)).append("\n\n");
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
+            logger.warn("Erro ao serializar JSON, usando toString: {}", e.getMessage());
             prompt.append("Dados: ").append(metrics.toString()).append("\n\n");
         }
         prompt.append("Gere insights estruturados incluindo: principais descobertas, padrões identificados, ");
@@ -323,8 +331,14 @@ public class CorporateReportService {
         prompt.append("Crie um resumo executivo conciso (2-3 parágrafos) para um relatório corporativo de bem-estar.\n\n");
         prompt.append("Tipo: ").append(report.getReportType()).append("\n");
         prompt.append("Período: ").append(report.getPeriodStart()).append(" a ").append(report.getPeriodEnd()).append("\n");
-        prompt.append("Métricas principais: ").append(objectMapper.writeValueAsString(metrics)).append("\n");
-        prompt.append("Insights: ").append(objectMapper.writeValueAsString(insights)).append("\n\n");
+        try {
+            prompt.append("Métricas principais: ").append(objectMapper.writeValueAsString(metrics)).append("\n");
+            prompt.append("Insights: ").append(objectMapper.writeValueAsString(insights)).append("\n\n");
+        } catch (JsonProcessingException e) {
+            logger.warn("Erro ao serializar JSON, usando toString: {}", e.getMessage());
+            prompt.append("Métricas principais: ").append(metrics.toString()).append("\n");
+            prompt.append("Insights: ").append(insights.toString()).append("\n\n");
+        }
         prompt.append("O resumo deve ser claro, direto e focado em ações para gestores.");
         return prompt.toString();
     }
@@ -337,7 +351,8 @@ public class CorporateReportService {
         try {
             prompt.append("Dados: ").append(objectMapper.writeValueAsString(metrics)).append("\n");
             prompt.append("Insights: ").append(objectMapper.writeValueAsString(insights)).append("\n");
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
+            logger.warn("Erro ao serializar JSON, usando toString: {}", e.getMessage());
             prompt.append("Dados: ").append(metrics.toString()).append("\n");
             prompt.append("Insights: ").append(insights.toString()).append("\n");
         }
