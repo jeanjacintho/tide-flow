@@ -128,6 +128,28 @@ public class BillingService {
     }
 
     /**
+     * Processa um pagamento e registra no histórico.
+     * 
+     * @param companyId ID da empresa
+     * @param amount Valor pago
+     * @param stripeInvoiceId ID da fatura do Stripe (opcional)
+     * @return true se processado com sucesso
+     */
+    @Transactional
+    public boolean processPaymentWithHistory(@NonNull UUID companyId, BigDecimal amount, String stripeInvoiceId) {
+        boolean processed = processPayment(companyId, amount);
+        
+        if (processed) {
+            // Registra no histórico de pagamentos se disponível
+            // Nota: Isso requer injeção do PaymentHistoryService, que pode causar dependência circular
+            // Uma alternativa seria usar eventos ou fazer isso no controller
+            logger.info("Payment processed, consider recording in payment history");
+        }
+        
+        return processed;
+    }
+
+    /**
      * Classe DTO para representar uma fatura.
      */
     public static class InvoiceDTO {

@@ -528,6 +528,25 @@ class ApiService {
       method: 'GET',
     });
   }
+
+  // Payment history APIs
+  async getPaymentHistory(companyId: string, page: number = 0, size: number = 20): Promise<{
+    content: PaymentHistory[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  }> {
+    return this.request<{
+      content: PaymentHistory[];
+      totalElements: number;
+      totalPages: number;
+      number: number;
+      size: number;
+    }>(`/api/subscriptions/companies/${companyId}/payments?page=${page}&size=${size}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export interface UsageInfo {
@@ -535,6 +554,23 @@ export interface UsageInfo {
   maxUsers: number;
   atLimit: boolean;
   remainingSlots: number;
+}
+
+export interface PaymentHistory {
+  id: string;
+  companyId: string;
+  subscriptionId: string;
+  amount: number;
+  currency: string;
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  paymentDate: string;
+  billingPeriodStart?: string;
+  billingPeriodEnd?: string;
+  stripeInvoiceId?: string;
+  stripePaymentIntentId?: string;
+  invoiceNumber?: string;
+  description?: string;
+  createdAt: string;
 }
 
 export interface ConversationResponse {

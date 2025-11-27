@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, X, AlertCircle, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
 import { apiService } from '@/lib/api';
+import { PlanCard } from '@/components/subscription/plan-card';
+import { CurrentPlanCard } from '@/components/subscription/current-plan-card';
+import { UsageCard } from '@/components/subscription/usage-card';
+import { PaymentHistoryTable } from '@/components/subscription/payment-history-table';
 
 
 interface Subscription {
@@ -17,7 +19,7 @@ interface Subscription {
   planType: 'FREE' | 'ENTERPRISE';
   pricePerUser: number;
   totalUsers: number;
-  billingCycle: 'MONTHLY' | 'YEARLY';
+  billingCycle: string;
   nextBillingDate: string;
   status: string;
   monthlyBill: number;
@@ -65,7 +67,7 @@ export default function SubscriptionPage() {
         apiService.getUsageInfo(user.companyId),
       ]);
 
-      setSubscription(subData);
+      setSubscription(subData as Subscription);
       setUsageInfo(usageData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados da assinatura');
@@ -121,7 +123,7 @@ export default function SubscriptionPage() {
             
             // Se o plano foi atualizado para ENTERPRISE, para o polling
             if (subData.planType === 'ENTERPRISE') {
-              setSubscription(subData);
+              setSubscription(subData as Subscription);
               setLoading(false);
               return;
             }
@@ -132,7 +134,7 @@ export default function SubscriptionPage() {
               setTimeout(checkSubscription, 2000);
             } else {
               // Após todas as tentativas, atualiza mesmo assim
-              setSubscription(subData);
+              setSubscription(subData as Subscription);
               setLoading(false);
               setError('O pagamento foi processado, mas pode levar alguns minutos para o plano ser atualizado. Recarregue a página em alguns instantes.');
             }
@@ -168,9 +170,9 @@ export default function SubscriptionPage() {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Assinatura</h1>
+        <h1 className="text-3xl font-bold">Subscription</h1>
         <p className="text-muted-foreground mt-1">
-          Gerencie seu plano e visualize informações de uso
+          Manage your plan and view usage information
         </p>
       </div>
 
@@ -187,208 +189,80 @@ export default function SubscriptionPage() {
 
       {/* Current Subscription */}
       {subscription && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Plano Atual</CardTitle>
-            <CardDescription>
-              Informações sobre sua assinatura atual
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold">
-                  {subscription.planType === 'FREE' ? 'Plano Gratuito' : 'Plano Enterprise'}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Status: {subscription.status}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  €{subscription.monthlyBill.toFixed(2)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  por mês
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-              <div>
-                <div className="text-sm text-muted-foreground">Usuários Ativos</div>
-                <div className="text-lg font-semibold">{subscription.totalUsers}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Preço por Usuário</div>
-                <div className="text-lg font-semibold">
-                  €{subscription.pricePerUser.toFixed(2)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Ciclo de Cobrança</div>
-                <div className="text-lg font-semibold">
-                  {subscription.billingCycle === 'MONTHLY' ? 'Mensal' : 'Anual'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Próxima Cobrança</div>
-                <div className="text-lg font-semibold">
-                  {new Date(subscription.nextBillingDate).toLocaleDateString('pt-BR')}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <CurrentPlanCard
+          planName={
+            subscription.planType === 'FREE' ? 'Free Plan' : 'Enterprise Plan'
+          }
+          price={`€${subscription.monthlyBill.toFixed(2)}`}
+          priceUnit="/mo."
+          description={`Status: ${subscription.status}`}
+          status={subscription.status}
+          billingCycle={
+            subscription.billingCycle === 'MONTHLY' ? 'Monthly' : 'Yearly'
+          }
+          nextBillingDate={new Date(
+            subscription.nextBillingDate
+          ).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+          totalUsers={subscription.totalUsers}
+          pricePerUser={`€${subscription.pricePerUser.toFixed(2)}`}
+          monthlyBill={`€${subscription.monthlyBill.toFixed(2)}`}
+        />
       )}
 
       {/* Usage Info */}
       {usageInfo && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Uso Atual</CardTitle>
-            <CardDescription>
-              Informações sobre o uso da sua empresa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Usuários Ativos</span>
-                <span className="text-lg font-semibold">
-                  {usageInfo.activeUsers} / {usageInfo.maxUsers}
-                </span>
-              </div>
-              
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className={cn(
-                    'h-2 rounded-full transition-all',
-                    usageInfo.atLimit
-                      ? 'bg-red-500'
-                      : usageInfo.activeUsers / usageInfo.maxUsers > 0.8
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                  )}
-                  style={{
-                    width: `${Math.min(100, (usageInfo.activeUsers / usageInfo.maxUsers) * 100)}%`,
-                  }}
-                />
-              </div>
-
-              {usageInfo.atLimit && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                    Limite de usuários atingido. Faça upgrade para adicionar mais usuários.
-                  </div>
-                </div>
-              )}
-
-              {!usageInfo.atLimit && (
-                <div className="text-sm text-muted-foreground">
-                  {usageInfo.remainingSlots} vagas disponíveis
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <UsageCard
+          activeUsers={usageInfo.activeUsers}
+          maxUsers={usageInfo.maxUsers}
+          atLimit={usageInfo.atLimit}
+          remainingSlots={usageInfo.remainingSlots}
+        />
       )}
 
       {/* Plan Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className={cn(
-          subscription?.planType === 'FREE' && 'border-primary'
-        )}>
-          <CardHeader>
-            <CardTitle>Plano Gratuito</CardTitle>
-            <CardDescription>Ideal para pequenas equipes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-3xl font-bold">Grátis</div>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Até 7 usuários</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Dashboard básico</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Análise emocional</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <X className="w-5 h-5 text-gray-400" />
-                <span className="text-muted-foreground">Integração Slack/Teams</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <X className="w-5 h-5 text-gray-400" />
-                <span className="text-muted-foreground">Suporte prioritário</span>
-              </li>
-            </ul>
-            {subscription?.planType === 'FREE' && (
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium text-primary">Plano Atual</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <PlanCard
+          title="Free"
+          price="Free"
+          priceUnit=""
+          description="Ideal for small teams"
+          features={[
+            { text: 'Up to 7 users', included: true },
+            { text: 'Basic dashboard', included: true },
+            { text: 'Emotional analysis', included: true },
+            { text: 'Slack/Teams integration', included: false },
+            { text: 'Priority support', included: false },
+          ]}
+          isCurrent={subscription?.planType === 'FREE'}
+        />
 
-        <Card className={cn(
-          subscription?.planType === 'ENTERPRISE' && 'border-primary'
-        )}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Plano Enterprise
-            </CardTitle>
-            <CardDescription>Para empresas que precisam de mais</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="text-3xl font-bold">R$ 49.90</div>
-              <div className="text-sm text-muted-foreground">por usuário/mês</div>
-            </div>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Usuários ilimitados</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Dashboard completo</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Análise emocional avançada</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Integração Slack/Teams</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-600" />
-                <span>Suporte prioritário</span>
-              </li>
-            </ul>
-            {subscription?.planType === 'ENTERPRISE' ? (
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium text-primary">Plano Atual</div>
-              </div>
-            ) : (
-              <Button
-                onClick={handleUpgrade}
-                disabled={upgrading}
-                className="w-full mt-4"
-              >
-                {upgrading ? 'Processando...' : 'Upgrade para Enterprise'}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <PlanCard
+          title="Enterprise"
+          price="€49.90"
+          priceUnit="/user/mo."
+          description="For companies that need more"
+          features={[
+            { text: 'Unlimited users', included: true },
+            { text: 'Complete dashboard', included: true },
+            { text: 'Advanced emotional analysis', included: true },
+            { text: 'Slack/Teams integration', included: true },
+            { text: 'Priority support', included: true },
+          ]}
+          isCurrent={subscription?.planType === 'ENTERPRISE'}
+          onUpgrade={subscription?.planType !== 'ENTERPRISE' ? handleUpgrade : undefined}
+          upgradeLabel="Upgrade to Enterprise"
+          upgrading={upgrading}
+        />
       </div>
+
+      {/* Payment History */}
+      {user?.companyId && (
+        <PaymentHistoryTable companyId={user.companyId} />
+      )}
     </div>
   );
 }

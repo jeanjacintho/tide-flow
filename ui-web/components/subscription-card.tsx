@@ -57,7 +57,7 @@ export function SubscriptionCard() {
   }
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4">
+    <Card className="rounded-lg p-4 border-border/50 bg-card">
       <div className="space-y-2">
         <p className="text-sm font-semibold leading-none">
           Upgrade to Premium Plan

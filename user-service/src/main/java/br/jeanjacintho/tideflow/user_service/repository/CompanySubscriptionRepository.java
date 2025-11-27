@@ -20,6 +20,8 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
     
     Optional<CompanySubscription> findByStripeCustomerId(String stripeCustomerId);
     
+    Optional<CompanySubscription> findByStripeSubscriptionId(String stripeSubscriptionId);
+    
     List<CompanySubscription> findByStatus(SubscriptionStatus status);
     
     @Query("SELECT s FROM CompanySubscription s WHERE s.nextBillingDate <= :date AND s.status = :status")
