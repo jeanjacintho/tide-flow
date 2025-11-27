@@ -19,7 +19,6 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/nav-user";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { SubscriptionCard } from "@/components/subscription-card";
 import {
   LayoutDashboard,
@@ -211,7 +210,6 @@ export default function AppLayout({
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background p-2 shrink-0">
             <SidebarTrigger />
-            <ThemeToggle />
           </div>
           <main className="flex-1 overflow-y-auto min-h-0">
             {children}
