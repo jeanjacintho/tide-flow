@@ -9,20 +9,19 @@ import br.jeanjacintho.tideflow.user_service.dto.response.UsageInfoResponseDTO;
 import br.jeanjacintho.tideflow.user_service.model.Company;
 import br.jeanjacintho.tideflow.user_service.model.CompanySubscription;
 import br.jeanjacintho.tideflow.user_service.model.SubscriptionPlan;
+import br.jeanjacintho.tideflow.user_service.model.BillingCycle;
+import br.jeanjacintho.tideflow.user_service.model.SubscriptionStatus;
+import br.jeanjacintho.tideflow.user_service.repository.CompanyRepository;
+import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
+import java.time.LocalDate;
 import br.jeanjacintho.tideflow.user_service.service.BillingService;
 import br.jeanjacintho.tideflow.user_service.service.PaymentHistoryService;
 import br.jeanjacintho.tideflow.user_service.service.SubscriptionService;
-import br.jeanjacintho.tideflow.user_service.service.StripeService;
+import br.jeanjacintho.tideflow.user_service.service.StripeIntegrationService;
 import br.jeanjacintho.tideflow.user_service.service.UsageTrackingService;
 import br.jeanjacintho.tideflow.user_service.model.PaymentStatus;
 import br.jeanjacintho.tideflow.user_service.repository.CompanySubscriptionRepository;
 import br.jeanjacintho.tideflow.user_service.dto.response.PaymentHistoryResponseDTO;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Event;
-import com.stripe.model.Subscription;
-import com.stripe.net.Webhook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -54,28 +53,33 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
     private final BillingService billingService;
     private final UsageTrackingService usageTrackingService;
-    private final StripeService stripeService;
+    private final StripeIntegrationService stripeIntegrationService;
     private final PaymentHistoryService paymentHistoryService;
     private final CompanySubscriptionRepository subscriptionRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+    private final CompanyRepository companyRepository;
 
     public SubscriptionController(
             SubscriptionService subscriptionService,
             BillingService billingService,
             UsageTrackingService usageTrackingService,
-            StripeService stripeService,
+            StripeIntegrationService stripeIntegrationService,
             PaymentHistoryService paymentHistoryService,
             CompanySubscriptionRepository subscriptionRepository,
-            PaymentHistoryRepository paymentHistoryRepository) {
+            PaymentHistoryRepository paymentHistoryRepository,
+            CompanyRepository companyRepository) {
         this.subscriptionService = subscriptionService;
         this.billingService = billingService;
         this.usageTrackingService = usageTrackingService;
-        this.stripeService = stripeService;
+        this.stripeIntegrationService = stripeIntegrationService;
         this.paymentHistoryService = paymentHistoryService;
         this.subscriptionRepository = subscriptionRepository;
         this.paymentHistoryRepository = paymentHistoryRepository;
+        this.companyRepository = companyRepository;
     }
 
+    // ... (methods createSubscription, getSubscription, upgradeSubscription, getMonthlyBill, generateInvoice, processPayment, getUsageInfo, canAddUsers, createCheckoutSession remain unchanged)
+    
     /**
      * POST /api/subscriptions/companies/{companyId}
      * Cria uma assinatura para uma empresa.
@@ -100,19 +104,54 @@ public class SubscriptionController {
     /**
      * GET /api/subscriptions/companies/{companyId}
      * Obtém a assinatura de uma empresa.
+     * Cria automaticamente uma assinatura FREE se não existir.
      */
     @GetMapping("/companies/{companyId}")
     public ResponseEntity<SubscriptionResponseDTO> getSubscription(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}", companyId);
         
         try {
-            CompanySubscription subscription = subscriptionService.getSubscription(companyId);
+            // Busca assinatura existente ou cria uma nova se não existir
+            CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
+                    .orElse(null);
+            
+            if (subscription == null) {
+                logger.info("Assinatura não encontrada para companyId: {}. Criando assinatura FREE...", companyId);
+                
+                // Busca a empresa
+                Company company = companyRepository.findById(companyId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
+                
+                // Cria assinatura FREE diretamente
+                int currentUserCount = usageTrackingService.getActiveUserCount(companyId);
+                subscription = new CompanySubscription(
+                    company,
+                    SubscriptionPlan.FREE,
+                    BigDecimal.ZERO,
+                    currentUserCount,
+                    BillingCycle.MONTHLY,
+                    LocalDate.now().plusMonths(1)
+                );
+                subscription.setStatus(SubscriptionStatus.TRIAL);
+                subscription = subscriptionRepository.save(subscription);
+                
+                // Atualiza a empresa
+                company.setSubscriptionPlan(SubscriptionPlan.FREE);
+                company.setMaxEmployees(7);
+                companyRepository.save(company);
+                
+                logger.info("Assinatura FREE criada automaticamente para companyId: {}", companyId);
+            }
+            
             BigDecimal monthlyBill = subscriptionService.calculateMonthlyBill(companyId);
             SubscriptionResponseDTO response = SubscriptionResponseDTO.fromEntity(subscription, monthlyBill);
             return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            logger.error("Empresa não encontrada: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Erro ao obter assinatura: {}", e.getMessage(), e);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -243,50 +282,37 @@ public class SubscriptionController {
     public ResponseEntity<CheckoutSessionResponseDTO> createCheckoutSession(
             @Valid @RequestBody CreateCheckoutSessionRequestDTO request) {
         logger.info("POST /api/subscriptions/checkout-session - companyId: {}", request.companyId());
-        
         try {
-            CompanySubscription subscription = subscriptionService.getSubscription(request.companyId());
-            Company company = subscription.getCompany();
-            
-            // Obtém ou cria customer no Stripe
-            String customerId = subscription.getStripeCustomerId();
-            if (customerId == null || customerId.isEmpty()) {
-                customerId = stripeService.getOrCreateCustomer(
-                    request.companyId(),
-                    company.getName(),
-                    company.getBillingEmail() != null ? company.getBillingEmail() : "billing@" + company.getDomain()
-                );
-                subscription.setStripeCustomerId(customerId);
-                subscriptionService.updateSubscription(subscription);
-            }
-            
-            // Obtém ou cria price no Stripe
-            String priceId = stripeService.getOrCreateEnterprisePrice();
-            
-            // URLs de sucesso e cancelamento
-            String successUrl = request.successUrl() != null 
-                ? request.successUrl() 
-                : stripeService.frontendUrl + "/subscription?success=true";
-            String cancelUrl = request.cancelUrl() != null 
-                ? request.cancelUrl() 
-                : stripeService.frontendUrl + "/subscription?canceled=true";
-            
-            // Cria sessão de checkout
-            String checkoutUrl = stripeService.createCheckoutSession(
-                request.companyId(),
-                customerId,
-                priceId,
-                successUrl,
-                cancelUrl
-            );
-            
-            CheckoutSessionResponseDTO response = new CheckoutSessionResponseDTO(checkoutUrl, null);
-            return ResponseEntity.ok(response);
-        } catch (StripeException e) {
+            CheckoutSessionResponseDTO responseDTO = stripeIntegrationService.startCheckoutSession(request);
+            return ResponseEntity.ok(responseDTO);
+        } catch (ResourceNotFoundException e) {
+            logger.error("Recurso não encontrado ao criar checkout session: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Argumento inválido ao criar checkout session: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (RuntimeException e) {
             logger.error("Erro ao criar checkout session: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (Exception e) {
-            logger.error("Erro ao criar checkout session: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new CheckoutSessionResponseDTO(null, null));
+        }
+    }
+
+    /**
+     * DELETE /api/subscriptions/companies/{companyId}
+     * Cancela a assinatura do Stripe e volta para o plano FREE.
+     */
+    @DeleteMapping("/companies/{companyId}")
+    public ResponseEntity<Void> cancelCompanySubscription(@PathVariable @NonNull UUID companyId) {
+        logger.info("DELETE /api/subscriptions/companies/{} - cancel subscription", companyId);
+        try {
+            stripeIntegrationService.cancelSubscription(companyId);
+            return ResponseEntity.noContent().build();
+        } catch (ResourceNotFoundException e) {
+            logger.error("Assinatura não encontrada para cancelamento: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e) {
+            logger.error("Erro ao cancelar assinatura: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -320,7 +346,7 @@ public class SubscriptionController {
     @GetMapping("/companies/{companyId}/payments/debug")
     public ResponseEntity<Map<String, Object>> debugPaymentHistory(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/payments/debug", companyId);
-        
+
         Map<String, Object> debugInfo = new HashMap<>();
         try {
             // Verifica subscription
@@ -336,11 +362,11 @@ public class SubscriptionController {
             } else {
                 debugInfo.put("subscription", "NOT FOUND");
             }
-            
+
             // Conta pagamentos
             Long paymentCount = paymentHistoryRepository.count();
             debugInfo.put("totalPaymentsInDatabase", paymentCount);
-            
+
             // Lista pagamentos da empresa
             List<PaymentHistory> companyPayments = paymentHistoryRepository.findByCompanyIdOrderByPaymentDateDesc(companyId);
             debugInfo.put("companyPayments", companyPayments.stream()
@@ -352,12 +378,63 @@ public class SubscriptionController {
                     "paymentDate", p.getPaymentDate().toString()
                 ))
                 .collect(java.util.stream.Collectors.toList()));
-            
+
             return ResponseEntity.ok(debugInfo);
         } catch (Exception e) {
             logger.error("Erro no debug: {}", e.getMessage(), e);
             debugInfo.put("error", e.getMessage());
             return ResponseEntity.ok(debugInfo);
+        }
+    }
+
+    /**
+     * POST /api/subscriptions/companies/{companyId}/sync-stripe
+     * Força sincronização de uma assinatura com dados do Stripe
+     */
+    @PostMapping("/companies/{companyId}/sync-stripe")
+    public ResponseEntity<Map<String, Object>> forceStripeSync(@PathVariable @NonNull UUID companyId) {
+        logger.info("POST /api/subscriptions/companies/{}/sync-stripe - Force Stripe sync", companyId);
+
+        try {
+            Map<String, Object> result = stripeIntegrationService.forceSyncWithStripe(companyId);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            logger.error("Assinatura não encontrada ao forçar sync: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error forcing Stripe sync for company {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/subscriptions/test-subscription-lookup
+     * Testa a estratégia robusta de busca de assinaturas (para debugging)
+     */
+    @PostMapping("/test-subscription-lookup")
+    public ResponseEntity<Map<String, Object>> testSubscriptionLookup(
+            @RequestParam String subscriptionId,
+            @RequestParam(required = false) String customerId,
+            @RequestParam(required = false) String invoiceId) {
+
+        logger.info("POST /api/subscriptions/test-subscription-lookup - Testing lookup strategies");
+        Map<String, Object> result = stripeIntegrationService.testSubscriptionLookup(subscriptionId, customerId, invoiceId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * GET /api/subscriptions/stripe-metadata-check
+     * Verifica se os metadados estão sendo definidos corretamente no Stripe
+     */
+    @GetMapping("/stripe-metadata-check")
+    public ResponseEntity<Map<String, Object>> checkStripeMetadata(@RequestParam String subscriptionId) {
+        logger.info("GET /api/subscriptions/stripe-metadata-check - Checking metadata for: {}", subscriptionId);
+        try {
+            Map<String, Object> result = stripeIntegrationService.checkStripeMetadata(subscriptionId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error checking Stripe metadata: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -370,414 +447,16 @@ public class SubscriptionController {
             @RequestBody String payload,
             @RequestHeader(value = "Stripe-Signature", required = false) String sigHeader) {
         logger.info("POST /api/subscriptions/webhook received");
-        
         try {
-            String webhookSecret = stripeService.getWebhookSecret();
-            if (webhookSecret == null || webhookSecret.isEmpty()) {
-                logger.warn("Webhook secret not configured - webhook processing disabled");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Webhook secret not configured");
-            }
-            
-            if (sigHeader == null || sigHeader.isEmpty()) {
-                logger.warn("Stripe-Signature header is missing");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing Stripe-Signature header");
-            }
-            
-            Event event;
-            try {
-                event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-            } catch (com.stripe.exception.SignatureVerificationException e) {
-                logger.error("Webhook signature verification failed: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid signature");
-            }
-            
-            logger.info("Webhook event verified - Type: {}, ID: {}", event.getType(), event.getId());
-            
-            // Processa eventos relevantes
-            switch (event.getType()) {
-                case "checkout.session.completed":
-                    handleCheckoutSessionCompleted(event);
-                    break;
-                case "customer.subscription.created":
-                    handleSubscriptionUpdated(event);
-                    break;
-                case "customer.subscription.updated":
-                    handleSubscriptionUpdated(event);
-                    break;
-                case "customer.subscription.deleted":
-                    handleSubscriptionDeleted(event);
-                    break;
-                case "invoice.payment_succeeded":
-                    handleInvoicePaymentSucceeded(event);
-                    break;
-                case "invoice.payment_failed":
-                    handleInvoicePaymentFailed(event);
-                    break;
-                default:
-                    logger.debug("Unhandled event type: {}", event.getType());
-            }
-            
+            stripeIntegrationService.processWebhook(payload, sigHeader);
             return ResponseEntity.ok("Success");
+        } catch (IllegalArgumentException e) {
+            logger.error("Erro ao validar webhook: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Erro ao processar webhook: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error processing webhook: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing webhook: " + e.getMessage());
         }
     }
 
-    private void handleCheckoutSessionCompleted(Event event) {
-        logger.info("Starting processing of checkout.session.completed - Event ID: {}", event.getId());
-        try {
-            // Acessa os dados do evento através do JSON string e faz parse manualmente
-            String eventJson = event.toJson();
-            Gson gson = new Gson();
-            JsonObject eventObject = gson.fromJson(eventJson, JsonObject.class);
-            JsonObject dataObject = eventObject.getAsJsonObject("data").getAsJsonObject("object");
-            
-            if (dataObject == null) {
-                logger.error("Event data object is null. Event ID: {}", event.getId());
-                return;
-            }
-            
-            // Extrai os dados necessários diretamente do JSON
-            String sessionId = dataObject.has("id") ? dataObject.get("id").getAsString() : null;
-            String customerId = dataObject.has("customer") && !dataObject.get("customer").isJsonNull() 
-                    ? dataObject.get("customer").getAsString() : null;
-            String subscriptionId = dataObject.has("subscription") && !dataObject.get("subscription").isJsonNull()
-                    ? dataObject.get("subscription").getAsString() : null;
-            
-            logger.info("Extracted from event - Session: {}, Customer: {}, Subscription: {}", 
-                    sessionId, customerId, subscriptionId);
-            
-            // Extrai metadata
-            JsonObject metadata = null;
-            if (dataObject.has("metadata") && !dataObject.get("metadata").isJsonNull()) {
-                metadata = dataObject.getAsJsonObject("metadata");
-            }
-            
-            if (metadata == null || !metadata.has("company_id")) {
-                logger.error("Company ID not found in session metadata. Session ID: {}", sessionId);
-                logger.error("Event data: {}", dataObject.toString());
-                return;
-            }
-            
-            String companyIdStr = metadata.get("company_id").getAsString();
-            
-            if (companyIdStr == null || companyIdStr.isEmpty()) {
-                logger.error("Company ID is empty. Session ID: {}", sessionId);
-                return;
-            }
-            
-            UUID companyId;
-            try {
-                companyId = UUID.fromString(companyIdStr);
-            } catch (IllegalArgumentException e) {
-                logger.error("Invalid UUID format for company_id: {}. Error: {}", companyIdStr, e.getMessage());
-                return;
-            }
-            
-            logger.info("Activation data - Company: {}, Customer: {}, Subscription: {}", 
-                    companyId, customerId, subscriptionId);
-            
-            if (subscriptionId == null || subscriptionId.isEmpty()) {
-                logger.error("Subscription ID is null or empty");
-                return;
-            }
-            
-            if (customerId == null || customerId.isEmpty()) {
-                logger.error("Customer ID is null or empty");
-                return;
-            }
-            
-            try {
-                // Busca a subscription completa do Stripe
-                Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
-                logger.info("Retrieved Stripe subscription: {} - Status: {}", 
-                        stripeSubscription.getId(), stripeSubscription.getStatus());
-                
-                subscriptionService.activateStripeSubscription(companyId, customerId, stripeSubscription);
-                logger.info("✅ Successfully activated subscription for company: {}", companyId);
-                
-                // Tenta registrar o pagamento inicial se houver invoice
-                try {
-                    recordInitialPaymentFromCheckout(companyId, customerId, subscriptionId, stripeSubscription);
-                } catch (Exception e) {
-                    logger.warn("Could not record initial payment from checkout (will be recorded via invoice webhook): {}", e.getMessage());
-                }
-            } catch (StripeException e) {
-                logger.error("Stripe API error: {}", e.getMessage(), e);
-                // Fallback com IDs
-                logger.info("Trying fallback activation with IDs only");
-                subscriptionService.activateStripeSubscription(companyId, customerId, subscriptionId);
-            } catch (Exception e) {
-                logger.error("Failed to activate subscription: {}", e.getMessage(), e);
-                throw e;
-            }
-        } catch (Exception e) {
-            logger.error("❌ Unexpected error in handleCheckoutSessionCompleted: {}", e.getMessage(), e);
-        }
-    }
-
-    private void handleSubscriptionUpdated(Event event) {
-        logger.info("Processing subscription updated event - Event ID: {}", event.getId());
-        try {
-            // Acessa os dados através do JSON string
-            String eventJson = event.toJson();
-            Gson gson = new Gson();
-            JsonObject eventObject = gson.fromJson(eventJson, JsonObject.class);
-            JsonObject dataObject = eventObject.getAsJsonObject("data").getAsJsonObject("object");
-            
-            if (dataObject == null) {
-                logger.error("Event data object is null");
-                return;
-            }
-            
-            String subscriptionId = dataObject.has("id") ? dataObject.get("id").getAsString() : null;
-            String customerId = dataObject.has("customer") && !dataObject.get("customer").isJsonNull()
-                    ? dataObject.get("customer").getAsString() : null;
-            String status = dataObject.has("status") ? dataObject.get("status").getAsString() : null;
-            
-            logger.info("Subscription data - ID: {}, Customer: {}, Status: {}", subscriptionId, customerId, status);
-            
-            if (customerId == null || customerId.isEmpty()) {
-                logger.warn("Customer ID is null or empty, cannot sync subscription");
-                return;
-            }
-            
-            if (subscriptionId == null || subscriptionId.isEmpty()) {
-                logger.warn("Subscription ID is null or empty");
-                return;
-            }
-            
-            // Busca a subscription completa do Stripe para ter todos os dados
-            Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
-            subscriptionService.syncSubscriptionFromStripe(customerId, stripeSubscription);
-            logger.info("✅ Subscription synced successfully for customer: {}", customerId);
-            
-        } catch (Exception e) {
-            logger.error("❌ Error processing subscription updated: {}", e.getMessage(), e);
-        }
-    }
-
-    private void handleSubscriptionDeleted(Event event) {
-        logger.info("Processing subscription deleted event - Event ID: {}", event.getId());
-        try {
-            // Acessa os dados através do JSON string
-            String eventJson = event.toJson();
-            Gson gson = new Gson();
-            JsonObject eventObject = gson.fromJson(eventJson, JsonObject.class);
-            JsonObject dataObject = eventObject.getAsJsonObject("data").getAsJsonObject("object");
-            
-            if (dataObject == null) {
-                logger.error("Event data object is null");
-                return;
-            }
-            
-            String subscriptionId = dataObject.has("id") ? dataObject.get("id").getAsString() : null;
-            String customerId = dataObject.has("customer") && !dataObject.get("customer").isJsonNull()
-                    ? dataObject.get("customer").getAsString() : null;
-            
-            logger.info("Subscription deleted - ID: {}, Customer: {}", subscriptionId, customerId);
-            
-            if (customerId == null || customerId.isEmpty()) {
-                logger.warn("Customer ID is null or empty, cannot cancel subscription");
-                return;
-            }
-            
-            subscriptionService.cancelStripeSubscription(customerId);
-            logger.info("✅ Subscription cancelled successfully for customer: {}", customerId);
-            
-        } catch (Exception e) {
-            logger.error("❌ Error processing subscription deleted: {}", e.getMessage(), e);
-        }
-    }
-
-    private void recordInitialPaymentFromCheckout(UUID companyId, String customerId, 
-                                                  String subscriptionId, Subscription stripeSubscription) {
-        try {
-            logger.info("Attempting to record initial payment from checkout - Company: {}, Subscription: {}", 
-                    companyId, subscriptionId);
-            
-            // Busca a última invoice da subscription
-            String latestInvoiceId = stripeSubscription.getLatestInvoice();
-            if (latestInvoiceId == null || latestInvoiceId.isEmpty()) {
-                logger.warn("No latest invoice found in subscription {}", subscriptionId);
-                return;
-            }
-            
-            logger.info("Retrieving invoice {} from Stripe", latestInvoiceId);
-            com.stripe.model.Invoice invoice = com.stripe.model.Invoice.retrieve(latestInvoiceId);
-            
-            logger.info("Invoice status: {}, Amount paid: {}", invoice.getStatus(), invoice.getAmountPaid());
-            
-            if ("paid".equals(invoice.getStatus()) && invoice.getAmountPaid() != null && invoice.getAmountPaid() > 0) {
-                BigDecimal amountPaid = BigDecimal.valueOf(invoice.getAmountPaid())
-                        .divide(BigDecimal.valueOf(100));
-                
-                Long periodStart = invoice.getPeriodStart();
-                Long periodEnd = invoice.getPeriodEnd();
-                
-                String paymentIntentId = invoice.getPaymentIntent() != null ? invoice.getPaymentIntent().toString() : null;
-                String chargeId = invoice.getCharge() != null ? invoice.getCharge().toString() : null;
-                
-                logger.info("Recording payment - Amount: {}, Invoice: {}, PaymentIntent: {}, Charge: {}", 
-                        amountPaid, invoice.getId(), paymentIntentId, chargeId);
-                
-                paymentHistoryService.recordPayment(
-                        companyId,
-                        amountPaid,
-                        PaymentStatus.SUCCEEDED,
-                        invoice.getId(),
-                        paymentIntentId,
-                        chargeId,
-                        customerId,
-                        subscriptionId,
-                        null,
-                        periodStart != null ? java.time.LocalDateTime.ofEpochSecond(periodStart, 0, java.time.ZoneOffset.UTC) : null,
-                        periodEnd != null ? java.time.LocalDateTime.ofEpochSecond(periodEnd, 0, java.time.ZoneOffset.UTC) : null,
-                        invoice.getDescription(),
-                        invoice.getNumber()
-                );
-                logger.info("✅ Initial payment recorded successfully from checkout for company: {}", companyId);
-            } else {
-                logger.info("Invoice not paid yet or amount is zero. Status: {}, Amount: {}", 
-                        invoice.getStatus(), invoice.getAmountPaid());
-            }
-        } catch (Exception e) {
-            logger.error("❌ Could not record initial payment from checkout: {}", e.getMessage(), e);
-            e.printStackTrace();
-        }
-    }
-
-    private void handleInvoicePaymentSucceeded(Event event) {
-        logger.info("Processing invoice.payment_succeeded event - Event ID: {}", event.getId());
-        try {
-            // Acessa os dados através do JSON string
-            String eventJson = event.toJson();
-            Gson gson = new Gson();
-            JsonObject eventObject = gson.fromJson(eventJson, JsonObject.class);
-            JsonObject invoice = eventObject.getAsJsonObject("data").getAsJsonObject("object");
-            
-            if (invoice == null) {
-                logger.error("Invoice object is null");
-                return;
-            }
-            
-            String invoiceId = invoice.has("id") ? invoice.get("id").getAsString() : null;
-            String subscriptionId = invoice.has("subscription") && !invoice.get("subscription").isJsonNull()
-                    ? invoice.get("subscription").getAsString() : null;
-            String customerId = invoice.has("customer") && !invoice.get("customer").isJsonNull()
-                    ? invoice.get("customer").getAsString() : null;
-            String paymentIntentId = invoice.has("payment_intent") && !invoice.get("payment_intent").isJsonNull()
-                    ? invoice.get("payment_intent").getAsString() : null;
-            String chargeId = invoice.has("charge") && !invoice.get("charge").isJsonNull()
-                    ? invoice.get("charge").getAsString() : null;
-            
-            // Extrai valores monetários
-            BigDecimal amountPaid = null;
-            if (invoice.has("amount_paid")) {
-                Long amountPaidLong = invoice.get("amount_paid").getAsLong();
-                amountPaid = BigDecimal.valueOf(amountPaidLong).divide(BigDecimal.valueOf(100)); // Stripe usa centavos
-            }
-            
-            String invoiceNumber = invoice.has("number") ? invoice.get("number").getAsString() : null;
-            String description = invoice.has("description") ? invoice.get("description").getAsString() : null;
-            
-            // Extrai período de cobrança
-            Long periodStart = invoice.has("period_start") ? invoice.get("period_start").getAsLong() : null;
-            Long periodEnd = invoice.has("period_end") ? invoice.get("period_end").getAsLong() : null;
-            
-            logger.info("Invoice payment succeeded - Invoice: {}, Subscription: {}, Customer: {}, Amount: {}", 
-                    invoiceId, subscriptionId, customerId, amountPaid);
-            
-            if (subscriptionId != null && customerId != null) {
-                // Busca a assinatura para obter o companyId - tenta múltiplas estratégias
-                CompanySubscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
-                        .orElse(null);
-                
-                if (subscription == null) {
-                    logger.warn("Subscription not found for customerId: {}. Trying to find by subscriptionId: {}", 
-                            customerId, subscriptionId);
-                    // Tenta buscar pela subscriptionId diretamente
-                    subscription = subscriptionRepository.findByStripeSubscriptionId(subscriptionId)
-                            .orElse(null);
-                }
-                
-                if (subscription == null) {
-                    logger.warn("Subscription not found by subscriptionId either. Trying Stripe API lookup...");
-                    // Tenta buscar pela subscriptionId no Stripe e depois pelo customerId retornado
-                    try {
-                        Subscription stripeSub = stripeService.getSubscription(subscriptionId);
-                        String stripeCustomerId = stripeSub.getCustomer();
-                        subscription = subscriptionRepository.findByStripeCustomerId(stripeCustomerId)
-                                .orElse(null);
-                        if (subscription != null) {
-                            logger.info("Found subscription via Stripe API lookup");
-                        } else {
-                            logger.error("Subscription still not found after Stripe API lookup. CustomerId from Stripe: {}", stripeCustomerId);
-                        }
-                    } catch (Exception e) {
-                        logger.error("Could not retrieve subscription from Stripe: {}", e.getMessage(), e);
-                    }
-                }
-                
-                if (subscription != null && amountPaid != null) {
-                    // Salva histórico de pagamento
-                    try {
-                        UUID companyId = subscription.getCompany().getId();
-                        logger.info("Recording payment for company: {}, invoice: {}, amount: {}", 
-                                companyId, invoiceId, amountPaid);
-                        
-                        paymentHistoryService.recordPayment(
-                                companyId,
-                                amountPaid,
-                                PaymentStatus.SUCCEEDED,
-                                invoiceId,
-                                paymentIntentId,
-                                chargeId,
-                                customerId,
-                                subscriptionId,
-                                null, // paymentDate será definido automaticamente
-                                periodStart != null ? java.time.LocalDateTime.ofEpochSecond(periodStart, 0, java.time.ZoneOffset.UTC) : null,
-                                periodEnd != null ? java.time.LocalDateTime.ofEpochSecond(periodEnd, 0, java.time.ZoneOffset.UTC) : null,
-                                description,
-                                invoiceNumber
-                        );
-                        logger.info("✅ Payment history recorded successfully for invoice {}", invoiceId);
-                    } catch (Exception e) {
-                        logger.error("❌ Error recording payment history: {}", e.getMessage(), e);
-                        e.printStackTrace();
-                    }
-                } else {
-                    if (subscription == null) {
-                        logger.error("❌ Cannot record payment: Subscription not found for customerId: {} or subscriptionId: {}", 
-                                customerId, subscriptionId);
-                    }
-                    if (amountPaid == null) {
-                        logger.error("❌ Cannot record payment: amountPaid is null");
-                    }
-                }
-                
-                // Sincroniza o estado atual da assinatura
-                if (subscription != null) {
-                    try {
-                        Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
-                        subscriptionService.syncSubscriptionFromStripe(customerId, stripeSubscription);
-                        logger.info("✅ Subscription synced via invoice payment");
-                    } catch (Exception e) {
-                        logger.error("Error syncing subscription: {}", e.getMessage(), e);
-                    }
-                }
-            } else {
-                logger.warn("Missing subscription or customer ID in invoice. subscriptionId: {}, customerId: {}", 
-                        subscriptionId, customerId);
-            }
-        } catch (Exception e) {
-            logger.error("❌ Error processing invoice payment: {}", e.getMessage(), e);
-        }
-    }
-
-    private void handleInvoicePaymentFailed(Event event) {
-        logger.info("Processing invoice.payment_failed event");
-        // Atualiza status da subscription para PAST_DUE ou CANCELED
-    }
 }

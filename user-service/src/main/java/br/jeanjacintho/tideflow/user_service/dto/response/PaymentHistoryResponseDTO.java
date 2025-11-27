@@ -19,6 +19,9 @@ public record PaymentHistoryResponseDTO(
     LocalDateTime billingPeriodEnd,
     String stripeInvoiceId,
     String stripePaymentIntentId,
+    String stripeChargeId,
+    String stripeCustomerId,
+    String stripeSubscriptionId,
     String invoiceNumber,
     String description,
     LocalDateTime createdAt
@@ -36,6 +39,9 @@ public record PaymentHistoryResponseDTO(
             payment.getBillingPeriodEnd(),
             payment.getStripeInvoiceId(),
             payment.getStripePaymentIntentId(),
+            payment.getStripeChargeId(),
+            payment.getStripeCustomerId(),
+            payment.getStripeSubscriptionId(),
             payment.getInvoiceNumber(),
             payment.getDescription(),
             payment.getCreatedAt()

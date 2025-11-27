@@ -193,23 +193,28 @@ export default function SubscriptionPage() {
           planName={
             subscription.planType === 'FREE' ? 'Free Plan' : 'Enterprise Plan'
           }
-          price={`€${subscription.monthlyBill.toFixed(2)}`}
+          price={`R$ ${subscription.monthlyBill.toFixed(2).replace('.', ',')}`}
           priceUnit="/mo."
           description={`Status: ${subscription.status}`}
           status={subscription.status}
           billingCycle={
             subscription.billingCycle === 'MONTHLY' ? 'Monthly' : 'Yearly'
           }
-          nextBillingDate={new Date(
-            subscription.nextBillingDate
-          ).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })}
+          nextBillingDate={
+            subscription.planType === 'FREE' 
+              ? undefined 
+              : subscription.nextBillingDate
+                ? new Date(subscription.nextBillingDate).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : undefined
+          }
           totalUsers={subscription.totalUsers}
-          pricePerUser={`€${subscription.pricePerUser.toFixed(2)}`}
-          monthlyBill={`€${subscription.monthlyBill.toFixed(2)}`}
+          pricePerUser={`R$ ${subscription.pricePerUser.toFixed(2).replace('.', ',')}`}
+          monthlyBill={`R$ ${subscription.monthlyBill.toFixed(2).replace('.', ',')}`}
+          isFreePlan={subscription.planType === 'FREE'}
         />
       )}
 
@@ -242,7 +247,7 @@ export default function SubscriptionPage() {
 
         <PlanCard
           title="Enterprise"
-          price="€49.90"
+          price="R$ 199,90"
           priceUnit="/user/mo."
           description="For companies that need more"
           features={[

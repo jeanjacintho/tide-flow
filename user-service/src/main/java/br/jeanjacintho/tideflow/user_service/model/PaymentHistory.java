@@ -29,7 +29,7 @@ public class PaymentHistory {
     private BigDecimal amount;
 
     @Column(name = "currency", nullable = false, length = 3)
-    private String currency = "EUR";
+    private String currency = "BRL";
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -245,3 +245,5 @@ public class PaymentHistory {
         this.updatedAt = updatedAt;
     }
 }
+
+

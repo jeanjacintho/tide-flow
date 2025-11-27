@@ -12,6 +12,7 @@ import br.jeanjacintho.tideflow.user_service.repository.CompanySubscriptionRepos
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Service
@@ -27,7 +30,6 @@ public class SubscriptionService {
     private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
     
     private static final BigDecimal FREE_PLAN_PRICE = BigDecimal.ZERO;
-    private static final BigDecimal ENTERPRISE_PLAN_PRICE_PER_USER = new BigDecimal("6.00"); // €6 por usuário/mês
     private static final int FREE_PLAN_MAX_EMPLOYEES = 7;
     private static final int ENTERPRISE_PLAN_MAX_EMPLOYEES = Integer.MAX_VALUE;
 
@@ -35,6 +37,9 @@ public class SubscriptionService {
     private final CompanyRepository companyRepository;
     private final CompanyAuthorizationService authorizationService;
     private final UsageTrackingService usageTrackingService;
+
+    @Value("${tideflow.subscription.price-brl:19990}")
+    private Long subscriptionPriceCents;
 
     @Autowired
     public SubscriptionService(
@@ -46,6 +51,13 @@ public class SubscriptionService {
         this.companyRepository = companyRepository;
         this.authorizationService = authorizationService;
         this.usageTrackingService = usageTrackingService;
+    }
+
+    private BigDecimal getEnterprisePlanPrice() {
+        if (subscriptionPriceCents == null) {
+            return new BigDecimal("199.90");
+        }
+        return BigDecimal.valueOf(subscriptionPriceCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -72,7 +84,7 @@ public class SubscriptionService {
 
         BigDecimal pricePerUser = planType == SubscriptionPlan.FREE 
             ? FREE_PLAN_PRICE 
-            : ENTERPRISE_PLAN_PRICE_PER_USER;
+            : getEnterprisePlanPrice();
 
         int maxEmployees = planType == SubscriptionPlan.FREE 
             ? FREE_PLAN_MAX_EMPLOYEES 
@@ -88,7 +100,6 @@ public class SubscriptionService {
             BillingCycle.MONTHLY,
             LocalDate.now().plusMonths(1)
         );
-
         subscription.setStatus(SubscriptionStatus.TRIAL);
         
         CompanySubscription saved = subscriptionRepository.save(subscription);
@@ -128,7 +139,7 @@ public class SubscriptionService {
 
         BigDecimal newPricePerUser = newPlan == SubscriptionPlan.FREE 
             ? FREE_PLAN_PRICE 
-            : ENTERPRISE_PLAN_PRICE_PER_USER;
+            : getEnterprisePlanPrice();
 
         int maxEmployees = newPlan == SubscriptionPlan.FREE 
             ? FREE_PLAN_MAX_EMPLOYEES 
@@ -175,7 +186,7 @@ public class SubscriptionService {
                 .multiply(new BigDecimal(activeUsers))
                 .setScale(2, RoundingMode.HALF_UP);
 
-        logger.info("Fatura mensal calculada: €{} para {} usuários", totalBill, activeUsers);
+        logger.info("Fatura mensal calculada: R$ {} para {} usuários", totalBill, activeUsers);
         return totalBill;
     }
 
@@ -224,6 +235,33 @@ public class SubscriptionService {
     }
 
     /**
+     * Suspende uma assinatura (chamado pelo Scheduler ou manualmente).
+     */
+    @Transactional
+    public void suspendSubscription(@NonNull UUID companyId) {
+        logger.info("Suspendendo assinatura da empresa: {}", companyId);
+        
+        CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
+        
+        subscription.setStatus(SubscriptionStatus.SUSPENDED);
+        subscriptionRepository.save(subscription);
+        
+        // Opcional: Reverter para plano FREE se desejado, ou apenas bloquear acesso.
+        // Se reverter para FREE:
+        /*
+        subscription.setPlanType(SubscriptionPlan.FREE);
+        subscription.setPricePerUser(FREE_PLAN_PRICE);
+        Company company = subscription.getCompany();
+        company.setSubscriptionPlan(SubscriptionPlan.FREE);
+        company.setMaxEmployees(FREE_PLAN_MAX_EMPLOYEES);
+        companyRepository.save(company);
+        */
+        
+        logger.info("Assinatura suspensa com sucesso.");
+    }
+
+    /**
      * Ativa uma assinatura após checkout do Stripe ser completado.
      */
     @Transactional
@@ -237,7 +275,55 @@ public class SubscriptionService {
         subscription.setStripeSubscriptionId(stripeSubscription.getId());
         subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+        subscription.setPricePerUser(getEnterprisePlanPrice());
+        
+        // Calcula próxima data de cobrança baseada no Stripe
+        // Durante trial period, prioriza trial_end sobre current_period_end
+        Long currentPeriodEnd = stripeSubscription.getCurrentPeriodEnd();
+        Long trialEnd = stripeSubscription.getTrialEnd();
+        String stripeStatus = stripeSubscription.getStatus();
+        
+        // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
+        if ("trialing".equals(stripeStatus) && trialEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date set from trial_end (trialing status): {}", nextBilling);
+        } else if (trialEnd != null && currentPeriodEnd != null) {
+            // Se ambos existem, usa o que for maior (mais futuro)
+            LocalDate trialEndDate = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            LocalDate currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            
+            LocalDate nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date set from {} (trial_end: {}, current_period_end: {})", 
+                    nextBilling, trialEndDate, currentPeriodEndDate);
+        } else if (currentPeriodEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date set from current_period_end: {}", nextBilling);
+        } else if (trialEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date set from trial_end: {}", nextBilling);
+        } else {
+            // Fallback: calcula baseado no billing cycle
+            if (subscription.getBillingCycle() == BillingCycle.MONTHLY) {
+                subscription.setNextBillingDate(LocalDate.now().plusMonths(1));
+            } else {
+                subscription.setNextBillingDate(LocalDate.now().plusYears(1));
+            }
+            logger.info("Next billing date calculated from billing cycle: {}", subscription.getNextBillingDate());
+        }
         
         // Obtém o price ID da subscription
         if (!stripeSubscription.getItems().getData().isEmpty()) {
@@ -257,7 +343,8 @@ public class SubscriptionService {
         companyRepository.save(company);
         
         subscriptionRepository.save(subscription);
-        logger.info("Stripe subscription activated successfully - Plan: {}, Status: {}", subscription.getPlanType(), subscription.getStatus());
+        logger.info("Stripe subscription activated successfully - Plan: {}, Status: {}, Next Billing: {}", 
+                subscription.getPlanType(), subscription.getStatus(), subscription.getNextBillingDate());
     }
 
     /**
@@ -274,7 +361,7 @@ public class SubscriptionService {
         subscription.setStripeSubscriptionId(stripeSubscriptionId);
         subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+        subscription.setPricePerUser(getEnterprisePlanPrice());
         
         Company company = subscription.getCompany();
         company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
@@ -315,7 +402,7 @@ public class SubscriptionService {
             // Isso garante que o plano seja atualizado mesmo se o evento de checkout falhar
             if (priceId != null && !priceId.isEmpty()) {
                 subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
-                subscription.setPricePerUser(ENTERPRISE_PLAN_PRICE_PER_USER);
+                subscription.setPricePerUser(getEnterprisePlanPrice());
                 
                 // Atualiza também a empresa
                 Company company = subscription.getCompany();
@@ -328,8 +415,47 @@ public class SubscriptionService {
             }
         }
         
-        // Atualiza status baseado no status do Stripe
+        // Atualiza próxima data de cobrança baseada no Stripe
+        // Durante trial period, prioriza trial_end sobre current_period_end
+        Long currentPeriodEnd = stripeSubscription.getCurrentPeriodEnd();
+        Long trialEnd = stripeSubscription.getTrialEnd();
         String stripeStatus = stripeSubscription.getStatus();
+        
+        // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
+        if ("trialing".equals(stripeStatus) && trialEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date synced from trial_end (trialing status): {}", nextBilling);
+        } else if (trialEnd != null && currentPeriodEnd != null) {
+            // Se ambos existem, usa o que for maior (mais futuro)
+            LocalDate trialEndDate = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            LocalDate currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            
+            LocalDate nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date synced from {} (trial_end: {}, current_period_end: {})", 
+                    nextBilling, trialEndDate, currentPeriodEndDate);
+        } else if (currentPeriodEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date synced from current_period_end: {}", nextBilling);
+        } else if (trialEnd != null) {
+            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            subscription.setNextBillingDate(nextBilling);
+            logger.info("Next billing date synced from trial_end: {}", nextBilling);
+        }
+        
+        // Atualiza status baseado no status do Stripe
         if ("active".equals(stripeStatus) || "trialing".equals(stripeStatus)) {
             subscription.setStatus(SubscriptionStatus.ACTIVE);
         } else if ("past_due".equals(stripeStatus) || "unpaid".equals(stripeStatus)) {
@@ -339,7 +465,8 @@ public class SubscriptionService {
         }
         
         subscriptionRepository.save(subscription);
-        logger.info("Subscription synced successfully - Plan: {}, Status: {}", subscription.getPlanType(), subscription.getStatus());
+        logger.info("Subscription synced successfully - Plan: {}, Status: {}, Next Billing: {}", 
+                subscription.getPlanType(), subscription.getStatus(), subscription.getNextBillingDate());
     }
 
     /**

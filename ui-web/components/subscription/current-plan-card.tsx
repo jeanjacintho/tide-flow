@@ -12,12 +12,13 @@ export interface CurrentPlanCardProps {
   description: string;
   status: string;
   billingCycle: string;
-  nextBillingDate: string;
+  nextBillingDate?: string;
   totalUsers: number;
   pricePerUser: string;
   monthlyBill: string;
   onManage?: () => void;
   className?: string;
+  isFreePlan?: boolean;
 }
 
 export function CurrentPlanCard({
@@ -33,6 +34,7 @@ export function CurrentPlanCard({
   monthlyBill,
   onManage,
   className,
+  isFreePlan = false,
 }: CurrentPlanCardProps) {
   return (
     <div
@@ -70,7 +72,7 @@ export function CurrentPlanCard({
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isFreePlan ? 'grid-cols-2' : 'grid-cols-2'}`}>
             <div>
               <div className="text-xs text-muted-foreground mb-1">
                 Total Users
@@ -83,21 +85,29 @@ export function CurrentPlanCard({
               </div>
               <div className="text-base font-medium">{pricePerUser}</div>
             </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Billing Cycle
-              </div>
-              <div className="text-base font-medium">{billingCycle}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Next Billing
-              </div>
-              <div className="text-base font-medium">{nextBillingDate}</div>
-            </div>
+            {!isFreePlan && (
+              <>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Billing Cycle
+                  </div>
+                  <div className="text-base font-medium">{billingCycle}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Next Billing
+                  </div>
+                  <div className="text-base font-medium">
+                    {nextBillingDate || 'Not available'}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+

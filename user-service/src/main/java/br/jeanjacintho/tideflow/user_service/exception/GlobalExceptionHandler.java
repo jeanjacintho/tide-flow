@@ -3,6 +3,8 @@ package br.jeanjacintho.tideflow.user_service.exception;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,6 +20,8 @@ import br.jeanjacintho.tideflow.user_service.dto.response.ErrorResponseDTO;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleResourceNotFoundException(
@@ -149,9 +153,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponseDTO> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+        logger.error("RuntimeException capturada no endpoint {}: {}", 
+                request.getDescription(false).replace("uri=", ""), ex.getMessage(), ex);
+        
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                ex.getMessage() != null ? ex.getMessage() : "Erro interno do servidor",
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleGenericException(
             Exception ex, WebRequest request) {
+        logger.error("Exceção não tratada capturada no endpoint {}: {} - Tipo: {}", 
+                request.getDescription(false).replace("uri=", ""), 
+                ex.getMessage(), 
+                ex.getClass().getName(), 
+                ex);
+        
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",

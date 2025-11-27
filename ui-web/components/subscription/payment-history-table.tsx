@@ -53,7 +53,7 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'EUR') => {
+  const formatCurrency = (amount: number, currency: string = 'BRL') => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: currency,
@@ -238,3 +238,5 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
     </Card>
   );
 }
+
+

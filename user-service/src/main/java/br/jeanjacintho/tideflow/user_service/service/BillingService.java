@@ -97,7 +97,7 @@ public class BillingService {
      */
     @Transactional
     public boolean processPayment(@NonNull UUID companyId, BigDecimal amount) {
-        logger.info("Processando pagamento de €{} para empresa {}", amount, companyId);
+        logger.info("Processando pagamento de R$ {} para empresa {}", amount, companyId);
         
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
@@ -109,7 +109,7 @@ public class BillingService {
         BigDecimal expectedAmount = subscriptionService.calculateMonthlyBill(companyId);
         
         if (amount.compareTo(expectedAmount) < 0) {
-            logger.warn("Valor pago (€{}) menor que o esperado (€{})", amount, expectedAmount);
+            logger.warn("Valor pago (R$ {}) menor que o esperado (R$ {})", amount, expectedAmount);
             // Em produção, isso poderia gerar um alerta ou notificação
         }
 

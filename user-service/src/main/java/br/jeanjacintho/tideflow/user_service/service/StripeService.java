@@ -3,17 +3,24 @@ package br.jeanjacintho.tideflow.user_service.service;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
+import com.stripe.model.CustomerCollection;
 import com.stripe.model.Price;
+import com.stripe.model.PriceCollection;
 import com.stripe.model.Product;
+import com.stripe.model.ProductCollection;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerListParams;
 import com.stripe.param.PriceCreateParams;
+import com.stripe.param.PriceListParams;
 import com.stripe.param.ProductCreateParams;
+import com.stripe.param.ProductListParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -31,6 +38,15 @@ public class StripeService {
     private String webhookSecret;
     private String enterprisePriceId;
     public String frontendUrl;
+
+    @Value("${tideflow.subscription.price-brl:19990}")
+    private Long subscriptionPrice;
+
+    @Value("${tideflow.subscription.currency:brl}")
+    private String subscriptionCurrency;
+
+    @Value("${tideflow.subscription.duration-minutes:5}")
+    private int subscriptionDurationMinutes;
 
     @PostConstruct
     public void init() {
@@ -56,23 +72,37 @@ public class StripeService {
      * Cria ou retorna um customer no Stripe
      */
     public String getOrCreateCustomer(UUID companyId, String companyName, String email) throws StripeException {
-        logger.info("Getting or creating Stripe customer for company: {}", companyId);
+        logger.info("Getting or creating Stripe customer for company: {} with email: {}", companyId, email);
         
-        // Primeiro, tenta buscar customer existente pelo metadata
-        Map<String, Object> params = new HashMap<>();
-        params.put("limit", 100);
+        // Primeiro, tenta buscar customer existente pelo metadata (company_id)
+        try {
+            CustomerListParams searchParams = CustomerListParams.builder()
+                    .addExpand("data.metadata")
+                    .build();
+            
+            CustomerCollection customers = Customer.list(searchParams);
+            
+            // Busca customer com o mesmo company_id no metadata
+            for (Customer existingCustomer : customers.getData()) {
+                Map<String, String> metadata = existingCustomer.getMetadata();
+                if (metadata != null && companyId.toString().equals(metadata.get("company_id"))) {
+                    logger.info("Found existing Stripe customer: {} for company: {}", existingCustomer.getId(), companyId);
+                    return existingCustomer.getId();
+                }
+            }
+        } catch (StripeException e) {
+            logger.warn("Error searching for existing customer, will create new one: {}", e.getMessage());
+        }
         
-        // Se já existe customerId no banco, busca por ele
-        // Caso contrário, cria um novo
-        
+        // Se não encontrou, cria um novo customer
         CustomerCreateParams customerParams = CustomerCreateParams.builder()
                 .setEmail(email)
-                .setName(companyName)
+                .setName(companyName != null && !companyName.trim().isEmpty() ? companyName : "Company " + companyId.toString().substring(0, 8))
                 .putMetadata("company_id", companyId.toString())
                 .build();
         
         Customer customer = Customer.create(customerParams);
-        logger.info("Created Stripe customer: {}", customer.getId());
+        logger.info("Created new Stripe customer: {} for company: {}", customer.getId(), companyId);
         
         return customer.getId();
     }
@@ -81,29 +111,83 @@ public class StripeService {
      * Cria um produto e preço no Stripe (se não existir)
      */
     public String getOrCreateEnterprisePrice() throws StripeException {
+        // Se há um price ID configurado, tenta usar ele
         if (enterprisePriceId != null && !enterprisePriceId.isEmpty()) {
             try {
                 Price.retrieve(enterprisePriceId);
+                logger.info("Using configured Stripe price: {}", enterprisePriceId);
                 return enterprisePriceId;
             } catch (StripeException e) {
-                logger.warn("Configured price ID not found, creating new price");
+                logger.warn("Configured price ID not found, will search or create new price: {}", e.getMessage());
             }
         }
         
-        // Cria produto Enterprise
-        ProductCreateParams productParams = ProductCreateParams.builder()
-                .setName("TideFlow Enterprise Plan")
-                .setDescription("Plano Enterprise - Usuários ilimitados e recursos avançados")
-                .build();
+        // Busca produto existente pelo nome
+        String productName = "TideFlow Enterprise Plan";
+        Product existingProduct = null;
+        try {
+            ProductListParams productListParams = ProductListParams.builder()
+                    .setLimit(100L)
+                    .build();
+            ProductCollection products = Product.list(productListParams);
+            
+            for (Product product : products.getData()) {
+                if (productName.equals(product.getName())) {
+                    existingProduct = product;
+                    logger.info("Found existing Stripe product: {}", product.getId());
+                    break;
+                }
+            }
+        } catch (StripeException e) {
+            logger.warn("Error searching for existing product, will create new one: {}", e.getMessage());
+        }
         
-        Product product = Product.create(productParams);
-        logger.info("Created Stripe product: {}", product.getId());
+        // Se não encontrou produto, cria um novo
+        Product product = existingProduct;
+        if (product == null) {
+            ProductCreateParams productParams = ProductCreateParams.builder()
+                    .setName(productName)
+                    .setDescription("Plano Enterprise - Usuários ilimitados e recursos avançados")
+                    .putMetadata("plan_type", "ENTERPRISE")
+                    .build();
+            
+            product = Product.create(productParams);
+            logger.info("Created new Stripe product: {}", product.getId());
+        }
         
-        // Cria preço por usuário (€6.00 por usuário/mês)
+        // Busca preço existente para este produto com a moeda e valor configurados
+        Price existingPrice = null;
+        try {
+            PriceListParams priceListParams = PriceListParams.builder()
+                    .setProduct(product.getId())
+                    .setLimit(100L)
+                    .build();
+            PriceCollection prices = Price.list(priceListParams);
+            
+            for (Price price : prices.getData()) {
+                if (subscriptionCurrency.equalsIgnoreCase(price.getCurrency()) 
+                        && price.getUnitAmount() != null 
+                        && price.getUnitAmount().equals(subscriptionPrice)
+                        && price.getRecurring() != null
+                        && "month".equals(price.getRecurring().getInterval())) {
+                    existingPrice = price;
+                    logger.info("Found existing Stripe price: {}", price.getId());
+                    break;
+                }
+            }
+        } catch (StripeException e) {
+            logger.warn("Error searching for existing price, will create new one: {}", e.getMessage());
+        }
+        
+        // Se não encontrou preço, cria um novo
+        if (existingPrice != null) {
+            return existingPrice.getId();
+        }
+        
         PriceCreateParams priceParams = PriceCreateParams.builder()
                 .setProduct(product.getId())
-                .setCurrency("eur")
-                .setUnitAmount(600L) // €6.00 em centavos
+                .setCurrency(subscriptionCurrency)
+                .setUnitAmount(subscriptionPrice)
                 .setRecurring(PriceCreateParams.Recurring.builder()
                         .setInterval(PriceCreateParams.Recurring.Interval.MONTH)
                         .build())
@@ -111,7 +195,7 @@ public class StripeService {
                 .build();
         
         Price price = Price.create(priceParams);
-        logger.info("Created Stripe price: {}", price.getId());
+        logger.info("Created new Stripe price: {} ({} {})", price.getId(), subscriptionCurrency, subscriptionPrice);
         
         return price.getId();
     }
@@ -123,6 +207,45 @@ public class StripeService {
                                        String successUrl, String cancelUrl) throws StripeException {
         logger.info("Creating checkout session for company: {}", companyId);
         
+        // Configura período de teste com base na configuração (em minutos)
+        // Nota: O Stripe requer trial_end >= 48 horas.
+        // Se durationMinutes < 48h (2880 min), usamos billing_cycle_anchor para forçar primeira cobrança rápida.
+        // Se durationMinutes >= 48h, usamos trial_end padrão.
+        
+        SessionCreateParams.SubscriptionData.Builder subscriptionDataBuilder = 
+                SessionCreateParams.SubscriptionData.builder();
+        
+        // Adiciona metadata à subscription também para facilitar recuperação
+        // subscriptionDataBuilder.putMetadata("company_id", companyId.toString());
+        
+        long durationSeconds = subscriptionDurationMinutes * 60L;
+        long futureTimestamp = (System.currentTimeMillis() / 1000) + durationSeconds;
+        
+        if (subscriptionDurationMinutes < 2880) { // Menos de 48 horas
+             // Usamos billing_cycle_anchor para simular "fim do trial" (primeira cobrança)
+             subscriptionDataBuilder.setBillingCycleAnchor(futureTimestamp);
+             logger.info("Using billing_cycle_anchor for short duration: {} minutes", subscriptionDurationMinutes);
+        } else {
+             // Usamos trial_end padrão
+             subscriptionDataBuilder.setTrialEnd(futureTimestamp);
+             logger.info("Using trial_end for duration: {} minutes", subscriptionDurationMinutes);
+        }
+        
+        // Metadata crítica para rastreabilidade - ADICIONA EM MÚLTIPLOS LUGARES
+        Map<String, String> subscriptionMetadata = new HashMap<>();
+        subscriptionMetadata.put("company_id", companyId.toString());
+        subscriptionMetadata.put("created_at", String.valueOf(System.currentTimeMillis()));
+        subscriptionMetadata.put("source", "tideflow_checkout");
+
+        // Adiciona metadata na subscription
+        subscriptionDataBuilder.putAllMetadata(subscriptionMetadata);
+
+        // Cria params da sessão com metadata adicional
+        Map<String, String> sessionMetadata = new HashMap<>();
+        sessionMetadata.put("company_id", companyId.toString());
+        sessionMetadata.put("customer_id", customerId);
+        sessionMetadata.put("price_id", priceId);
+
         SessionCreateParams params = SessionCreateParams.builder()
                 .setCustomer(customerId)
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
@@ -132,9 +255,13 @@ public class StripeService {
                         .build())
                 .setSuccessUrl(successUrl)
                 .setCancelUrl(cancelUrl)
-                .putMetadata("company_id", companyId.toString())
+                .putAllMetadata(sessionMetadata)
                 .setPaymentMethodCollection(SessionCreateParams.PaymentMethodCollection.ALWAYS)
+                .setSubscriptionData(subscriptionDataBuilder.build())
                 .build();
+
+        logger.info("Created checkout session with metadata - company_id: {}, customer_id: {}, subscription_metadata_keys: {}",
+                companyId, customerId, subscriptionMetadata.keySet());
         
         Session session = Session.create(params);
         logger.info("Created checkout session: {}", session.getId());
@@ -227,4 +354,3 @@ public class StripeService {
         return webhookSecret;
     }
 }
-
