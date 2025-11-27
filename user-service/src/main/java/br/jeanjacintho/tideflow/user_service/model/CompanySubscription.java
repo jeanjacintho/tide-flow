@@ -2,7 +2,6 @@ package br.jeanjacintho.tideflow.user_service.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -36,7 +35,7 @@ public class CompanySubscription {
     private BillingCycle billingCycle;
 
     @Column(name = "next_billing_date", nullable = false)
-    private LocalDate nextBillingDate;
+    private LocalDateTime nextBillingDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -60,7 +59,7 @@ public class CompanySubscription {
     public CompanySubscription() {}
 
     public CompanySubscription(Company company, SubscriptionPlan planType, BigDecimal pricePerUser, 
-                              Integer totalUsers, BillingCycle billingCycle, LocalDate nextBillingDate) {
+                              Integer totalUsers, BillingCycle billingCycle, LocalDateTime nextBillingDate) {
         this.company = company;
         this.planType = planType;
         this.pricePerUser = pricePerUser;
@@ -135,11 +134,11 @@ public class CompanySubscription {
         this.billingCycle = billingCycle;
     }
 
-    public LocalDate getNextBillingDate() {
+    public LocalDateTime getNextBillingDate() {
         return nextBillingDate;
     }
 
-    public void setNextBillingDate(LocalDate nextBillingDate) {
+    public void setNextBillingDate(LocalDateTime nextBillingDate) {
         this.nextBillingDate = nextBillingDate;
     }
 

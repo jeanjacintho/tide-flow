@@ -33,7 +33,7 @@ import br.jeanjacintho.tideflow.user_service.repository.DepartmentRepository;
 import br.jeanjacintho.tideflow.user_service.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class CompanyService {
@@ -209,7 +209,7 @@ public class CompanyService {
             FREE_PLAN_PRICE,
             0, // Inicialmente 0 usuários
             BillingCycle.MONTHLY,
-            LocalDate.now().plusMonths(1)
+            LocalDateTime.now().plusMonths(1)
         );
         subscription.setStatus(SubscriptionStatus.TRIAL);
         subscriptionRepository.save(subscription);

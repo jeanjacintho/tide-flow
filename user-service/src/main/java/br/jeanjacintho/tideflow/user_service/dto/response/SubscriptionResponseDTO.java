@@ -3,7 +3,7 @@ package br.jeanjacintho.tideflow.user_service.dto.response;
 import br.jeanjacintho.tideflow.user_service.model.CompanySubscription;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record SubscriptionResponseDTO(
@@ -13,7 +13,7 @@ public record SubscriptionResponseDTO(
     BigDecimal pricePerUser,
     Integer totalUsers,
     String billingCycle,
-    LocalDate nextBillingDate,
+    LocalDateTime nextBillingDate,
     String status,
     BigDecimal monthlyBill
 ) {

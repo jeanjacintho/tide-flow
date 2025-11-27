@@ -1,6 +1,6 @@
 package br.jeanjacintho.tideflow.user_service.repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,8 +25,8 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
     List<CompanySubscription> findByStatus(SubscriptionStatus status);
     
     @Query("SELECT s FROM CompanySubscription s WHERE s.nextBillingDate <= :date AND s.status = :status")
-    List<CompanySubscription> findUpcomingBillings(@Param("date") LocalDate date, @Param("status") SubscriptionStatus status);
+    List<CompanySubscription> findUpcomingBillings(@Param("date") LocalDateTime date, @Param("status") SubscriptionStatus status);
     
     @Query("SELECT s FROM CompanySubscription s WHERE s.status = :status AND s.nextBillingDate < :date")
-    List<CompanySubscription> findExpiredSubscriptions(@Param("date") LocalDate date, @Param("status") SubscriptionStatus status);
+    List<CompanySubscription> findExpiredSubscriptions(@Param("date") LocalDateTime date, @Param("status") SubscriptionStatus status);
 }

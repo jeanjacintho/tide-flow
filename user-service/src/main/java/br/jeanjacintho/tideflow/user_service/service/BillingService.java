@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -116,9 +117,9 @@ public class BillingService {
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         
         if (subscription.getBillingCycle().name().equals("MONTHLY")) {
-            subscription.setNextBillingDate(LocalDate.now().plusMonths(1));
+            subscription.setNextBillingDate(LocalDateTime.now().plusMonths(1));
         } else {
-            subscription.setNextBillingDate(LocalDate.now().plusYears(1));
+            subscription.setNextBillingDate(LocalDateTime.now().plusYears(1));
         }
 
         subscriptionRepository.save(subscription);

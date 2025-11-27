@@ -1,6 +1,6 @@
 package br.jeanjacintho.tideflow.user_service.scheduler;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,19 +39,12 @@ public class SubscriptionScheduler {
     public void checkExpiredSubscriptions() {
         logger.info("Checking for expired subscriptions...");
         
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
         
-        // Busca assinaturas ativas que venceram (nextBillingDate < hoje)
-        // Nota: Para testes de minutos, a lógica de LocalDate pode não ser suficiente se quisermos precisão de minutos.
-        // O campo nextBillingDate é LocalDate, então a granularidade é dias.
-        // Para suportar minutos, idealmente deveríamos migrar nextBillingDate para LocalDateTime.
-        // Mas como o modelo atual usa LocalDate, vamos trabalhar com o que temos, 
-        // assumindo que o "Scheduler" é para garantir que nada fique pendente por dias.
+        // Busca assinaturas ativas que venceram (nextBillingDate < agora)
+        // Com LocalDateTime, agora temos precisão de minutos para suportar testes com durações curtas.
         
-        // No entanto, o usuário pediu especificamente para "fazer o plano durar esse tempo".
-        // Se o tempo for em minutos, o scheduler vai ajudar a garantir a expiração.
-        
-        List<CompanySubscription> expiredTrials = subscriptionRepository.findExpiredSubscriptions(today, SubscriptionStatus.TRIAL);
+        List<CompanySubscription> expiredTrials = subscriptionRepository.findExpiredSubscriptions(now, SubscriptionStatus.TRIAL);
         for (CompanySubscription sub : expiredTrials) {
             if (sub.getCompany() != null && sub.getCompany().getId() != null) {
                 UUID companyId = sub.getCompany().getId();
@@ -62,7 +55,7 @@ public class SubscriptionScheduler {
             }
         }
 
-        List<CompanySubscription> expiredActive = subscriptionRepository.findExpiredSubscriptions(today, SubscriptionStatus.ACTIVE);
+        List<CompanySubscription> expiredActive = subscriptionRepository.findExpiredSubscriptions(now, SubscriptionStatus.ACTIVE);
         for (CompanySubscription sub : expiredActive) {
             if (sub.getCompany() != null && sub.getCompany().getId() != null) {
                 UUID companyId = sub.getCompany().getId();

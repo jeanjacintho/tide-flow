@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -303,7 +303,7 @@ public class StripeIntegrationService {
                 BigDecimal.ZERO,
                 currentUserCount,
                 BillingCycle.MONTHLY,
-                LocalDate.now().plusMonths(1)
+                LocalDateTime.now().plusMonths(1)
         );
         subscription.setStatus(SubscriptionStatus.TRIAL);
         subscription = subscriptionRepository.save(subscription);
@@ -315,7 +315,6 @@ public class StripeIntegrationService {
         return subscription;
     }
 
-    @SuppressWarnings("null")
     private Company ensureCompanyLoaded(CompanySubscription subscription, UUID companyId) {
         Company company = subscription.getCompany();
         if (company == null) {
@@ -601,7 +600,6 @@ public class StripeIntegrationService {
         }
     }
 
-    @SuppressWarnings("null")
     private void handleInvoicePaymentFailed(Event event) {
         logger.info("Processing invoice.payment_failed - Event {}", event.getId());
         try {
@@ -759,7 +757,6 @@ public class StripeIntegrationService {
         return null;
     }
 
-    @SuppressWarnings("null")
     private void recordPaymentSafely(UUID companyId,
                                      BigDecimal amount,
                                      PaymentStatus status,
@@ -878,7 +875,6 @@ public class StripeIntegrationService {
         }
     }
 
-    @SuppressWarnings("null")
     private void syncSubscriptionState(CompanySubscription subscription, String customerId, String subscriptionId) {
         try {
             Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);

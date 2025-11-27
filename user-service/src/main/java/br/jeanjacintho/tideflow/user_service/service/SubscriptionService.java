@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
 
@@ -98,7 +98,7 @@ public class SubscriptionService {
             pricePerUser,
             currentUserCount,
             BillingCycle.MONTHLY,
-            LocalDate.now().plusMonths(1)
+            LocalDateTime.now().plusMonths(1)
         );
         subscription.setStatus(SubscriptionStatus.TRIAL);
         
@@ -285,42 +285,42 @@ public class SubscriptionService {
         
         // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
         if ("trialing".equals(stripeStatus) && trialEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from trial_end (trialing status): {}", nextBilling);
         } else if (trialEnd != null && currentPeriodEnd != null) {
             // Se ambos existem, usa o que for maior (mais futuro)
-            LocalDate trialEndDate = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime trialEndDate = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            LocalDate currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
+                    .toLocalDateTime();
+            LocalDateTime currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             
-            LocalDate nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
+            LocalDateTime nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from {} (trial_end: {}, current_period_end: {})", 
                     nextBilling, trialEndDate, currentPeriodEndDate);
         } else if (currentPeriodEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from current_period_end: {}", nextBilling);
         } else if (trialEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from trial_end: {}", nextBilling);
         } else {
             // Fallback: calcula baseado no billing cycle
             if (subscription.getBillingCycle() == BillingCycle.MONTHLY) {
-                subscription.setNextBillingDate(LocalDate.now().plusMonths(1));
+                subscription.setNextBillingDate(LocalDateTime.now().plusMonths(1));
             } else {
-                subscription.setNextBillingDate(LocalDate.now().plusYears(1));
+                subscription.setNextBillingDate(LocalDateTime.now().plusYears(1));
             }
             logger.info("Next billing date calculated from billing cycle: {}", subscription.getNextBillingDate());
         }
@@ -423,34 +423,34 @@ public class SubscriptionService {
         
         // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
         if ("trialing".equals(stripeStatus) && trialEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from trial_end (trialing status): {}", nextBilling);
         } else if (trialEnd != null && currentPeriodEnd != null) {
             // Se ambos existem, usa o que for maior (mais futuro)
-            LocalDate trialEndDate = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime trialEndDate = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-            LocalDate currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
+                    .toLocalDateTime();
+            LocalDateTime currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             
-            LocalDate nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
+            LocalDateTime nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from {} (trial_end: {}, current_period_end: {})", 
                     nextBilling, trialEndDate, currentPeriodEndDate);
         } else if (currentPeriodEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from current_period_end: {}", nextBilling);
         } else if (trialEnd != null) {
-            LocalDate nextBilling = Instant.ofEpochSecond(trialEnd)
+            LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
+                    .toLocalDateTime();
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from trial_end: {}", nextBilling);
         }

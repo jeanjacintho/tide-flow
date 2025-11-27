@@ -13,7 +13,7 @@ import br.jeanjacintho.tideflow.user_service.model.BillingCycle;
 import br.jeanjacintho.tideflow.user_service.model.SubscriptionStatus;
 import br.jeanjacintho.tideflow.user_service.repository.CompanyRepository;
 import br.jeanjacintho.tideflow.user_service.exception.ResourceNotFoundException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import br.jeanjacintho.tideflow.user_service.service.BillingService;
 import br.jeanjacintho.tideflow.user_service.service.PaymentHistoryService;
 import br.jeanjacintho.tideflow.user_service.service.SubscriptionService;
@@ -129,7 +129,7 @@ public class SubscriptionController {
                     BigDecimal.ZERO,
                     currentUserCount,
                     BillingCycle.MONTHLY,
-                    LocalDate.now().plusMonths(1)
+                    LocalDateTime.now().plusMonths(1)
                 );
                 subscription.setStatus(SubscriptionStatus.TRIAL);
                 subscription = subscriptionRepository.save(subscription);
