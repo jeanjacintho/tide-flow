@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export interface UsageCardProps {
@@ -22,21 +23,14 @@ export function UsageCard({
   const usagePercentage = isUnlimited ? 0 : Math.min(100, (activeUsers / maxUsers) * 100);
 
   return (
-    <div
-      className={cn(
-        'rounded-lg p-4',
-        'bg-card border border-border/50',
-        className
-      )}
-    >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-0.5">
-          <div className="text-base font-medium">Current Usage</div>
-          <div className="text-sm text-muted-foreground mt-1">
-            Information about your company's usage
-          </div>
-        </div>
-
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Current Usage</CardTitle>
+        <CardDescription>
+          Information about your company's usage
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Active Users</span>
@@ -90,7 +84,7 @@ export function UsageCard({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

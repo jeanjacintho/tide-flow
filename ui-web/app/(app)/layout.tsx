@@ -65,21 +65,25 @@ export default function AppLayout({
       });
     }
     
-    // Employee Directory - todos podem ver
-    items.push({ 
-      href: '/employees', 
-      icon: Users, 
-      label: 'Employee Directory', 
-      pathname: '/employees' 
-    });
+    // Employee Directory - apenas OWNER
+    if (user?.companyRole === 'OWNER') {
+      items.push({ 
+        href: '/employees', 
+        icon: Users, 
+        label: 'Employee Directory', 
+        pathname: '/employees' 
+      });
+    }
     
-    // Attendance & Leave - todos podem ver
-    items.push({ 
-      href: '/attendance', 
-      icon: Calendar, 
-      label: 'Attendance & Leave', 
-      pathname: '/attendance' 
-    });
+    // Attendance & Leave (Departamentos) - apenas OWNER
+    if (user?.companyRole === 'OWNER') {
+      items.push({ 
+        href: '/attendance', 
+        icon: Calendar, 
+        label: 'Attendance & Leave', 
+        pathname: '/attendance' 
+      });
+    }
     
     // Recruitment - HR_MANAGER, ADMIN e OWNER
     if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
@@ -206,16 +210,6 @@ export default function AppLayout({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  {user?.companyRole === 'OWNER' && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname === '/management'}>
-                        <Link href="/management">
-                          <Settings className="w-4 h-4" />
-                          <span>Gerenciamento</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
                   {user?.systemRole === 'SYSTEM_ADMIN' && (
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname === '/companies'}>

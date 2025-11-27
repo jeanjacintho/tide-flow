@@ -26,6 +26,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 export default function CompaniesPage() {
@@ -113,11 +115,13 @@ export default function CompaniesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">Empresas</h1>
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Empresas</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie todas as empresas cadastradas no sistema
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -203,58 +207,86 @@ export default function CompaniesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas</CardTitle>
+            <CardDescription>
+              Lista de todas as empresas cadastradas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
       ) : companies.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-semibold">Nenhuma empresa cadastrada</p>
-          <p className="text-muted-foreground">Comece cadastrando uma nova empresa</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas</CardTitle>
+            <CardDescription>
+              Lista de todas as empresas cadastradas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-semibold">Nenhuma empresa cadastrada</p>
+              <p className="text-muted-foreground">Comece cadastrando uma nova empresa</p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Domínio</TableHead>
-                <TableHead>Plano</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Máx. Funcionários</TableHead>
-                <TableHead>Email de Cobrança</TableHead>
-                <TableHead>CNPJ</TableHead>
-                <TableHead>Criado em</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {companies.map((company) => (
-                <TableRow key={company.id}>
-                  <TableCell className="font-medium">{company.name}</TableCell>
-                  <TableCell>{company.domain || '-'}</TableCell>
-                  <TableCell>{company.subscriptionPlan}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      company.status === 'ACTIVE' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : company.status === 'TRIAL'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    }`}>
-                      {company.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>{company.maxEmployees}</TableCell>
-                  <TableCell>{company.billingEmail || '-'}</TableCell>
-                  <TableCell>{company.taxId || '-'}</TableCell>
-                  <TableCell>
-                    {new Date(company.createdAt).toLocaleDateString('pt-BR')}
-                  </TableCell>
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas</CardTitle>
+            <CardDescription>
+              Lista de todas as empresas cadastradas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Domínio</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Máx. Funcionários</TableHead>
+                  <TableHead>Email de Cobrança</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Criado em</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {companies.map((company) => (
+                  <TableRow key={company.id}>
+                    <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableCell>{company.domain || '-'}</TableCell>
+                    <TableCell>{company.subscriptionPlan}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        company.status === 'ACTIVE' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : company.status === 'TRIAL'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {company.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{company.maxEmployees}</TableCell>
+                    <TableCell>{company.billingEmail || '-'}</TableCell>
+                    <TableCell>{company.taxId || '-'}</TableCell>
+                    <TableCell>
+                      {new Date(company.createdAt).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

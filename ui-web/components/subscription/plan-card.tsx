@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Check, Minus } from 'lucide-react';
 
@@ -35,37 +36,28 @@ export function PlanCard({
   className,
 }: PlanCardProps) {
   return (
-    <div
-      className={cn(
-        'rounded-lg p-4 h-full flex flex-col',
-        'bg-card border border-border/50',
-        className
-      )}
-    >
-      <div className="flex h-full flex-col justify-between">
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <div className="text-base font-medium">{title}</div>
-            {isCurrent && (
-              <div className="inline-flex items-center rounded-md border border-border/50 px-1.5 py-0.5 text-xs font-medium transition-colors bg-muted/30">
-                <span className="text-xs">Current</span>
-              </div>
-            )}
-            {priceUnit && (
-              <span className="flex items-end gap-0.5 ml-1 text-muted-foreground">
-                <span className="text-base font-medium">{price}</span>
-                <span className="text-xs mb-[3px]">{priceUnit}</span>
-              </span>
-            )}
-            {!priceUnit && (
-              <span className="text-base font-medium ml-1">{price}</span>
-            )}
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {description}
-          </div>
+    <Card className={cn('h-full flex flex-col', className)}>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <CardTitle>{title}</CardTitle>
+          {isCurrent && (
+            <div className="inline-flex items-center rounded-md border border-border/50 px-1.5 py-0.5 text-xs font-medium transition-colors bg-muted/30">
+              <span className="text-xs">Current</span>
+            </div>
+          )}
+          {priceUnit && (
+            <span className="flex items-end gap-0.5 ml-1 text-muted-foreground">
+              <span className="text-base font-medium">{price}</span>
+              <span className="text-xs mb-[3px]">{priceUnit}</span>
+            </span>
+          )}
+          {!priceUnit && (
+            <span className="text-base font-medium ml-1">{price}</span>
+          )}
         </div>
-
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex h-full flex-col justify-between">
         <div className="space-y-3 flex-1 mt-4">
           {features.map((feature) => (
             <div key={feature.text} className="flex items-start gap-2">
@@ -115,8 +107,8 @@ export function PlanCard({
             </span>
           </Button>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

@@ -5,10 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { apiService } from '@/lib/api';
-import { Save, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -82,16 +82,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Perfil</h1>
-        <p className="text-muted-foreground">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Settings</h1>
+        <p className="text-muted-foreground mt-1">
           Gerencie suas informações pessoais e configurações de segurança
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6">
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Foto de Perfil</CardTitle>

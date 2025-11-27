@@ -3,11 +3,20 @@
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/use-dashboard';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,47 +101,53 @@ export default function DashboardPage() {
         <TabsContent value="hr" className="space-y-6">
           {/* Key Metric Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-row items-center justify-between mb-2">
-                <div className="text-sm font-medium text-muted-foreground">Total Employees</div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
-              </div>
-              {dashboardLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold">{totalEmployees}</div>
-                  <p className="text-xs text-green-600 mt-1">+2 from last month</p>
-                </>
-              )}
-            </div>
+              </CardHeader>
+              <CardContent>
+                {dashboardLoading ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{totalEmployees}</div>
+                    <p className="text-xs text-green-600 mt-1">+2 from last month</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-row items-center justify-between mb-2">
-                <div className="text-sm font-medium text-muted-foreground">New Hires This Month</div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">New Hires This Month</CardTitle>
                 <UserPlus className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{newHires}</div>
-              <p className="text-xs text-green-600 mt-1">+2 from last month</p>
-            </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{newHires}</div>
+                <p className="text-xs text-green-600 mt-1">+2 from last month</p>
+              </CardContent>
+            </Card>
 
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-row items-center justify-between mb-2">
-                <div className="text-sm font-medium text-muted-foreground">Absentee Rate</div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Absentee Rate</CardTitle>
                 <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{absenteeRate}%</div>
-              <p className="text-xs text-red-600 mt-1">-0.2% from last month</p>
-            </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{absenteeRate}%</div>
+                <p className="text-xs text-red-600 mt-1">-0.2% from last month</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Employee Performance Chart */}
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-col gap-4">
+            <Card>
+              <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="text-base font-medium">Employee Performance</div>
+                  <CardTitle>Employee Performance</CardTitle>
                   <Select defaultValue="this-year">
                     <SelectTrigger className="w-[140px] h-8">
                       <SelectValue />
@@ -143,10 +158,12 @@ export default function DashboardPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-baseline gap-2">
+                <div className="flex items-baseline gap-2 mt-2">
                   <div className="text-3xl font-bold">{performance}%</div>
                   <p className="text-sm text-green-600">+2.4% from last year</p>
                 </div>
+              </CardHeader>
+              <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={performanceData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -177,13 +194,15 @@ export default function DashboardPage() {
                   <div className="h-4 w-4 bg-muted rounded"></div>
                   <span className="text-sm text-muted-foreground">Avg 82%</span>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Employee Type Chart */}
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-col gap-4">
-                <div className="text-base font-medium">Employee Type</div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Employee Type</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-center justify-center">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -204,7 +223,7 @@ export default function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 mt-4">
                   {employeeTypeData.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -220,17 +239,17 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Bottom Row: Employee List and Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Employee List */}
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-col gap-4">
-                <div className="text-base font-medium">Employee List</div>
-                <div className="flex items-center gap-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Employee List</CardTitle>
+                <div className="flex items-center gap-2 mt-4">
                   <Select defaultValue="all">
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select department" />
@@ -258,69 +277,65 @@ export default function DashboardPage() {
                     <Input placeholder="Search employee" className="pl-8" />
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full" role="table" aria-label="Employee list">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Contact / Company
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            Department
-                            <ArrowUpDown className="h-3 w-3" />
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contact / Company</TableHead>
+                      <TableHead>
+                        <div className="flex items-center gap-1">
+                          Department
+                          <ArrowUpDown className="h-3 w-3" />
+                        </div>
+                      </TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeListData.map((employee) => (
+                      <TableRow key={employee.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={employee.avatar || undefined} />
+                              <AvatarFallback>
+                                {employee.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{employee.name}</span>
                           </div>
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Position
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {employeeListData.map((employee) => (
-                        <tr key={employee.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={employee.avatar || undefined} />
-                                <AvatarFallback>
-                                  {employee.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm font-medium">{employee.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{employee.department}</td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{employee.position}</td>
-                          <td className="px-4 py-3">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View</DropdownMenuItem>
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem>Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+                        </TableCell>
+                        <TableCell>{employee.department}</TableCell>
+                        <TableCell>{employee.position}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>View</DropdownMenuItem>
+                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem>Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
             {/* Activity Feed */}
-            <div className="rounded-lg p-4 bg-card border border-border/50">
-              <div className="flex flex-col gap-4">
-                <div className="text-base font-medium">Activity</div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   {activityData.map((activity, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -338,8 +353,8 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
