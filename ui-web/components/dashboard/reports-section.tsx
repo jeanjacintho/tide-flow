@@ -27,18 +27,54 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
   const loadReports = async () => {
     try {
       setLoading(true);
-      const latestReport = await apiService.getLatestReport(companyId);
       
-      // Se houver um relatório, adiciona à lista
-      if (latestReport) {
-        setReports([latestReport]);
+      // Usa listReports para buscar todos os relatórios completados
+      const reportType = filter !== 'all' ? filter : undefined;
+      const reportList = await apiService.listReports(
+        companyId,
+        reportType,
+        'COMPLETED', // Apenas relatórios completados
+        0,
+        50 // Busca até 50 relatórios
+      );
+      
+      // Converte ReportSummary para CorporateReportResponse
+      if (reportList.reports && reportList.reports.length > 0) {
+        const fullReports: CorporateReportResponse[] = reportList.reports.map((summary) => ({
+          id: summary.id,
+          companyId: summary.companyId,
+          departmentId: summary.departmentId,
+          reportType: summary.reportType,
+          reportDate: summary.reportDate,
+          periodStart: summary.periodStart,
+          periodEnd: summary.periodEnd,
+          status: summary.status as 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED' | 'ARCHIVED',
+          title: summary.title,
+          executiveSummary: summary.executiveSummary,
+          generatedByAi: summary.generatedByAi,
+          createdAt: summary.createdAt,
+          updatedAt: summary.createdAt, // Usa createdAt como fallback
+          generatedAt: summary.generatedAt,
+          insights: undefined,
+          metrics: undefined,
+          recommendations: undefined,
+        }));
+        setReports(fullReports);
       } else {
         setReports([]);
       }
-    } catch (error) {
-      console.error('Erro ao carregar relatórios:', error);
-      toast.error('Erro ao carregar relatórios');
-      setReports([]);
+    } catch (error: any) {
+      // Se for 404, não há relatórios (não é erro)
+      if (error?.message?.includes('404') || error?.message?.includes('Not Found')) {
+        setReports([]);
+      } else {
+        console.error('Erro ao carregar relatórios:', error);
+        // Não mostra toast de erro se for apenas falta de relatórios
+        if (!error?.message?.includes('404') && !error?.message?.includes('Not Found')) {
+          toast.error('Erro ao carregar relatórios');
+        }
+        setReports([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,10 +149,7 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Relatórios
-            </CardTitle>
+            <CardTitle>Relatórios</CardTitle>
             <CardDescription>
               Relatórios gerados automaticamente com análises e insights
             </CardDescription>
@@ -169,7 +202,6 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
           </div>
         ) : sortedReports.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">Nenhum relatório encontrado</p>
             <Button onClick={handleGenerateReport}>
               <Plus className="h-4 w-4 mr-2" />
@@ -193,3 +225,4 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
     </Card>
   );
 }
+

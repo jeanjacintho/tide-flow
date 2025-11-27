@@ -281,20 +281,55 @@ class ApiService {
     const params = date ? `?date=${date}` : '';
     const token = this.getAuthToken();
     
-    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/dashboard/${companyId}${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/corporate/dashboard/${companyId}${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP error! status: ${response.status}`);
+      if (response.status === 404) {
+        // Retorna dados vazios quando não há dados ainda
+        return {
+          companyId,
+          date: date || new Date().toISOString().split('T')[0],
+          averageStressLevel: null,
+          averageEmotionalIntensity: null,
+          totalActiveUsers: null,
+          totalConversations: null,
+          totalMessages: null,
+          riskAlertsCount: null,
+          departmentBreakdown: {},
+          topKeywords: {},
+          topTriggers: {},
+        };
+      }
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      // Em caso de erro de rede ou outro erro, retorna dados vazios
+      console.warn('Erro ao buscar dashboard overview:', error);
+      return {
+        companyId,
+        date: date || new Date().toISOString().split('T')[0],
+        averageStressLevel: null,
+        averageEmotionalIntensity: null,
+        totalActiveUsers: null,
+        totalConversations: null,
+        totalMessages: null,
+        riskAlertsCount: null,
+        departmentBreakdown: {},
+        topKeywords: {},
+        topTriggers: {},
+      };
     }
-
-    return response.json();
   }
 
   async getStressTimeline(
@@ -306,23 +341,46 @@ class ApiService {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
     
-    const response = await fetch(
-      `${AI_SERVICE_URL}/api/corporate/stress-timeline/${companyId}?startDate=${startDate}&endDate=${endDate}&granularity=${granularity}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
+    try {
+      const response = await fetch(
+        `${AI_SERVICE_URL}/api/corporate/stress-timeline/${companyId}?startDate=${startDate}&endDate=${endDate}&granularity=${granularity}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+        }
+      );
+
+      if (response.status === 404) {
+        return {
+          companyId,
+          startDate,
+          endDate,
+          granularity,
+          points: [],
+          alerts: [],
+        };
       }
-    );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.warn('Erro ao buscar stress timeline:', error);
+      return {
+        companyId,
+        startDate,
+        endDate,
+        granularity,
+        points: [],
+        alerts: [],
+      };
     }
-
-    return response.json();
   }
 
   async getDepartmentHeatmap(companyId: string, date?: string): Promise<DepartmentHeatmapDTO> {
@@ -330,41 +388,67 @@ class ApiService {
     const params = date ? `?date=${date}` : '';
     const token = this.getAuthToken();
     
-    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department-heatmap/${companyId}${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department-heatmap/${companyId}${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP error! status: ${response.status}`);
+      if (response.status === 404) {
+        return {
+          companyId,
+          date: date || new Date().toISOString().split('T')[0],
+          departments: [],
+        };
+      }
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.warn('Erro ao buscar department heatmap:', error);
+      return {
+        companyId,
+        date: date || new Date().toISOString().split('T')[0],
+        departments: [],
+      };
     }
-
-    return response.json();
   }
 
-  async getTurnoverPrediction(companyId: string, departmentId?: string): Promise<TurnoverPredictionDTO> {
+  async getTurnoverPrediction(companyId: string, departmentId?: string): Promise<TurnoverPredictionDTO | null> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const params = departmentId ? `?departmentId=${departmentId}` : '';
     const token = this.getAuthToken();
     
-    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/turnover-prediction/${companyId}${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+    try {
+      const response = await fetch(`${AI_SERVICE_URL}/api/corporate/turnover-prediction/${companyId}${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP error! status: ${response.status}`);
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.warn('Erro ao buscar turnover prediction:', error);
+      return null;
     }
-
-    return response.json();
   }
 
   async getImpactAnalysis(
@@ -492,25 +576,100 @@ class ApiService {
     return response.json();
   }
 
-  async getLatestReport(companyId: string, reportType?: string): Promise<CorporateReportResponse> {
+  async getLatestReport(companyId: string, reportType?: string): Promise<CorporateReportResponse | null> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
     
-    const params = reportType ? `?reportType=${reportType}` : '';
-    const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/company/${companyId}/latest${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+    try {
+      const params = reportType ? `?reportType=${reportType}` : '';
+      const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/company/${companyId}/latest${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP error! status: ${response.status}`);
+      // 404 significa que não há relatórios, não é um erro - retorna null silenciosamente
+      if (response.status === 404) {
+        return null;
+      }
+
+      // Outros erros HTTP também retornam null para evitar erros no console
+      if (!response.ok) {
+        // Não loga erro para 404, apenas retorna null
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      // Em caso de erro de rede ou outro erro, retorna null silenciosamente
+      // Não loga erro para evitar poluir o console
+      return null;
     }
+  }
 
-    return response.json();
+  async listReports(
+    companyId: string,
+    reportType?: string,
+    status?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<ReportListResponse> {
+    const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
+    const token = this.getAuthToken();
+    
+    try {
+      const params = new URLSearchParams({
+        companyId,
+        page: page.toString(),
+        size: size.toString(),
+      });
+      
+      if (reportType) params.append('reportType', reportType);
+      if (status) params.append('status', status);
+      
+      const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+
+      // 404 significa que não há relatórios, retorna lista vazia
+      if (response.status === 404) {
+        return {
+          reports: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: size,
+        };
+      }
+
+      // Outros erros HTTP também retornam lista vazia
+      if (!response.ok) {
+        return {
+          reports: [],
+          totalElements: 0,
+          totalPages: 0,
+          currentPage: 0,
+          pageSize: size,
+        };
+      }
+
+      return response.json();
+    } catch (error) {
+      // Em caso de erro de rede, retorna lista vazia
+      return {
+        reports: [],
+        totalElements: 0,
+        totalPages: 0,
+        currentPage: 0,
+        pageSize: size,
+      };
+    }
   }
 
   async deleteReport(reportId: string): Promise<void> {

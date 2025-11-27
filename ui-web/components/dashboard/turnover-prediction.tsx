@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
 import { TurnoverPredictionDTO } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -78,8 +77,7 @@ export function TurnoverPrediction({ data, loading }: TurnoverPredictionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" />
+        <CardTitle>
           Predição de Turnover
           {data.departmentName && (
             <span className="text-sm font-normal text-muted-foreground">
@@ -96,17 +94,14 @@ export function TurnoverPrediction({ data, loading }: TurnoverPredictionProps) {
           'p-4 rounded-lg border',
           getRiskLevelBg(data.riskLevel)
         )}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-muted-foreground">Score de Risco</div>
-              <div className={cn('text-3xl font-bold', getRiskLevelColor(data.riskLevel))}>
-                {data.riskScore}
-              </div>
-              <div className={cn('text-sm font-medium mt-1', getRiskLevelColor(data.riskLevel))}>
-                {data.riskLevel}
-              </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Score de Risco</div>
+            <div className={cn('text-3xl font-bold', getRiskLevelColor(data.riskLevel))}>
+              {data.riskScore}
             </div>
-            <AlertTriangle className={cn('w-12 h-12', getRiskLevelColor(data.riskLevel))} />
+            <div className={cn('text-sm font-medium mt-1', getRiskLevelColor(data.riskLevel))}>
+              {data.riskLevel}
+            </div>
           </div>
         </div>
 
@@ -142,8 +137,7 @@ export function TurnoverPrediction({ data, loading }: TurnoverPredictionProps) {
 
         {data.recommendations && data.recommendations.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" />
+            <h4 className="text-sm font-semibold mb-3">
               Recomendações
             </h4>
             <ul className="space-y-2">

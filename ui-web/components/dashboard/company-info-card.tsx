@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Building2, Users, Calendar, Mail, MapPin, CreditCard, ExternalLink } from 'lucide-react';
 import { Company, UsageInfo } from '@/lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -75,10 +74,7 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              {company.name}
-            </CardTitle>
+            <CardTitle>{company.name}</CardTitle>
             <CardDescription className="mt-1">Informações da empresa e assinatura</CardDescription>
           </div>
           <div className="flex gap-2">
@@ -95,63 +91,47 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
         {/* Company Details */}
         <div className="space-y-3">
           {company.domain && (
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Domínio</p>
-                <p className="font-medium">{company.domain}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Domínio</p>
+              <p className="font-medium">{company.domain}</p>
             </div>
           )}
 
           {company.billingEmail && (
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Email de Cobrança</p>
-                <p className="font-medium">{company.billingEmail}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Email de Cobrança</p>
+              <p className="font-medium">{company.billingEmail}</p>
             </div>
           )}
 
           {company.billingAddress && (
-            <div className="flex items-center gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Endereço de Cobrança</p>
-                <p className="font-medium">{company.billingAddress}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Endereço de Cobrança</p>
+              <p className="font-medium">{company.billingAddress}</p>
             </div>
           )}
 
           {company.taxId && (
-            <div className="flex items-center gap-3 text-sm">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">CNPJ/ID Fiscal</p>
-                <p className="font-medium">{company.taxId}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">CNPJ/ID Fiscal</p>
+              <p className="font-medium">{company.taxId}</p>
             </div>
           )}
 
-          <div className="flex items-center gap-3 text-sm">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-muted-foreground">Criada em</p>
-              <p className="font-medium">
-                {company.createdAt
-                  ? format(new Date(company.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                  : 'Não disponível'}
-              </p>
-            </div>
+          <div className="text-sm">
+            <p className="text-muted-foreground">Criada em</p>
+            <p className="font-medium">
+              {company.createdAt
+                ? format(new Date(company.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                : 'Não disponível'}
+            </p>
           </div>
         </div>
 
         {/* Usage Information */}
         {usageInfo && (
           <div className="pt-4 border-t">
-            <div className="flex items-center gap-3 mb-3">
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="mb-3">
               <p className="text-sm font-medium">Uso de Licenças</p>
             </div>
             <div className="space-y-2">
@@ -200,3 +180,4 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
     </Card>
   );
 }
+

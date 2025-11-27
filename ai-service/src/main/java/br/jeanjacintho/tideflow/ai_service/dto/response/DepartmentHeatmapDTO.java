@@ -1,5 +1,6 @@
 package br.jeanjacintho.tideflow.ai_service.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.UUID;
 
 public record DepartmentHeatmapDTO(
     UUID companyId,
+    @JsonFormat(pattern = "yyyy-MM-dd")
     LocalDate date,
     List<DepartmentHeatmapItem> departments
 ) {

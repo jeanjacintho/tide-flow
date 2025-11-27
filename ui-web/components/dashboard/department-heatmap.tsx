@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { DepartmentHeatmapItem } from '@/lib/api';
-import { Users, MessageSquare, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DepartmentHeatmapProps {
@@ -123,16 +122,13 @@ export function DepartmentHeatmap({ departments, loading }: DepartmentHeatmapPro
                   </div>
                   
                   <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4 text-muted-foreground" />
+                    <div>
                       <span className="text-muted-foreground">{dept.activeUsers ?? 0}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    <div>
                       <span className="text-muted-foreground">{dept.conversations ?? 0}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                    <div>
                       <span className="text-muted-foreground">{dept.riskAlerts ?? 0}</span>
                     </div>
                   </div>

@@ -94,7 +94,7 @@ public class User {
      * Dados individuais NUNCA são expostos, independente deste status.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "privacy_consent_status", nullable = false)
+    @Column(name = "privacy_consent_status")
     private PrivacyConsentStatus privacyConsentStatus;
 
     /**
@@ -108,7 +108,7 @@ public class User {
      * Indica se o usuário leu e reconheceu o aviso de privacidade.
      * Diferente de consentimento: reconhecimento é apenas leitura, consentimento é permissão de compartilhamento.
      */
-    @Column(name = "privacy_notice_acknowledged", nullable = false)
+    @Column(name = "privacy_notice_acknowledged")
     private Boolean privacyNoticeAcknowledged;
 
     /**
@@ -116,7 +116,7 @@ public class User {
      * Este campo é derivado de privacyConsentStatus (true apenas se ACCEPTED).
      * Mantido como campo separado para facilitar queries e auditoria.
      */
-    @Column(name = "data_sharing_enabled", nullable = false)
+    @Column(name = "data_sharing_enabled")
     private Boolean dataSharingEnabled;
 
     @Column(name = "created_at", nullable = false, updatable = false)

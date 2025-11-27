@@ -1,11 +1,13 @@
 package br.jeanjacintho.tideflow.ai_service.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 public record ImpactAnalysisDTO(
     UUID companyId,
+    @JsonFormat(pattern = "yyyy-MM-dd")
     LocalDate eventDate,
     String eventDescription,
     ImpactMetrics beforeMetrics,

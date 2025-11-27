@@ -69,12 +69,10 @@ export function ReportCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5" />
+            <CardTitle className="text-lg">
               {report.title || 'Relatório Sem Título'}
             </CardTitle>
-            <CardDescription className="mt-1 flex items-center gap-2">
-              <Calendar className="h-3 w-3" />
+            <CardDescription className="mt-1">
               {report.generatedAt
                 ? format(new Date(report.generatedAt), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
                     locale: ptBR,
@@ -95,31 +93,22 @@ export function ReportCard({
         {report.metrics && (
           <div className="grid grid-cols-2 gap-4 mb-4">
             {report.metrics.totalUsers !== undefined && (
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-muted-foreground">Usuários</p>
-                  <p className="font-medium">{report.metrics.totalUsers}</p>
-                </div>
+              <div className="text-sm">
+                <p className="text-muted-foreground">Usuários</p>
+                <p className="font-medium">{report.metrics.totalUsers}</p>
               </div>
             )}
             {report.metrics.avgStressLevel !== undefined && (
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-muted-foreground">Stress Médio</p>
-                  <p className="font-medium">{Number(report.metrics.avgStressLevel).toFixed(1)}%</p>
-                </div>
+              <div className="text-sm">
+                <p className="text-muted-foreground">Stress Médio</p>
+                <p className="font-medium">{Number(report.metrics.avgStressLevel).toFixed(1)}%</p>
               </div>
             )}
             {report.metrics.riskAlertsCount !== undefined && Number(report.metrics.riskAlertsCount) > 0 && (
-              <div className="flex items-center gap-2 text-sm col-span-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                <div>
-                  <p className="text-destructive font-medium">
-                    {report.metrics.riskAlertsCount} alerta{Number(report.metrics.riskAlertsCount) > 1 ? 's' : ''} de risco
-                  </p>
-                </div>
+              <div className="text-sm col-span-2">
+                <p className="text-destructive font-medium">
+                  {report.metrics.riskAlertsCount} alerta{Number(report.metrics.riskAlertsCount) > 1 ? 's' : ''} de risco
+                </p>
               </div>
             )}
           </div>
@@ -181,3 +170,4 @@ export function ReportCard({
     </Card>
   );
 }
+

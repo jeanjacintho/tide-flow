@@ -39,12 +39,8 @@ export function useDashboardData(companyId: string | null, date?: Date) {
 
     fetchData();
     
-    // Refresh a cada 5 minutos
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
   }, [companyId, date]);
 
@@ -114,21 +110,33 @@ export function useDepartmentHeatmap(companyId: string | null, date?: Date) {
       return;
     }
 
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (isMounted) {
+          setLoading(true);
+          setError(null);
+        }
         const dateStr = date ? format(date, 'yyyy-MM-dd') : undefined;
         const result = await apiService.getDepartmentHeatmap(companyId, dateStr);
-        setData(result);
+        if (isMounted) {
+          setData(result);
+          setLoading(false);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar mapa de calor');
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Erro ao carregar mapa de calor');
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [companyId, date]);
 
   return { data, loading, error };
@@ -161,6 +169,7 @@ export function useTurnoverPrediction(companyId: string | null, departmentId?: s
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Erro ao carregar predição de turnover');
+          setData(null);
           setLoading(false);
         }
       }

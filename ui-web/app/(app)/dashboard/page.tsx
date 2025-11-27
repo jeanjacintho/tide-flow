@@ -1,72 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDashboardData } from '@/hooks/use-dashboard';
+import { 
+  useDashboardData, 
+  useStressTimeline, 
+  useDepartmentHeatmap, 
+  useTurnoverPrediction 
+} from '@/hooks/use-dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, CheckCircle2, Search, MoreVertical, ArrowUpDown, Briefcase, Calendar } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { StressSeismograph } from '@/components/dashboard/stress-seismograph';
+import { DepartmentHeatmap } from '@/components/dashboard/department-heatmap';
+import { TurnoverPrediction } from '@/components/dashboard/turnover-prediction';
+import { ImpactAnalysis } from '@/components/dashboard/impact-analysis';
 import { AccountInfoCard } from '@/components/dashboard/account-info-card';
 import { CompanyInfoCard } from '@/components/dashboard/company-info-card';
 import { ReportsSection } from '@/components/dashboard/reports-section';
 import { apiService, Company, UsageInfo } from '@/lib/api';
-
-const MOCK_COMPANY_ID = '00000000-0000-0000-0000-000000000000';
-
-// Mock data para os gráficos
-const performanceData = [
-  { month: 'Jan', value: 78 },
-  { month: 'Feb', value: 80 },
-  { month: 'Mar', value: 82 },
-  { month: 'Apr', value: 85 },
-  { month: 'May', value: 88 },
-  { month: 'Jun', value: 95 },
-  { month: 'Jul', value: 90 },
-  { month: 'Aug', value: 87 },
-  { month: 'Sep', value: 89 },
-  { month: 'Oct', value: 91 },
-  { month: 'Nov', value: 88 },
-  { month: 'Dec', value: 89 },
-];
-
-const employeeTypeData = [
-  { name: 'Full-Time', value: 92, color: 'hsl(var(--primary))' },
-  { name: 'Part-Time', value: 25, color: 'hsl(var(--chart-2))' },
-];
-
-const employeeListData = [
-  { id: 1, name: 'John Doe', department: 'Marketing', position: 'Digital Marketer', avatar: null },
-  { id: 2, name: 'Maria Tan', department: 'Finance', position: 'Finance Manager', avatar: null },
-  { id: 3, name: 'Sarah Johnson', department: 'HR', position: 'HR Specialist', avatar: null },
-  { id: 4, name: 'Michael Chen', department: 'IT', position: 'Software Engineer', avatar: null },
-];
-
-const activityData = [
-  { type: 'company-event', title: 'Annual Town Hall', date: 'April 10' },
-  { type: 'holiday', title: 'Public Holiday', date: 'April 10' },
-  { type: 'holiday', title: 'National Good Friday', date: 'April 7' },
-];
+import { subDays, subMonths, format } from 'date-fns';
 
 export default function DashboardPage() {
   const { hasAccess, isChecking } = useRequireRole({ 
@@ -75,332 +30,53 @@ export default function DashboardPage() {
   });
   
   const { user } = useAuth();
+  const companyId = user?.companyId;
   
-  if (isChecking || !hasAccess) {
-    return null;
-  }
-  
-  const { data: dashboardData, loading: dashboardLoading } = useDashboardData(MOCK_COMPANY_ID, new Date());
-
-  const totalEmployees = dashboardData?.totalActiveUsers ?? 134;
-  const newHires = 5;
-  const absenteeRate = 3.2;
-  const performance = 89;
-
-  return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Overview of your company's HR metrics and insights
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="hr" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="hr">HR Dashboard</TabsTrigger>
-          <TabsTrigger value="recruitment">Recruitment Dashboard</TabsTrigger>
-          <TabsTrigger value="account">Conta & Empresa</TabsTrigger>
-          <TabsTrigger value="reports">Relatórios</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="hr" className="space-y-6">
-          {/* Key Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {dashboardLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">{totalEmployees}</div>
-                    <p className="text-xs text-green-600 mt-1">+2 from last month</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">New Hires This Month</CardTitle>
-                <UserPlus className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{newHires}</div>
-                <p className="text-xs text-green-600 mt-1">+2 from last month</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Absentee Rate</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{absenteeRate}%</div>
-                <p className="text-xs text-red-600 mt-1">-0.2% from last month</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Employee Performance Chart */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Employee Performance</CardTitle>
-                  <Select defaultValue="this-year">
-                    <SelectTrigger className="w-[140px] h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="this-year">This year</SelectItem>
-                      <SelectItem value="last-year">Last year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <div className="text-3xl font-bold">{performance}%</div>
-                  <p className="text-sm text-green-600">+2.4% from last year</p>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar 
-                      dataKey="value" 
-                      fill="hsl(var(--primary))"
-                      radius={[8, 8, 0, 0]}
-                    >
-                      {performanceData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.month === 'Jun' ? 'hsl(var(--primary))' : 'hsl(var(--muted))'} 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="flex items-center gap-2 mt-4">
-                  <div className="h-4 w-4 bg-muted rounded"></div>
-                  <span className="text-sm text-muted-foreground">Avg 82%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Employee Type Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Employee Type</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={employeeTypeData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {employeeTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-col gap-2 mt-4">
-                  {employeeTypeData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="h-3 w-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span className="text-sm">{item.value} {item.name}</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {index === 0 ? '68' : '15'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Bottom Row: Employee List and Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Employee List */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Employee List</CardTitle>
-                <div className="flex items-center gap-2 mt-4">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Departments</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="hr">HR</SelectItem>
-                      <SelectItem value="it">IT</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select defaultValue="7d">
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7d">Last 7 days</SelectItem>
-                      <SelectItem value="30d">Last 30 days</SelectItem>
-                      <SelectItem value="90d">Last 90 days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search employee" className="pl-8" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contact / Company</TableHead>
-                      <TableHead>
-                        <div className="flex items-center gap-1">
-                          Department
-                          <ArrowUpDown className="h-3 w-3" />
-                        </div>
-                      </TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employeeListData.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={employee.avatar || undefined} />
-                              <AvatarFallback>
-                                {employee.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{employee.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{employee.department}</TableCell>
-                        <TableCell>{employee.position}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View</DropdownMenuItem>
-                              <DropdownMenuItem>Edit</DropdownMenuItem>
-                              <DropdownMenuItem>Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Activity Feed */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activityData.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="mt-1">
-                        {activity.type === 'company-event' ? (
-                          <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">{activity.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="recruitment">
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Recruitment Dashboard coming soon...</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="account" className="space-y-6">
-          <AccountAndCompanyInfo user={user} companyId={user?.companyId} />
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-6">
-          {user?.companyId ? (
-            <ReportsSection companyId={user.companyId} />
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Nenhuma empresa associada</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-function AccountAndCompanyInfo({ user, companyId }: { user: any; companyId?: string }) {
   const [company, setCompany] = useState<Company | null>(null);
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
+  const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(undefined);
+  
+  // Memoiza a data atual para evitar recriações desnecessárias
+  const currentDate = useMemo(() => new Date(), []);
+  
+  // Dashboard overview
+  const { data: dashboardData, loading: dashboardLoading } = useDashboardData(companyId || null, currentDate);
+  
+  // Stress timeline - memoiza as datas para evitar recriações desnecessárias
+  const startDate = useMemo(() => {
+    const now = new Date();
+    switch (timeRange) {
+      case '7d': return subDays(now, 7);
+      case '30d': return subDays(now, 30);
+      case '90d': return subDays(now, 90);
+      case '1y': return subMonths(now, 12);
+      default: return subDays(now, 30);
+    }
+  }, [timeRange]);
+  
+  const endDate = useMemo(() => new Date(), []); // Data atual - não muda durante a sessão
+  const granularity = useMemo(() => timeRange === '1y' ? 'month' : timeRange === '7d' ? 'day' : 'day', [timeRange]);
+  
+  const { data: stressTimeline, loading: stressLoading } = useStressTimeline(
+    companyId || null,
+    startDate,
+    endDate,
+    granularity
+  );
+  
+  // Department heatmap
+  const { data: heatmapData, loading: heatmapLoading } = useDepartmentHeatmap(companyId || null, currentDate);
+  
+  // Turnover prediction
+  const { data: turnoverData, loading: turnoverLoading } = useTurnoverPrediction(
+    companyId || null,
+    selectedDepartment
+  );
+  
   useEffect(() => {
     if (companyId) {
       loadCompanyInfo();
-    } else {
-      setLoading(false);
     }
   }, [companyId]);
 
@@ -408,24 +84,238 @@ function AccountAndCompanyInfo({ user, companyId }: { user: any; companyId?: str
     if (!companyId) return;
     
     try {
-      setLoading(true);
       const [companyData, usage] = await Promise.all([
-        apiService.getCompanyById(companyId),
+        apiService.getCompanyById(companyId).catch(() => null),
         apiService.getUsageInfo(companyId).catch(() => null),
       ]);
       setCompany(companyData);
       setUsageInfo(usage);
     } catch (error) {
       console.error('Erro ao carregar informações da empresa:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
+  if (isChecking || !hasAccess) {
+    return null;
+  }
+
+  // Calcular métricas principais
+  const totalEmployees = dashboardData?.totalActiveUsers ?? 0;
+  const totalConversations = dashboardData?.totalConversations ?? 0;
+  const totalMessages = dashboardData?.totalMessages ?? 0;
+  const riskAlerts = dashboardData?.riskAlertsCount ?? 0;
+  const avgStress = dashboardData?.averageStressLevel !== null && dashboardData?.averageStressLevel !== undefined
+    ? Math.round((dashboardData.averageStressLevel * 100)) 
+    : null;
+  
+  // Top keywords e triggers
+  const topKeywords = dashboardData?.topKeywords 
+    ? Object.entries(dashboardData.topKeywords)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 5)
+    : [];
+  
+  const topTriggers = dashboardData?.topTriggers 
+    ? Object.keys(dashboardData.topTriggers).slice(0, 3)
+    : [];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <AccountInfoCard user={user} loading={!user} />
-      <CompanyInfoCard company={company} usageInfo={usageInfo} loading={loading} />
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">The Corporate Map</h1>
+          <p className="text-muted-foreground mt-1">
+            Dashboard de gestão emocional em tempo real - Dados agregados por departamento
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="1y">Último ano</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboardLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalEmployees}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {usageInfo ? `${usageInfo.activeUsers} de ${usageInfo.maxUsers} licenças` : 'Total de colaboradores'}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboardLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalConversations}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalMessages} mensagens no período
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nível de Stress Médio</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboardLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {avgStress !== null ? `${avgStress}%` : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {avgStress !== null 
+                    ? avgStress < 30 ? 'Baixo stress' 
+                    : avgStress < 70 ? 'Stress moderado' 
+                    : 'Alto stress - Atenção necessária'
+                    : 'Sem dados disponíveis'}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alertas de Risco</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboardLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{riskAlerts}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {riskAlerts > 0 ? 'Requer atenção imediata' : 'Nenhum alerta ativo'}
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Insights e Palavras-chave */}
+      {(topKeywords.length > 0 || topTriggers.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {topKeywords.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Palavras-chave Mais Citadas</CardTitle>
+                <CardDescription>Principais temas mencionados nas conversas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {topKeywords.map(([keyword, count]) => (
+                    <Badge key={keyword} variant="secondary" className="text-xs">
+                      {keyword} ({count})
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {topTriggers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Principais Gatilhos de Stress</CardTitle>
+                <CardDescription>Fatores que mais impactam o bem-estar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {topTriggers.map((trigger, index) => (
+                    <div key={index} className="text-sm">
+                      <span>{trigger}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Sismógrafo de Stress */}
+      <StressSeismograph data={stressTimeline} loading={stressLoading} />
+
+      {/* Mapa de Calor por Departamento */}
+      <DepartmentHeatmap 
+        departments={heatmapData?.departments || []} 
+        loading={heatmapLoading} 
+      />
+
+      {/* Predição de Turnover */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TurnoverPrediction 
+          data={turnoverData} 
+          loading={turnoverLoading} 
+        />
+        
+        {/* Análise de Impacto */}
+        <ImpactAnalysis companyId={companyId || null} />
+      </div>
+
+      {/* Informações da Conta e Empresa */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AccountInfoCard user={user} loading={!user} />
+        <CompanyInfoCard 
+          company={company} 
+          usageInfo={usageInfo} 
+          loading={!companyId} 
+        />
+      </div>
+
+      {/* Relatórios */}
+      {companyId && (
+        <ReportsSection companyId={companyId} />
+      )}
+
+      {/* Aviso de Privacidade */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-sm">
+            Garantia de Privacidade
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            <strong>A sua empresa NÃO sabe quem você é, nem o que você escreve.</strong> Ela recebe apenas dados agregados do setor. 
+            Todos os dados individuais são protegidos e nunca expostos no dashboard corporativo. 
+            Este sistema garante compliance total com LGPD/GDPR.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

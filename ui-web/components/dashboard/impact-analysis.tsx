@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { ImpactAnalysisDTO, apiService } from '@/lib/api';
 import { format } from 'date-fns';
 
@@ -62,11 +61,6 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
     },
   ] : [];
 
-  const getTrendIcon = (change: number) => {
-    if (change > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
-    if (change < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Minus className="w-4 h-4 text-gray-600" />;
-  };
 
   return (
     <Card>
@@ -84,10 +78,7 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
               id="eventDate"
               type="date"
               value={eventDate}
-              onChange={(e) => {
-                setEventDate(e.target.value);
-                setShouldFetch(false);
-              }}
+              onChange={(e) => setEventDate(e.target.value)}
             />
           </div>
           <div>
@@ -96,10 +87,7 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
               id="eventDescription"
               placeholder="Ex: Fim do Home Office"
               value={eventDescription}
-              onChange={(e) => {
-                setEventDescription(e.target.value);
-                setShouldFetch(false);
-              }}
+              onChange={(e) => setEventDescription(e.target.value)}
             />
           </div>
         </div>
@@ -136,8 +124,7 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground">Stress</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getTrendIcon(data.changes.stressChangePercentage)}
+                  <div className="mt-1">
                     <span className="text-lg font-semibold">
                       {data.changes.stressChangePercentage > 0 ? '+' : ''}
                       {data.changes.stressChangePercentage.toFixed(1)}%
@@ -146,8 +133,7 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground">Moral</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getTrendIcon(data.changes.moraleChangePercentage)}
+                  <div className="mt-1">
                     <span className="text-lg font-semibold">
                       {data.changes.moraleChangePercentage > 0 ? '+' : ''}
                       {data.changes.moraleChangePercentage.toFixed(1)}%
@@ -156,8 +142,7 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground">Engajamento</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getTrendIcon(data.changes.engagementChangePercentage)}
+                  <div className="mt-1">
                     <span className="text-lg font-semibold">
                       {data.changes.engagementChangePercentage > 0 ? '+' : ''}
                       {data.changes.engagementChangePercentage.toFixed(1)}%

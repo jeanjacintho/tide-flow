@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, MapPin, Building2, Calendar, Shield } from 'lucide-react';
 import { User as UserType } from '@/lib/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -94,56 +93,41 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
 
         {/* Contact Information */}
         <div className="space-y-3">
-          <div className="flex items-center gap-3 text-sm">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-muted-foreground">Email</p>
-              <p className="font-medium">{user.email}</p>
-            </div>
+          <div className="text-sm">
+            <p className="text-muted-foreground">Email</p>
+            <p className="font-medium">{user.email}</p>
           </div>
 
           {user.trustedEmail && (
-            <div className="flex items-center gap-3 text-sm">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Email de Confiança</p>
-                <p className="font-medium">{user.trustedEmail}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Email de Confiança</p>
+              <p className="font-medium">{user.trustedEmail}</p>
             </div>
           )}
 
           {user.phone && (
-            <div className="flex items-center gap-3 text-sm">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Telefone</p>
-                <p className="font-medium">{user.phone}</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Telefone</p>
+              <p className="font-medium">{user.phone}</p>
             </div>
           )}
 
           {(user.city || user.state) && (
-            <div className="flex items-center gap-3 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-muted-foreground">Localização</p>
-                <p className="font-medium">
-                  {[user.city, user.state].filter(Boolean).join(', ') || 'Não informado'}
-                </p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Localização</p>
+              <p className="font-medium">
+                {[user.city, user.state].filter(Boolean).join(', ') || 'Não informado'}
+              </p>
             </div>
           )}
 
-          <div className="flex items-center gap-3 text-sm">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-muted-foreground">Membro desde</p>
-              <p className="font-medium">
-                {user.createdAt
-                  ? format(new Date(user.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                  : 'Não disponível'}
-              </p>
-            </div>
+          <div className="text-sm">
+            <p className="text-muted-foreground">Membro desde</p>
+            <p className="font-medium">
+              {user.createdAt
+                ? format(new Date(user.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                : 'Não disponível'}
+            </p>
           </div>
         </div>
 
@@ -177,3 +161,4 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
     </Card>
   );
 }
+

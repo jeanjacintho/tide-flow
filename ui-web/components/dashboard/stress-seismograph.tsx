@@ -2,7 +2,6 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { StressTimelineDTO } from '@/lib/api';
 
@@ -56,8 +55,7 @@ export function StressSeismograph({ data, loading }: StressSeismographProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" />
+        <CardTitle>
           Sismógrafo de Stress
         </CardTitle>
         <CardDescription>
@@ -71,15 +69,12 @@ export function StressSeismograph({ data, loading }: StressSeismographProps) {
               {alertPoints.map((alert, index) => (
                 <div
                   key={index}
-                  className={`flex items-center gap-2 p-2 rounded-md ${
+                  className={`p-2 rounded-md ${
                     alert.type === 'PEAK'
                       ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'
                       : 'bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800'
                   }`}
                 >
-                  <AlertTriangle className={`w-4 h-4 ${
-                    alert.type === 'PEAK' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
-                  }`} />
                   <div className="text-sm">
                     <strong>{format(new Date(alert.timestamp), 'dd/MM HH:mm')}:</strong> {alert.message}
                   </div>
