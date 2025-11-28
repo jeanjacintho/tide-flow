@@ -1050,6 +1050,34 @@ export interface CreateCompanyUserRequest {
   state?: string;
 }
 
+export interface Department {
+  id: string;
+  companyId: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CreateDepartmentRequest {
+  name: string;
+  description?: string;
+}
+
+export interface InviteUserRequest {
+  name: string;
+  username?: string;
+  email: string;
+  departmentId: string;
+  employeeId?: string;
+}
+
+export interface InviteUserResponse {
+  userId: string;
+  username: string;
+  temporaryPassword: string;
+  message: string;
+}
+
 export interface ReportGenerationRequest {
   companyId: string;
   departmentId?: string;
