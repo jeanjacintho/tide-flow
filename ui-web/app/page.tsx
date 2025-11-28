@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import { Building2, User, ArrowRight, Zap, Lock, TrendingUp, Users } from "lucid
 import { cn } from "@/lib/utils";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { AuroraText } from "@/components/ui/aurora-text";
+import { Iphone } from "@/components/ui/iphone";
 
 export default function Home() {
   return (
@@ -72,7 +74,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="relative z-10 flex-1">
         <div className="container mx-auto px-4 py-8 lg:py-12">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid gap-12 items-center lg:grid-cols-[40%_60%]">
             {/* Left Side - Hero Content */}
             <div className="space-y-8">
               {/* Social Proof */}
@@ -167,57 +169,28 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Side - Dashboard Mockup */}
-            <div className="relative hidden lg:block">
-              <div className="relative">
-                {/* Background Dashboard */}
-                <div className="absolute inset-0 bg-muted/30 rounded-2xl blur-2xl transform scale-105"></div>
-                
-                {/* Main Dashboard Card */}
-                <div className="relative bg-card border border-border rounded-2xl p-6 shadow-xl">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-sm">Dashboard</h3>
-                      <div className="text-xs text-muted-foreground">Total em bem-estar: 8.283</div>
-                    </div>
-                    
-                    {/* Time Filters */}
-                    <div className="flex gap-2">
-                      <Button variant="default" size="sm" className="text-xs">Hoje</Button>
-                      <Button variant="ghost" size="sm" className="text-xs">Ontem</Button>
-                      <Button variant="ghost" size="sm" className="text-xs">Essa semana</Button>
-                      <Button variant="ghost" size="sm" className="text-xs">Esse mês</Button>
-                    </div>
-
-                    {/* Chart Area */}
-                    <div className="h-48 bg-muted/30 rounded-lg flex items-end justify-center gap-1 p-4">
-                      {[40, 60, 45, 70, 55, 80, 65, 90, 75, 85, 70, 95].map((height, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-primary rounded-t"
-                          style={{ height: `${height}%` }}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Metrics */}
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Colaboradores ativos</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">652</span>
-                          <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded">+12</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Risco detectado</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold">23</span>
-                          <span className="text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded">-4</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {/* Right Side - UI Images */}
+            <div className="relative hidden lg:block h-[600px] overflow-visible">
+              {/* Background - UI Web (positioned to the right, 30% cropped from right) */}
+              <div className="absolute right-0 top-0 w-4/5 h-full overflow-hidden flex items-center justify-end">
+                <div className="relative h-full rounded-lg border border-border overflow-hidden" style={{ width: '100%' }}>
+                  <Image 
+                    src="/ui-web.webp"
+                    alt="UI Web"
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: 'left center' }}
+                    priority
+                  />
+                </div>
+              </div>
+              {/* Overlay - UI Mobile with iPhone mock (left side) */}
+              <div className="absolute left-0 bottom-0 w-2/5 h-full z-10 flex items-end justify-start">
+                <div className="relative w-full max-w-[280px]" style={{ transform: 'scale(0.8)', transformOrigin: 'left bottom' }}>
+                  <Iphone 
+                    src="/ui-mobile.webp"
+                    className="w-full h-auto drop-shadow-2xl"
+                  />
                 </div>
               </div>
             </div>
