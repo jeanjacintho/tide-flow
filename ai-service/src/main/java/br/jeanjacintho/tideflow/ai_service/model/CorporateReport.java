@@ -16,7 +16,7 @@ import java.util.UUID;
     @Index(name = "idx_report_created", columnList = "created_at DESC")
 })
 public class CorporateReport {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -96,7 +96,7 @@ public class CorporateReport {
 
     public CorporateReport() {}
 
-    public CorporateReport(UUID companyId, ReportType reportType, LocalDate reportDate, 
+    public CorporateReport(UUID companyId, ReportType reportType, LocalDate reportDate,
                           LocalDate periodStart, LocalDate periodEnd, String title) {
         this.companyId = companyId;
         this.reportType = reportType;

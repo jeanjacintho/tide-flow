@@ -22,4 +22,3 @@ public class JacksonConfig implements WebMvcConfigurer {
         return objectMapper;
     }
 }
-

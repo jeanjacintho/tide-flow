@@ -103,4 +103,3 @@ public class PatternResponse {
         this.ultimaAtualizacao = ultimaAtualizacao;
     }
 }
-

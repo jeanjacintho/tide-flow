@@ -35,4 +35,3 @@ public class PatternController {
         return ResponseEntity.accepted().build();
     }
 }
-

@@ -88,7 +88,7 @@ public class UpdateUserRequestDTO {
     public void setCity(String city) {
         this.city = city;
     }
-    
+
     public String getState() {
         return state;
     }

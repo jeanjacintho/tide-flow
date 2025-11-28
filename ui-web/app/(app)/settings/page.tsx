@@ -40,7 +40,7 @@ export default function ProfilePage() {
       state: user.state || '',
       avatarUrl: user.avatarUrl || '',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,6 +245,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-
-

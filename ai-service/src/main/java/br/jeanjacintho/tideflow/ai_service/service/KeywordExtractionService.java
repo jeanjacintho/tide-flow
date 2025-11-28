@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 public class KeywordExtractionService {
 
     private static final Logger logger = LoggerFactory.getLogger(KeywordExtractionService.class);
-    
+
     private static final int MIN_KEYWORD_LENGTH = 3;
     private static final int MAX_KEYWORDS = 20;
     private static final Pattern WORD_PATTERN = Pattern.compile("\\b\\w+\\b");
-    
+
     private static final Set<String> STOP_WORDS = Set.of(
         "o", "a", "os", "as", "um", "uma", "uns", "umas",
         "de", "do", "da", "dos", "das", "em", "no", "na", "nos", "nas",
@@ -48,19 +48,15 @@ public class KeywordExtractionService {
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
     }
 
-    /**
-     * Extrai palavras-chave de mensagens agregadas por departamento.
-     * Retorna um mapa com palavra -> frequência.
-     */
     @Transactional(readOnly = true)
     public Map<String, Integer> extractKeywordsFromDepartment(UUID departmentId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        logger.info("Extraindo palavras-chave para departamento {} no período {} - {}", 
+        logger.info("Extraindo palavras-chave para departamento {} no período {} - {}",
             departmentId, startDateTime, endDateTime);
-        
+
         List<EmotionalAnalysis> analyses = emotionalAnalysisRepository.findByDepartmentIdAndDateRange(
             departmentId, startDateTime, endDateTime
         );
-        
+
         if (analyses.isEmpty()) {
             logger.warn("Nenhuma análise encontrada para departamento {}", departmentId);
             return new HashMap<>();
@@ -68,33 +64,30 @@ public class KeywordExtractionService {
 
         Map<String, Integer> keywordFrequency = new HashMap<>();
         Set<UUID> processedConversations = new HashSet<>();
-        
+
         for (EmotionalAnalysis analysis : analyses) {
             if (analysis.getConversationId() != null && !processedConversations.contains(analysis.getConversationId())) {
-                List<br.jeanjacintho.tideflow.ai_service.model.ConversationMessage> messages = 
+                List<br.jeanjacintho.tideflow.ai_service.model.ConversationMessage> messages =
                     messageRepository.findByConversationIdOrderBySequenceNumberAsc(analysis.getConversationId());
-                
+
                 for (br.jeanjacintho.tideflow.ai_service.model.ConversationMessage message : messages) {
                     if (message.getRole() == MessageRole.USER) {
                         extractKeywordsFromText(message.getContent(), keywordFrequency);
                     }
                 }
-                
+
                 processedConversations.add(analysis.getConversationId());
             }
         }
-        
+
         return filterTopKeywords(keywordFrequency);
     }
 
-    /**
-     * Extrai palavras-chave de um texto específico.
-     */
     public void extractKeywordsFromText(String text, Map<String, Integer> keywordFrequency) {
         if (text == null || text.trim().isEmpty()) {
             return;
         }
-        
+
         String normalizedText = normalizeText(text);
         WORD_PATTERN.matcher(normalizedText).results()
             .map(match -> match.group().toLowerCase())
@@ -103,9 +96,6 @@ public class KeywordExtractionService {
             .forEach(word -> keywordFrequency.merge(word, 1, Integer::sum));
     }
 
-    /**
-     * Filtra e retorna as top keywords por frequência.
-     */
     private Map<String, Integer> filterTopKeywords(Map<String, Integer> keywordFrequency) {
         return keywordFrequency.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
@@ -118,9 +108,6 @@ public class KeywordExtractionService {
             ));
     }
 
-    /**
-     * Normaliza texto removendo acentos e caracteres especiais.
-     */
     private String normalizeText(String text) {
         return text.toLowerCase()
             .replaceAll("[áàâãä]", "a")
@@ -132,18 +119,15 @@ public class KeywordExtractionService {
             .replaceAll("[^\\w\\s]", " ");
     }
 
-    /**
-     * Calcula score de sentimento agregado baseado nas análises emocionais.
-     */
     @Transactional(readOnly = true)
     public Double calculateSentimentScore(UUID departmentId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        logger.info("Calculando score de sentimento para departamento {} no período {} - {}", 
+        logger.info("Calculando score de sentimento para departamento {} no período {} - {}",
             departmentId, startDateTime, endDateTime);
-        
+
         List<EmotionalAnalysis> analyses = emotionalAnalysisRepository.findByDepartmentIdAndDateRange(
             departmentId, startDateTime, endDateTime
         );
-        
+
         if (analyses.isEmpty()) {
             return null;
         }

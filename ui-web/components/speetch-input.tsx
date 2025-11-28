@@ -12,8 +12,8 @@ interface SpeechInputProps {
   userId?: string;
 }
 
-export default function SpeechInput({ 
-  onTranscriptChange, 
+export default function SpeechInput({
+  onTranscriptChange,
   disabled = false,
   conversationId,
   userId
@@ -24,7 +24,6 @@ export default function SpeechInput({
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Limpa recursos quando o componente desmonta
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -45,7 +44,7 @@ export default function SpeechInput({
     }
 
     if (isRecording) {
-      // Parar gravação
+
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
@@ -55,7 +54,7 @@ export default function SpeechInput({
       }
       setIsRecording(false);
     } else {
-      // Iniciar gravação
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
@@ -74,12 +73,11 @@ export default function SpeechInput({
 
         mediaRecorder.onstop = async () => {
           setIsProcessing(true);
-          
+
           try {
-            // Cria um blob do áudio gravado
+
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            
-            // Envia para o backend para transcrição
+
             const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.webm');
@@ -100,15 +98,13 @@ export default function SpeechInput({
             }
 
             const data = await response.json();
-            
-            // Atualiza o transcript
+
             if (data.transcript && onTranscriptChange) {
               onTranscriptChange(data.transcript);
             }
 
-            // Se houver resposta da conversa, também atualiza
             if (data.conversationResponse) {
-              // A resposta da IA já foi processada no backend
+
               console.log('Conversa processada:', data.conversationResponse);
             }
           } catch (error) {
@@ -129,7 +125,6 @@ export default function SpeechInput({
     }
   };
 
-  // Verifica suporte do navegador
   if (typeof window === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return null;
   }

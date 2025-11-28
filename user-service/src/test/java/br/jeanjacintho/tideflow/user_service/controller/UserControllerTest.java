@@ -467,4 +467,3 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(0));
     }
 }
-

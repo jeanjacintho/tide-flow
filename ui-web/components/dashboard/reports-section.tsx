@@ -27,18 +27,16 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
   const loadReports = async () => {
     try {
       setLoading(true);
-      
-      // Usa listReports para buscar todos os relatórios completados
+
       const reportType = filter !== 'all' ? filter : undefined;
       const reportList = await apiService.listReports(
         companyId,
         reportType,
-        'COMPLETED', // Apenas relatórios completados
+        'COMPLETED',
         0,
-        50 // Busca até 50 relatórios
+        50
       );
-      
-      // Converte ReportSummary para CorporateReportResponse
+
       if (reportList.reports && reportList.reports.length > 0) {
         const fullReports: CorporateReportResponse[] = reportList.reports.map((summary) => ({
           id: summary.id,
@@ -53,7 +51,7 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
           executiveSummary: summary.executiveSummary,
           generatedByAi: summary.generatedByAi,
           createdAt: summary.createdAt,
-          updatedAt: summary.createdAt, // Usa createdAt como fallback
+          updatedAt: summary.createdAt,
           generatedAt: summary.generatedAt,
           insights: undefined,
           metrics: undefined,
@@ -64,12 +62,12 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
         setReports([]);
       }
     } catch (error: any) {
-      // Se for 404, não há relatórios (não é erro)
+
       if (error?.message?.includes('404') || error?.message?.includes('Not Found')) {
         setReports([]);
       } else {
         console.error('Erro ao carregar relatórios:', error);
-        // Não mostra toast de erro se for apenas falta de relatórios
+
         if (!error?.message?.includes('404') && !error?.message?.includes('Not Found')) {
           toast.error('Erro ao carregar relatórios');
         }
@@ -81,15 +79,14 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
   };
 
   const handleViewReport = (reportId: string) => {
-    // Navegar para página de detalhes do relatório
+
     window.location.href = `/dashboard/reports/${reportId}`;
   };
 
   const handleDownloadReport = async (reportId: string) => {
     try {
       toast.info('Preparando download do relatório...');
-      // Implementar lógica de download
-      // Por enquanto, apenas mostra mensagem
+
       toast.success('Download iniciado');
     } catch (error) {
       console.error('Erro ao baixar relatório:', error);
@@ -115,8 +112,7 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
   const handleGenerateReport = async () => {
     try {
       toast.info('Gerando novo relatório...');
-      // Implementar lógica de geração de relatório
-      // Por enquanto, apenas recarrega os relatórios
+
       await loadReports();
       toast.success('Relatório gerado com sucesso');
     } catch (error) {
@@ -166,7 +162,7 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <div className="flex gap-2 mt-4">
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[180px]">
@@ -225,4 +221,3 @@ export function ReportsSection({ companyId }: ReportsSectionProps) {
     </Card>
   );
 }
-

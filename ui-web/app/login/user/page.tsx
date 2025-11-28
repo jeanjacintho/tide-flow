@@ -39,9 +39,9 @@ export default function UserLoginPage() {
     ) => {
         if (field === 'username') setUsername(value as string);
         if (field === 'password') setPassword(value as string);
-        
+
         setTouchedFields(prev => new Set(prev).add(field));
-        
+
         if (errors[field]) {
             const fieldSchema = loginSchema.shape[field];
             if (fieldSchema) {
@@ -58,7 +58,7 @@ export default function UserLoginPage() {
     };
 
     const isFieldValid = (field: keyof LoginFormData): boolean => {
-        return !errors[field] && touchedFields.has(field) && 
+        return !errors[field] && touchedFields.has(field) &&
                (field === 'username' ? username !== '' : password !== '');
     };
 
@@ -99,7 +99,7 @@ export default function UserLoginPage() {
 
     return (
         <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
-            {/* Dot Pattern Background */}
+            {}
             <div className="absolute inset-0 opacity-30 pointer-events-none">
                 <DotPattern
                     className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
@@ -110,8 +110,8 @@ export default function UserLoginPage() {
                     cr={1}
                 />
             </div>
-            
-            {/* Content */}
+
+            {}
             <motion.div
                 className="relative z-10 w-full max-w-md space-y-6"
                 style={{ willChange: 'transform' }}
@@ -119,7 +119,7 @@ export default function UserLoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                {/* Header */}
+                {}
                 <motion.div
                     className="text-center"
                     initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ export default function UserLoginPage() {
                     <p className="text-muted-foreground mt-1">Acesso para funcionários</p>
                 </motion.div>
 
-                {/* Form Card */}
+                {}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -182,8 +182,8 @@ export default function UserLoginPage() {
                                             <FieldLabel htmlFor="password">
                                                 Senha <span className="text-destructive">*</span>
                                             </FieldLabel>
-                                            <Link 
-                                                href="/forgot-password" 
+                                            <Link
+                                                href="/forgot-password"
                                                 className="text-sm text-primary hover:underline font-medium transition-colors"
                                             >
                                                 Esqueceu sua senha?
@@ -222,10 +222,10 @@ export default function UserLoginPage() {
                                     </Field>
                                     <FieldGroup>
                                         <Field>
-                                            <Button 
-                                                type="submit" 
-                                                disabled={isPending} 
-                                                className="w-full" 
+                                            <Button
+                                                type="submit"
+                                                disabled={isPending}
+                                                className="w-full"
                                                 size="lg"
                                             >
                                                 {isPending ? (
@@ -249,8 +249,8 @@ export default function UserLoginPage() {
                                 </FieldGroup>
                             </form>
                             <div className="mt-6 pt-6 border-t">
-                                <Link 
-                                    href="/login/company" 
+                                <Link
+                                    href="/login/company"
                                     className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
                                 >
                                     <Building2 className="h-4 w-4 group-hover:text-primary transition-colors" />

@@ -88,7 +88,7 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Company Details */}
+        {}
         <div className="space-y-3">
           {company.domain && (
             <div className="text-sm">
@@ -128,7 +128,7 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
           </div>
         </div>
 
-        {/* Usage Information */}
+        {}
         {usageInfo && (
           <div className="pt-4 border-t">
             <div className="mb-3">
@@ -167,7 +167,7 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
           </div>
         )}
 
-        {/* Actions */}
+        {}
         <div className="pt-4 border-t flex gap-2">
           <Button variant="outline" size="sm" className="flex-1">
             Ver Detalhes
@@ -180,4 +180,3 @@ export function CompanyInfoCard({ company, usageInfo, loading = false }: Company
     </Card>
   );
 }
-

@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadUser = async () => {
       const token = localStorage.getItem('auth_token');
       if (!token) {
@@ -61,17 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await apiService.login({ username, password });
       localStorage.setItem('auth_token', response.token);
-      
+
       const userData = await apiService.getCurrentUser();
       setUser(userData);
-      
-      // Redireciona baseado no tipo de usuário e role
+
       if (userData.companyId) {
-        // Apenas HR_MANAGER, ADMIN e OWNER podem acessar o dashboard
+
         if (userData.companyRole === 'HR_MANAGER' || userData.companyRole === 'ADMIN' || userData.companyRole === 'OWNER') {
           router.push('/dashboard');
         } else {
-          // Usuários normais vão para o chat
+
           router.push('/chat');
         }
       } else {
@@ -90,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         role: 'USER',
       });
-      
+
       await login(email, password);
     } catch (error) {
       throw error;

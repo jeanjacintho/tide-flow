@@ -47,21 +47,18 @@ export const LoginScreen: React.FC = () => {
     try {
       console.log('LoginScreen: Starting login process');
       console.log('LoginScreen: Username:', username.trim());
-      
-      // Faz login e atualiza o estado de autenticação
-      // O App.tsx detecta automaticamente a mudança em isAuthenticated
-      // e redireciona para ChatScreen quando o login for bem-sucedido
+
       await login(username.trim(), password);
-      
+
       console.log('LoginScreen: Login completed successfully');
-      // Não precisa de navegação manual - o redirecionamento é automático
+
     } catch (error) {
       console.error('LoginScreen: Login error caught:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
           : 'Erro ao fazer login. Verifique suas credenciais.';
-      
+
       console.error('LoginScreen: Showing error alert:', errorMessage);
       Alert.alert('Erro no Login', errorMessage);
     }
@@ -287,4 +284,3 @@ const styles = StyleSheet.create({
     color: Colors.primaryForeground,
   },
 });
-

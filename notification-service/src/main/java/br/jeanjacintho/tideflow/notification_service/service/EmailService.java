@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
-    
+
     private final JavaMailSender mailSender;
     private final boolean emailEnabled;
 
-    public EmailService(JavaMailSender mailSender, 
+    public EmailService(JavaMailSender mailSender,
                        @Value("${spring.mail.enabled:true}") boolean emailEnabled) {
         this.mailSender = mailSender;
         this.emailEnabled = emailEnabled;
@@ -32,7 +32,7 @@ public class EmailService {
             message.setTo(to);
             message.setSubject("Bem-vindo ao Tide Flow!");
             message.setText(buildWelcomeMessage(name));
-            
+
             mailSender.send(message);
             logger.info("Email de boas-vindas enviado com sucesso para: {}", to);
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class EmailService {
             mailMessage.setTo(trustedEmail);
             mailMessage.setSubject("🚨 ALERTA VERMELHO - Tide Flow - " + userName + " precisa de atenção");
             mailMessage.setText(buildRiskAlertMessage(userName, message, riskLevel, reason, context));
-            
+
             mailSender.send(mailMessage);
             logger.info("Alerta de risco enviado com sucesso para: {}", trustedEmail);
         } catch (Exception e) {
@@ -84,35 +84,34 @@ public class EmailService {
         alertMessage.append("O sistema Tide Flow detectou um possível risco de autolesão ou suicídio na conta de ");
         alertMessage.append(userName != null && !userName.isEmpty() ? userName : "um usuário");
         alertMessage.append(".\n\n");
-        
+
         alertMessage.append("NÍVEL DE RISCO: ").append(riskLevel).append("\n\n");
-        
+
         if (reason != null && !reason.isEmpty()) {
             alertMessage.append("Motivo da detecção: ").append(reason).append("\n\n");
         }
-        
+
         if (message != null && !message.isEmpty()) {
             alertMessage.append("Mensagem detectada:\n");
             alertMessage.append("\"").append(message).append("\"\n\n");
         }
-        
+
         if (context != null && !context.isEmpty()) {
             alertMessage.append("Contexto: ").append(context).append("\n\n");
         }
-        
+
         alertMessage.append("AÇÃO RECOMENDADA:\n");
         alertMessage.append("- Entre em contato com ").append(userName != null ? userName : "o usuário").append(" o quanto antes\n");
         alertMessage.append("- Ofereça suporte emocional e escuta ativa\n");
         alertMessage.append("- Se necessário, busque ajuda profissional (CVV: 188, CAPS, etc.)\n");
         alertMessage.append("- Não ignore este alerta\n\n");
-        
+
         alertMessage.append("Este é um alerta automático do sistema Tide Flow.\n");
         alertMessage.append("O sistema analisa mensagens usando inteligência artificial para detectar possíveis situações de risco.\n\n");
-        
+
         alertMessage.append("Atenciosamente,\n");
         alertMessage.append("Sistema Tide Flow");
-        
+
         return alertMessage.toString();
     }
 }
-

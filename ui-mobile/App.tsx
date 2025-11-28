@@ -9,7 +9,6 @@ import { Colors } from './constants/colors';
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Durante o carregamento inicial, mostra loading
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -18,8 +17,6 @@ function AppContent() {
     );
   }
 
-  // Primeira tela sempre é LoginScreen se não estiver autenticado
-  // Só vai para ChatScreen se o usuário já estiver logado
   if (!isAuthenticated) {
     return <LoginScreen />;
   }

@@ -119,4 +119,3 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
   },
 });
-

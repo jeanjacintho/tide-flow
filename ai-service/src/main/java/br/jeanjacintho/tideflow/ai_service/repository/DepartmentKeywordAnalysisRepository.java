@@ -13,9 +13,9 @@ import java.util.UUID;
 
 @Repository
 public interface DepartmentKeywordAnalysisRepository extends JpaRepository<DepartmentKeywordAnalysis, UUID> {
-    
+
     Optional<DepartmentKeywordAnalysis> findByDepartmentIdAndDate(UUID departmentId, LocalDate date);
-    
+
     @Query("SELECT k FROM DepartmentKeywordAnalysis k WHERE k.departmentId = :departmentId " +
            "AND k.date >= :startDate AND k.date <= :endDate ORDER BY k.date DESC")
     List<DepartmentKeywordAnalysis> findByDepartmentIdAndDateRange(
@@ -23,7 +23,7 @@ public interface DepartmentKeywordAnalysisRepository extends JpaRepository<Depar
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
-    
+
     @Query("SELECT k FROM DepartmentKeywordAnalysis k WHERE k.companyId = :companyId " +
            "AND k.date >= :startDate AND k.date <= :endDate ORDER BY k.date DESC")
     List<DepartmentKeywordAnalysis> findByCompanyIdAndDateRange(
@@ -31,7 +31,7 @@ public interface DepartmentKeywordAnalysisRepository extends JpaRepository<Depar
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
-    
+
     @Query(value = "SELECT DISTINCT k.department_id FROM department_keyword_analysis k " +
            "WHERE k.department_id IS NOT NULL AND k.date = :date", nativeQuery = true)
     List<UUID> findDistinctDepartmentIdsByDate(@Param("date") LocalDate date);

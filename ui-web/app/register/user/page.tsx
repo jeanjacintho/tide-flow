@@ -59,9 +59,9 @@ export default function RegisterUserPage() {
         if (field === 'email') setEmail(value as string);
         if (field === 'password') setPassword(value as string);
         if (field === 'confirmPassword') setConfirmPassword(value as string);
-        
+
         setTouchedFields(prev => new Set(prev).add(field));
-        
+
         if (errors[field]) {
             const fieldSchema = registerSchema.shape[field];
             if (fieldSchema) {
@@ -78,7 +78,7 @@ export default function RegisterUserPage() {
     };
 
     const isFieldValid = (field: keyof RegisterFormData): boolean => {
-        return !errors[field] && touchedFields.has(field) && 
+        return !errors[field] && touchedFields.has(field) &&
                (field === 'name' ? name !== '' :
                 field === 'email' ? email !== '' :
                 field === 'password' ? password !== '' :
@@ -135,7 +135,7 @@ export default function RegisterUserPage() {
                     cr={1}
                 />
             </div>
-            
+
             {/* Content */}
             <motion.div
                 className="relative z-10 w-full max-w-md space-y-6"
@@ -340,5 +340,3 @@ export default function RegisterUserPage() {
         </div>
     );
 }
-
-

@@ -19,7 +19,3 @@ public class UserCreatedListener {
         emailService.sendWelcomeEmail(event.email(), event.name());
     }
 }
-
-
-
-

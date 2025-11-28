@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRequireRole } from '@/hooks/useRequireRole';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  useDashboardData, 
-  useStressTimeline, 
-  useDepartmentHeatmap, 
-  useTurnoverPrediction 
+import {
+  useDashboardData,
+  useStressTimeline,
+  useDepartmentHeatmap,
+  useTurnoverPrediction
 } from '@/hooks/use-dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,26 +24,23 @@ import { apiService, Company, UsageInfo } from '@/lib/api';
 import { subDays, subMonths, format } from 'date-fns';
 
 export default function DashboardPage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: ['HR_MANAGER', 'ADMIN', 'OWNER'],
     redirectTo: '/chat'
   });
-  
+
   const { user } = useAuth();
   const companyId = user?.companyId;
-  
+
   const [company, setCompany] = useState<Company | null>(null);
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [selectedDepartment, setSelectedDepartment] = useState<string | undefined>(undefined);
-  
-  // Memoiza a data atual para evitar recriações desnecessárias
+
   const currentDate = useMemo(() => new Date(), []);
-  
-  // Dashboard overview
+
   const { data: dashboardData, loading: dashboardLoading } = useDashboardData(companyId || null, currentDate);
-  
-  // Stress timeline - memoiza as datas para evitar recriações desnecessárias
+
   const startDate = useMemo(() => {
     const now = new Date();
     switch (timeRange) {
@@ -54,26 +51,24 @@ export default function DashboardPage() {
       default: return subDays(now, 30);
     }
   }, [timeRange]);
-  
-  const endDate = useMemo(() => new Date(), []); // Data atual - não muda durante a sessão
+
+  const endDate = useMemo(() => new Date(), []);
   const granularity = useMemo(() => timeRange === '1y' ? 'month' : timeRange === '7d' ? 'day' : 'day', [timeRange]);
-  
+
   const { data: stressTimeline, loading: stressLoading } = useStressTimeline(
     companyId || null,
     startDate,
     endDate,
     granularity
   );
-  
-  // Department heatmap
+
   const { data: heatmapData, loading: heatmapLoading } = useDepartmentHeatmap(companyId || null, currentDate);
-  
-  // Turnover prediction
+
   const { data: turnoverData, loading: turnoverLoading } = useTurnoverPrediction(
     companyId || null,
     selectedDepartment
   );
-  
+
   useEffect(() => {
     if (companyId) {
       loadCompanyInfo();
@@ -82,7 +77,7 @@ export default function DashboardPage() {
 
   const loadCompanyInfo = async () => {
     if (!companyId) return;
-    
+
     try {
       const [companyData, usage] = await Promise.all([
         apiService.getCompanyById(companyId).catch(() => null),
@@ -99,29 +94,27 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Calcular métricas principais
   const totalEmployees = dashboardData?.totalActiveUsers ?? 0;
   const totalConversations = dashboardData?.totalConversations ?? 0;
   const totalMessages = dashboardData?.totalMessages ?? 0;
   const riskAlerts = dashboardData?.riskAlertsCount ?? 0;
   const avgStress = dashboardData?.averageStressLevel !== null && dashboardData?.averageStressLevel !== undefined
-    ? Math.round((dashboardData.averageStressLevel * 100)) 
+    ? Math.round((dashboardData.averageStressLevel * 100))
     : null;
-  
-  // Top keywords e triggers
-  const topKeywords = dashboardData?.topKeywords 
+
+  const topKeywords = dashboardData?.topKeywords
     ? Object.entries(dashboardData.topKeywords)
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 5)
     : [];
-  
-  const topTriggers = dashboardData?.topTriggers 
+
+  const topTriggers = dashboardData?.topTriggers
     ? Object.keys(dashboardData.topTriggers).slice(0, 3)
     : [];
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">O Mapa Corporativo</h1>
@@ -144,7 +137,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Key Metrics */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -195,9 +188,9 @@ export default function DashboardPage() {
                   {avgStress !== null ? `${avgStress}%` : 'N/D'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {avgStress !== null 
-                    ? avgStress < 30 ? 'Baixo stress' 
-                    : avgStress < 70 ? 'Stress moderado' 
+                  {avgStress !== null
+                    ? avgStress < 30 ? 'Baixo stress'
+                    : avgStress < 70 ? 'Stress moderado'
                     : 'Alto stress - Atenção necessária'
                     : 'Sem dados disponíveis'}
                 </p>
@@ -225,7 +218,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Insights e Palavras-chave */}
+      {}
       {(topKeywords.length > 0 || topTriggers.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {topKeywords.length > 0 && (
@@ -245,7 +238,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {topTriggers.length > 0 && (
             <Card>
               <CardHeader>
@@ -266,42 +259,42 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Sismógrafo de Stress */}
+      {}
       <StressSeismograph data={stressTimeline} loading={stressLoading} />
 
-      {/* Mapa de Calor por Departamento */}
-      <DepartmentHeatmap 
-        departments={heatmapData?.departments || []} 
-        loading={heatmapLoading} 
+      {}
+      <DepartmentHeatmap
+        departments={heatmapData?.departments || []}
+        loading={heatmapLoading}
       />
 
-      {/* Predição de Turnover */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TurnoverPrediction 
-          data={turnoverData} 
-          loading={turnoverLoading} 
+        <TurnoverPrediction
+          data={turnoverData}
+          loading={turnoverLoading}
         />
-        
-        {/* Análise de Impacto */}
+
+        {}
         <ImpactAnalysis companyId={companyId || null} />
       </div>
 
-      {/* Informações da Conta e Empresa */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AccountInfoCard user={user} loading={!user} />
-        <CompanyInfoCard 
-          company={company} 
-          usageInfo={usageInfo} 
-          loading={!companyId} 
+        <CompanyInfoCard
+          company={company}
+          usageInfo={usageInfo}
+          loading={!companyId}
         />
       </div>
 
-      {/* Relatórios */}
+      {}
       {companyId && (
         <ReportsSection companyId={companyId} />
       )}
 
-      {/* Aviso de Privacidade */}
+      {}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="text-sm">
@@ -310,8 +303,8 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            <strong>A sua empresa NÃO sabe quem você é, nem o que você escreve.</strong> Ela recebe apenas dados agregados do setor. 
-            Todos os dados individuais são protegidos e nunca expostos no dashboard corporativo. 
+            <strong>A sua empresa NÃO sabe quem você é, nem o que você escreve.</strong> Ela recebe apenas dados agregados do setor.
+            Todos os dados individuais são protegidos e nunca expostos no dashboard corporativo.
             Este sistema garante compliance total com LGPD/GDPR.
           </p>
         </CardContent>

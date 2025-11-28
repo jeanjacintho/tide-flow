@@ -66,8 +66,7 @@ class TokenServiceTest {
 
         assertNotNull(token1);
         assertNotNull(token2);
-        // Tokens devem ser diferentes para usuários diferentes
-        // (embora não seja garantido devido à aleatoriedade, é muito provável)
+
     }
 
     @Test
@@ -103,9 +102,7 @@ class TokenServiceTest {
     @Test
     @DisplayName("validateToken - Deve lançar RuntimeException com token expirado")
     void testValidateTokenExpired() {
-        // Criar um token com data de expiração no passado
-        // Como não temos acesso direto à criação do token com expiração customizada,
-        // vamos testar que um token inválido/alterado lança exceção
+
         String validToken = tokenService.generateToken(testUser);
         String tamperedToken = validToken.substring(0, validToken.length() - 5) + "XXXXX";
 
@@ -126,4 +123,3 @@ class TokenServiceTest {
         assertEquals(testUser.getEmail(), email2);
     }
 }
-

@@ -6,10 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * Configuração para o cliente Gemini.
- * Só é criado se a propriedade llm.provider estiver configurada como "gemini".
- */
 @Configuration
 @ConditionalOnProperty(name = "llm.provider", havingValue = "gemini")
 public class GeminiConfig {
@@ -24,4 +20,3 @@ public class GeminiConfig {
                 .build();
     }
 }
-

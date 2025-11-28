@@ -26,9 +26,9 @@ const requirements: Requirement[] = [
 
 function calculateStrength(password: string): PasswordStrength {
   if (!password) return 'weak';
-  
+
   const metRequirements = requirements.filter(req => req.test(password)).length;
-  
+
   if (metRequirements <= 2) return 'weak';
   if (metRequirements <= 3) return 'fair';
   if (metRequirements <= 5) return 'good';
@@ -74,7 +74,7 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Progress Bar */}
+      {}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">Força da senha</span>
@@ -99,7 +99,7 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
         </div>
       </div>
 
-      {/* Requirements List */}
+      {}
       <div className="space-y-1.5">
         {requirements.map((req, index) => {
           const isMet = req.test(password);
@@ -124,4 +124,3 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
     </div>
   );
 }
-

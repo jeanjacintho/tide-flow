@@ -16,10 +16,10 @@ import java.util.*;
 public class RiskDetectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(RiskDetectionService.class);
-    
+
     private final LLMClient llmClient;
     private final ObjectMapper objectMapper;
-    
+
     private static final List<String> RISK_KEYWORDS = Arrays.asList(
         "quero me matar", "quero morrer", "vou me matar", "vou me suicidar",
         "quero me mutilar", "vou me cortar", "quero me machucar",
@@ -35,39 +35,39 @@ public class RiskDetectionService {
 
     public Mono<RiskAnalysisResponse> analyzeRisk(String message, String userId) {
         logger.info("Iniciando análise de risco para usuário {}: mensagem='{}'", userId, message);
-        
+
         if (message == null || message.trim().isEmpty()) {
             logger.debug("Mensagem vazia, sem risco detectado");
             return Mono.just(new RiskAnalysisResponse(false, "NONE", "Mensagem vazia", null, 0.0));
         }
-        
+
         String messageLower = message.toLowerCase();
-        
+
         boolean hasRiskKeywords = RISK_KEYWORDS.stream()
                 .anyMatch(keyword -> messageLower.contains(keyword.toLowerCase()));
 
         logger.debug("Verificação de palavras-chave: encontradas={}", hasRiskKeywords);
-        
+
         if (!hasRiskKeywords) {
             logger.debug("Nenhuma palavra-chave de risco encontrada, mas ainda assim analisando com IA para detectar padrões sutis");
-            // Mesmo sem palavras-chave explícitas, vamos analisar com IA para detectar padrões sutis
+
         }
 
         String analysisPrompt = buildRiskAnalysisPrompt(message);
         logger.debug("Prompt de análise construído, enviando para IA");
-        
+
         return llmClient.generateResponse(analysisPrompt)
                 .map(analysisResponse -> {
                     logger.debug("Resposta da IA recebida, fazendo parse");
                     RiskAnalysisResponse parsed = parseRiskAnalysisResponse(analysisResponse);
-                    logger.info("Análise de risco parseada: detectado={}, nível={}, confiança={}", 
+                    logger.info("Análise de risco parseada: detectado={}, nível={}, confiança={}",
                         parsed.isRiskDetected(), parsed.getRiskLevel(), parsed.getConfidence());
                     return parsed;
                 })
                 .onErrorResume(error -> {
                     logger.error("Erro ao analisar risco com IA para usuário {}: {}", userId, error.getMessage(), error);
                     RiskAnalysisResponse fallback = createFallbackRiskAnalysis(message);
-                    logger.info("Usando análise de fallback: detectado={}, nível={}", 
+                    logger.info("Usando análise de fallback: detectado={}, nível={}",
                         fallback.isRiskDetected(), fallback.getRiskLevel());
                     return Mono.just(fallback);
                 });
@@ -91,7 +91,7 @@ public class RiskDetectionService {
         prompt.append("- Se for uso figurativo, metafórico, ou em contexto de ficção/arte, NÃO marque como risco.\n");
         prompt.append("- Se houver ambiguidade, seja conservador e marque como risco baixo/médio.\n");
         prompt.append("- Confidence deve refletir sua certeza na análise (0.0 = incerto, 1.0 = muito certo).\n");
-        
+
         return prompt.toString();
     }
 
@@ -101,17 +101,17 @@ public class RiskDetectionService {
                     .replace("```json", "")
                     .replace("```", "")
                     .trim();
-            
+
             Map<String, Object> responseMap = objectMapper.readValue(
-                    cleanedResponse, 
+                    cleanedResponse,
                     new TypeReference<Map<String, Object>>() {}
             );
-            
+
             boolean isRiskDetected = Boolean.TRUE.equals(responseMap.get("isRiskDetected"));
             String riskLevel = (String) responseMap.getOrDefault("riskLevel", "NONE");
             String reason = (String) responseMap.getOrDefault("reason", "");
             String context = (String) responseMap.getOrDefault("context", "");
-            
+
             double confidence = 0.5;
             Object confidenceObj = responseMap.get("confidence");
             if (confidenceObj instanceof Number) {
@@ -123,15 +123,15 @@ public class RiskDetectionService {
                     logger.warn("Erro ao parsear confidence: {}", confidenceObj);
                 }
             }
-            
+
             confidence = Math.max(0.0, Math.min(1.0, confidence));
-            
+
             if (!isRiskDetected) {
                 riskLevel = "NONE";
             }
-            
+
             return new RiskAnalysisResponse(isRiskDetected, riskLevel, reason, context, confidence);
-            
+
         } catch (JsonProcessingException e) {
             logger.error("Erro ao fazer parse da resposta de análise de risco: {}", e.getMessage(), e);
             return createFallbackRiskAnalysis(null);
@@ -142,18 +142,18 @@ public class RiskDetectionService {
         if (message == null) {
             return new RiskAnalysisResponse(false, "NONE", "Erro na análise", null, 0.0);
         }
-        
+
         String messageLower = message.toLowerCase();
-        boolean hasHighRiskKeywords = messageLower.contains("quero me matar") || 
+        boolean hasHighRiskKeywords = messageLower.contains("quero me matar") ||
                                       messageLower.contains("vou me matar") ||
                                       messageLower.contains("quero me suicidar");
-        
+
         if (hasHighRiskKeywords) {
-            return new RiskAnalysisResponse(true, "HIGH", 
+            return new RiskAnalysisResponse(true, "HIGH",
                     "Detecção de palavras-chave de alto risco", message, 0.7);
         }
-        
-        return new RiskAnalysisResponse(false, "NONE", 
+
+        return new RiskAnalysisResponse(false, "NONE",
                 "Análise não concluída - análise manual recomendada", null, 0.3);
     }
 }

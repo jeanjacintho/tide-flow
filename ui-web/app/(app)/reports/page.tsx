@@ -36,14 +36,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ReportsPage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: ['HR_MANAGER', 'ADMIN', 'OWNER'],
     redirectTo: '/chat'
   });
-  
+
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -70,7 +70,7 @@ export default function ReportsPage() {
 
   const loadReports = async () => {
     if (!companyId) return;
-    
+
     try {
       setLoading(true);
       const response = await apiService.listReports(

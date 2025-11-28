@@ -29,7 +29,7 @@ public class WhisperClient {
 
     public Mono<String> transcribeAudio(byte[] audioData, String filename) {
         DataBuffer dataBuffer = bufferFactory.wrap(audioData);
-        
+
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
         bodyBuilder.part("audio", dataBuffer)
                 .filename(filename)
@@ -41,7 +41,7 @@ public class WhisperClient {
                 .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
                 .retrieve()
                 .bodyToMono(Map.class)
-                .timeout(Duration.ofMillis(timeout * 3)) // Timeout maior para transcrição
+                .timeout(Duration.ofMillis(timeout * 3))
                 .map(response -> {
                     Object textObj = response.get("text");
                     return textObj != null ? textObj.toString().trim() : "";
@@ -49,4 +49,3 @@ public class WhisperClient {
                 .onErrorReturn("Erro ao transcrever o áudio.");
     }
 }
-

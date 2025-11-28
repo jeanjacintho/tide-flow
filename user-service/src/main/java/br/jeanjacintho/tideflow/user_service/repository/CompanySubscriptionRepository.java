@@ -17,16 +17,16 @@ import br.jeanjacintho.tideflow.user_service.model.SubscriptionStatus;
 @Repository
 public interface CompanySubscriptionRepository extends JpaRepository<CompanySubscription, UUID>, JpaSpecificationExecutor<CompanySubscription> {
     Optional<CompanySubscription> findByCompanyId(UUID companyId);
-    
+
     Optional<CompanySubscription> findByStripeCustomerId(String stripeCustomerId);
-    
+
     Optional<CompanySubscription> findByStripeSubscriptionId(String stripeSubscriptionId);
-    
+
     List<CompanySubscription> findByStatus(SubscriptionStatus status);
-    
+
     @Query("SELECT s FROM CompanySubscription s WHERE s.nextBillingDate <= :date AND s.status = :status")
     List<CompanySubscription> findUpcomingBillings(@Param("date") LocalDateTime date, @Param("status") SubscriptionStatus status);
-    
+
     @Query("SELECT s FROM CompanySubscription s WHERE s.status = :status AND s.nextBillingDate < :date")
     List<CompanySubscription> findExpiredSubscriptions(@Param("date") LocalDateTime date, @Param("status") SubscriptionStatus status);
 }

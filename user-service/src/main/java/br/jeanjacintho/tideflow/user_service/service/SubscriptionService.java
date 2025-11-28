@@ -28,7 +28,7 @@ import java.util.UUID;
 public class SubscriptionService {
 
     private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
-    
+
     private static final BigDecimal FREE_PLAN_PRICE = BigDecimal.ZERO;
     private static final int FREE_PLAN_MAX_EMPLOYEES = 7;
     private static final int ENTERPRISE_PLAN_MAX_EMPLOYEES = Integer.MAX_VALUE;
@@ -60,17 +60,10 @@ public class SubscriptionService {
         return BigDecimal.valueOf(subscriptionPriceCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Cria uma assinatura para uma empresa.
-     * 
-     * @param companyId ID da empresa
-     * @param planType Tipo de plano (FREE ou ENTERPRISE)
-     * @return CompanySubscription criada
-     */
     @Transactional
     public CompanySubscription createSubscription(@NonNull UUID companyId, SubscriptionPlan planType) {
         logger.info("Criando assinatura para empresa {} com plano {}", companyId, planType);
-        
+
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
 
@@ -82,16 +75,16 @@ public class SubscriptionService {
             throw new IllegalArgumentException("Empresa já possui uma assinatura ativa");
         }
 
-        BigDecimal pricePerUser = planType == SubscriptionPlan.FREE 
-            ? FREE_PLAN_PRICE 
+        BigDecimal pricePerUser = planType == SubscriptionPlan.FREE
+            ? FREE_PLAN_PRICE
             : getEnterprisePlanPrice();
 
-        int maxEmployees = planType == SubscriptionPlan.FREE 
-            ? FREE_PLAN_MAX_EMPLOYEES 
+        int maxEmployees = planType == SubscriptionPlan.FREE
+            ? FREE_PLAN_MAX_EMPLOYEES
             : ENTERPRISE_PLAN_MAX_EMPLOYEES;
 
         int currentUserCount = usageTrackingService.getActiveUserCount(companyId);
-        
+
         CompanySubscription subscription = new CompanySubscription(
             company,
             planType,
@@ -101,9 +94,9 @@ public class SubscriptionService {
             LocalDateTime.now().plusMonths(1)
         );
         subscription.setStatus(SubscriptionStatus.TRIAL);
-        
+
         CompanySubscription saved = subscriptionRepository.save(subscription);
-        
+
         company.setSubscriptionPlan(planType);
         company.setMaxEmployees(maxEmployees);
         companyRepository.save(company);
@@ -112,17 +105,10 @@ public class SubscriptionService {
         return saved;
     }
 
-    /**
-     * Faz upgrade da assinatura de uma empresa.
-     * 
-     * @param companyId ID da empresa
-     * @param newPlan Novo plano (FREE ou ENTERPRISE)
-     * @return CompanySubscription atualizada
-     */
     @Transactional
     public CompanySubscription upgradeSubscription(@NonNull UUID companyId, SubscriptionPlan newPlan) {
         logger.info("Fazendo upgrade da assinatura da empresa {} para plano {}", companyId, newPlan);
-        
+
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
 
@@ -137,20 +123,20 @@ public class SubscriptionService {
             throw new IllegalArgumentException("Empresa já possui o plano " + newPlan);
         }
 
-        BigDecimal newPricePerUser = newPlan == SubscriptionPlan.FREE 
-            ? FREE_PLAN_PRICE 
+        BigDecimal newPricePerUser = newPlan == SubscriptionPlan.FREE
+            ? FREE_PLAN_PRICE
             : getEnterprisePlanPrice();
 
-        int maxEmployees = newPlan == SubscriptionPlan.FREE 
-            ? FREE_PLAN_MAX_EMPLOYEES 
+        int maxEmployees = newPlan == SubscriptionPlan.FREE
+            ? FREE_PLAN_MAX_EMPLOYEES
             : ENTERPRISE_PLAN_MAX_EMPLOYEES;
 
         subscription.setPlanType(newPlan);
         subscription.setPricePerUser(newPricePerUser);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        
+
         CompanySubscription saved = subscriptionRepository.save(subscription);
-        
+
         company.setSubscriptionPlan(newPlan);
         company.setMaxEmployees(maxEmployees);
         companyRepository.save(company);
@@ -159,16 +145,10 @@ public class SubscriptionService {
         return saved;
     }
 
-    /**
-     * Calcula a fatura mensal (PMPM - Per Member Per Month) de uma empresa.
-     * 
-     * @param companyId ID da empresa
-     * @return Valor total da fatura mensal
-     */
     @Transactional(readOnly = true)
     public BigDecimal calculateMonthlyBill(@NonNull UUID companyId) {
         logger.info("Calculando fatura mensal para empresa {}", companyId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
 
@@ -177,7 +157,7 @@ public class SubscriptionService {
         }
 
         int activeUsers = usageTrackingService.getActiveUserCount(companyId);
-        
+
         if (subscription.getPlanType() == SubscriptionPlan.FREE) {
             return BigDecimal.ZERO;
         }
@@ -190,9 +170,6 @@ public class SubscriptionService {
         return totalBill;
     }
 
-    /**
-     * Atualiza o número de usuários na assinatura.
-     */
     @Transactional
     public void updateUserCount(@NonNull UUID companyId) {
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
@@ -205,9 +182,6 @@ public class SubscriptionService {
         }
     }
 
-    /**
-     * Verifica se a empresa pode adicionar mais usuários.
-     */
     @Transactional(readOnly = true)
     public boolean canAddUsers(@NonNull UUID companyId) {
         Company company = companyRepository.findById(companyId)
@@ -217,73 +191,47 @@ public class SubscriptionService {
         return activeUsers < company.getMaxEmployees();
     }
 
-    /**
-     * Obtém a assinatura de uma empresa.
-     */
     @Transactional(readOnly = true)
     public CompanySubscription getSubscription(@NonNull UUID companyId) {
         return subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
     }
 
-    /**
-     * Atualiza uma assinatura existente.
-     */
     @Transactional
     public CompanySubscription updateSubscription(@NonNull CompanySubscription subscription) {
         return subscriptionRepository.save(subscription);
     }
 
-    /**
-     * Suspende uma assinatura (chamado pelo Scheduler ou manualmente).
-     */
     @Transactional
     public void suspendSubscription(@NonNull UUID companyId) {
         logger.info("Suspendendo assinatura da empresa: {}", companyId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
-        
+
         subscription.setStatus(SubscriptionStatus.SUSPENDED);
         subscriptionRepository.save(subscription);
-        
-        // Opcional: Reverter para plano FREE se desejado, ou apenas bloquear acesso.
-        // Se reverter para FREE:
-        /*
-        subscription.setPlanType(SubscriptionPlan.FREE);
-        subscription.setPricePerUser(FREE_PLAN_PRICE);
-        Company company = subscription.getCompany();
-        company.setSubscriptionPlan(SubscriptionPlan.FREE);
-        company.setMaxEmployees(FREE_PLAN_MAX_EMPLOYEES);
-        companyRepository.save(company);
-        */
-        
+
         logger.info("Assinatura suspensa com sucesso.");
     }
 
-    /**
-     * Ativa uma assinatura após checkout do Stripe ser completado.
-     */
     @Transactional
     public void activateStripeSubscription(@NonNull UUID companyId, @NonNull String stripeCustomerId, @NonNull com.stripe.model.Subscription stripeSubscription) {
         logger.info("Activating Stripe subscription for company: {} with subscription: {}", companyId, stripeSubscription.getId());
-        
+
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
-        
+
         subscription.setStripeCustomerId(stripeCustomerId);
         subscription.setStripeSubscriptionId(stripeSubscription.getId());
         subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscription.setPricePerUser(getEnterprisePlanPrice());
-        
-        // Calcula próxima data de cobrança baseada no Stripe
-        // Durante trial period, prioriza trial_end sobre current_period_end
+
         Long currentPeriodEnd = stripeSubscription.getCurrentPeriodEnd();
         Long trialEnd = stripeSubscription.getTrialEnd();
         String stripeStatus = stripeSubscription.getStatus();
-        
-        // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
+
         if ("trialing".equals(stripeStatus) && trialEnd != null) {
             LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
@@ -291,17 +239,17 @@ public class SubscriptionService {
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from trial_end (trialing status): {}", nextBilling);
         } else if (trialEnd != null && currentPeriodEnd != null) {
-            // Se ambos existem, usa o que for maior (mais futuro)
+
             LocalDateTime trialEndDate = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
             LocalDateTime currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            
+
             LocalDateTime nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
             subscription.setNextBillingDate(nextBilling);
-            logger.info("Next billing date set from {} (trial_end: {}, current_period_end: {})", 
+            logger.info("Next billing date set from {} (trial_end: {}, current_period_end: {})",
                     nextBilling, trialEndDate, currentPeriodEndDate);
         } else if (currentPeriodEnd != null) {
             LocalDateTime nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
@@ -316,7 +264,7 @@ public class SubscriptionService {
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date set from trial_end: {}", nextBilling);
         } else {
-            // Fallback: calcula baseado no billing cycle
+
             if (subscription.getBillingCycle() == BillingCycle.MONTHLY) {
                 subscription.setNextBillingDate(LocalDateTime.now().plusMonths(1));
             } else {
@@ -324,87 +272,73 @@ public class SubscriptionService {
             }
             logger.info("Next billing date calculated from billing cycle: {}", subscription.getNextBillingDate());
         }
-        
-        // Obtém o price ID da subscription
+
         if (!stripeSubscription.getItems().getData().isEmpty()) {
             String priceId = stripeSubscription.getItems().getData().get(0).getPrice().getId();
             subscription.setStripePriceId(priceId);
-            
-            // Atualiza quantidade de usuários baseado na subscription
+
             Long quantity = stripeSubscription.getItems().getData().get(0).getQuantity();
             if (quantity != null) {
                 subscription.setTotalUsers(quantity.intValue());
             }
         }
-        
+
         Company company = subscription.getCompany();
         company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
         company.setMaxEmployees(ENTERPRISE_PLAN_MAX_EMPLOYEES);
         companyRepository.save(company);
-        
+
         subscriptionRepository.save(subscription);
-        logger.info("Stripe subscription activated successfully - Plan: {}, Status: {}, Next Billing: {}", 
+        logger.info("Stripe subscription activated successfully - Plan: {}, Status: {}, Next Billing: {}",
                 subscription.getPlanType(), subscription.getStatus(), subscription.getNextBillingDate());
     }
 
-    /**
-     * Método sobrecarregado para compatibilidade com código antigo.
-     */
     @Transactional
     public void activateStripeSubscription(@NonNull UUID companyId, @NonNull String stripeCustomerId, @NonNull String stripeSubscriptionId) {
         logger.info("Activating Stripe subscription for company: {} with subscription ID: {}", companyId, stripeSubscriptionId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
-        
+
         subscription.setStripeCustomerId(stripeCustomerId);
         subscription.setStripeSubscriptionId(stripeSubscriptionId);
         subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscription.setPricePerUser(getEnterprisePlanPrice());
-        
+
         Company company = subscription.getCompany();
         company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
         company.setMaxEmployees(ENTERPRISE_PLAN_MAX_EMPLOYEES);
         companyRepository.save(company);
-        
+
         subscriptionRepository.save(subscription);
         logger.info("Stripe subscription activated successfully");
     }
 
-    /**
-     * Sincroniza assinatura com dados do Stripe.
-     */
     @Transactional
     public void syncSubscriptionFromStripe(@NonNull String customerId, com.stripe.model.Subscription stripeSubscription) {
         logger.info("Syncing subscription from Stripe - customerId: {}", customerId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", "customerId: " + customerId));
-        
+
         subscription.setStripeSubscriptionId(stripeSubscription.getId());
-        
-        // Atualiza quantidade de usuários e PLANO baseado na subscription do Stripe
+
         if (!stripeSubscription.getItems().getData().isEmpty()) {
             com.stripe.model.SubscriptionItem item = stripeSubscription.getItems().getData().get(0);
-            
-            // Atualiza quantidade
+
             Long quantity = item.getQuantity();
             if (quantity != null) {
                 subscription.setTotalUsers(quantity.intValue());
             }
-            
-            // Atualiza Price ID
+
             String priceId = item.getPrice().getId();
             subscription.setStripePriceId(priceId);
-            
-            // CRÍTICO: Se tem um Price ID configurado, assume que é o plano ENTERPRISE (pago)
-            // Isso garante que o plano seja atualizado mesmo se o evento de checkout falhar
+
             if (priceId != null && !priceId.isEmpty()) {
                 subscription.setPlanType(SubscriptionPlan.ENTERPRISE);
                 subscription.setPricePerUser(getEnterprisePlanPrice());
-                
-                // Atualiza também a empresa
+
                 Company company = subscription.getCompany();
                 if (company.getSubscriptionPlan() != SubscriptionPlan.ENTERPRISE) {
                     company.setSubscriptionPlan(SubscriptionPlan.ENTERPRISE);
@@ -414,14 +348,11 @@ public class SubscriptionService {
                 }
             }
         }
-        
-        // Atualiza próxima data de cobrança baseada no Stripe
-        // Durante trial period, prioriza trial_end sobre current_period_end
+
         Long currentPeriodEnd = stripeSubscription.getCurrentPeriodEnd();
         Long trialEnd = stripeSubscription.getTrialEnd();
         String stripeStatus = stripeSubscription.getStatus();
-        
-        // Se está em trial, usa trial_end (fim do trial = próxima cobrança)
+
         if ("trialing".equals(stripeStatus) && trialEnd != null) {
             LocalDateTime nextBilling = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
@@ -429,17 +360,17 @@ public class SubscriptionService {
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from trial_end (trialing status): {}", nextBilling);
         } else if (trialEnd != null && currentPeriodEnd != null) {
-            // Se ambos existem, usa o que for maior (mais futuro)
+
             LocalDateTime trialEndDate = Instant.ofEpochSecond(trialEnd)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
             LocalDateTime currentPeriodEndDate = Instant.ofEpochSecond(currentPeriodEnd)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            
+
             LocalDateTime nextBilling = trialEndDate.isAfter(currentPeriodEndDate) ? trialEndDate : currentPeriodEndDate;
             subscription.setNextBillingDate(nextBilling);
-            logger.info("Next billing date synced from {} (trial_end: {}, current_period_end: {})", 
+            logger.info("Next billing date synced from {} (trial_end: {}, current_period_end: {})",
                     nextBilling, trialEndDate, currentPeriodEndDate);
         } else if (currentPeriodEnd != null) {
             LocalDateTime nextBilling = Instant.ofEpochSecond(currentPeriodEnd)
@@ -454,8 +385,7 @@ public class SubscriptionService {
             subscription.setNextBillingDate(nextBilling);
             logger.info("Next billing date synced from trial_end: {}", nextBilling);
         }
-        
-        // Atualiza status baseado no status do Stripe
+
         if ("active".equals(stripeStatus) || "trialing".equals(stripeStatus)) {
             subscription.setStatus(SubscriptionStatus.ACTIVE);
         } else if ("past_due".equals(stripeStatus) || "unpaid".equals(stripeStatus)) {
@@ -463,31 +393,28 @@ public class SubscriptionService {
         } else if ("canceled".equals(stripeStatus) || "incomplete_expired".equals(stripeStatus)) {
             subscription.setStatus(SubscriptionStatus.CANCELLED);
         }
-        
+
         subscriptionRepository.save(subscription);
-        logger.info("Subscription synced successfully - Plan: {}, Status: {}, Next Billing: {}", 
+        logger.info("Subscription synced successfully - Plan: {}, Status: {}, Next Billing: {}",
                 subscription.getPlanType(), subscription.getStatus(), subscription.getNextBillingDate());
     }
 
-    /**
-     * Cancela assinatura quando deletada no Stripe.
-     */
     @Transactional
     public void cancelStripeSubscription(@NonNull String customerId) {
         logger.info("Canceling subscription for customerId: {}", customerId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", "customerId: " + customerId));
-        
+
         subscription.setStatus(SubscriptionStatus.CANCELLED);
         subscription.setPlanType(SubscriptionPlan.FREE);
         subscription.setPricePerUser(FREE_PLAN_PRICE);
-        
+
         Company company = subscription.getCompany();
         company.setSubscriptionPlan(SubscriptionPlan.FREE);
         company.setMaxEmployees(FREE_PLAN_MAX_EMPLOYEES);
         companyRepository.save(company);
-        
+
         subscriptionRepository.save(subscription);
         logger.info("Subscription canceled successfully");
     }

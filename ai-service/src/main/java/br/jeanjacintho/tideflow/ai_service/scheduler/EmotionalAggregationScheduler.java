@@ -30,23 +30,17 @@ public class EmotionalAggregationScheduler {
         this.keywordAnalysisService = keywordAnalysisService;
     }
 
-    /**
-     * Executa agregação diária às 2h da manhã para o dia anterior.
-     * Agrega dados emocionais por departamento e empresa.
-     */
-    @Scheduled(cron = "0 0 2 * * ?") // Todo dia às 2h da manhã
+    @Scheduled(cron = "0 0 2 * * ?")
     public void aggregatePreviousDay() {
         logger.info("Iniciando agregação diária de dados emocionais");
-        
+
         try {
             LocalDate yesterday = LocalDate.now().minusDays(1);
             logger.info("Agregando dados do dia anterior: {}", yesterday);
-            
-            // Busca departmentIds únicos de forma otimizada
+
             List<UUID> departmentIds = emotionalAnalysisRepository.findDistinctDepartmentIdsByDate(yesterday);
             logger.info("Encontrados {} departamentos para agregação", departmentIds.size());
 
-            // Agrega por departamento
             for (UUID departmentId : departmentIds) {
                 try {
                     aggregationService.aggregateByDepartment(departmentId, yesterday);
@@ -54,13 +48,11 @@ public class EmotionalAggregationScheduler {
                     logger.error("Erro ao agregar dados do departamento {}: {}", departmentId, e.getMessage(), e);
                 }
             }
-            
-            // Busca companyIds únicos de forma otimizada
+
             List<UUID> companyIds = emotionalAnalysisRepository.findDistinctCompanyIdsByDate(yesterday);
 
             logger.info("Encontradas {} empresas para agregação", companyIds.size());
 
-            // Agrega por empresa
             for (UUID companyId : companyIds) {
                 try {
                     aggregationService.aggregateByCompany(companyId, yesterday);
@@ -69,7 +61,6 @@ public class EmotionalAggregationScheduler {
                 }
             }
 
-            // Analisa keywords e triggers agregados por departamento
             logger.info("Iniciando análise de keywords e triggers para o dia anterior");
             try {
                 keywordAnalysisService.analyzeAllDepartmentsForDate(yesterday);

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class ReportListResponseDTO {
-    
+
     private List<ReportSummaryDTO> reports;
     private Long totalElements;
     private Integer totalPages;
@@ -18,7 +18,7 @@ public class ReportListResponseDTO {
 
     public ReportListResponseDTO() {}
 
-    public ReportListResponseDTO(List<ReportSummaryDTO> reports, Long totalElements, 
+    public ReportListResponseDTO(List<ReportSummaryDTO> reports, Long totalElements,
                                 Integer totalPages, Integer currentPage, Integer pageSize) {
         this.reports = reports;
         this.totalElements = totalElements;

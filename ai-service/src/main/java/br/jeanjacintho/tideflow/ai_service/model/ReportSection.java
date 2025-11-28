@@ -12,7 +12,7 @@ import java.util.UUID;
     @Index(name = "idx_section_type", columnList = "section_type")
 })
 public class ReportSection {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

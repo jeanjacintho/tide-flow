@@ -38,7 +38,7 @@ export function useDashboardData(companyId: string | null, date?: Date) {
     };
 
     fetchData();
-    
+
     return () => {
       isMounted = false;
     };

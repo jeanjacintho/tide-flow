@@ -48,17 +48,14 @@ public class CompanyAdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", userId));
 
-        // Valida que o usuário pertence à empresa
         if (!user.getCompany().getId().equals(companyId)) {
             throw new IllegalArgumentException("Usuário não pertence a esta empresa");
         }
 
-        // Valida acesso e permissão (apenas OWNER ou ADMIN podem adicionar admins)
         if (!TenantContext.isSystemAdmin() && !authorizationService.isOwner(companyId) && !authorizationService.isAdmin(companyId)) {
             throw new AccessDeniedException("Empresa", companyId, "Apenas OWNER ou ADMIN podem adicionar administradores");
         }
 
-        // Verifica se já é admin
         if (companyAdminRepository.existsByUserIdAndCompanyId(userId, companyId)) {
             throw new IllegalArgumentException("Usuário já é administrador desta empresa");
         }
@@ -69,7 +66,7 @@ public class CompanyAdminService {
     }
 
     public List<CompanyAdminResponseDTO> getCompanyAdmins(@NonNull UUID companyId) {
-        // Valida acesso
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Empresa", companyId, "Usuário não tem acesso a esta empresa");
         }
@@ -84,22 +81,20 @@ public class CompanyAdminService {
         CompanyAdmin admin = companyAdminRepository.findByUserIdAndCompanyId(userId, companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Administrador", userId));
 
-        // Valida acesso e permissão (apenas OWNER pode remover admins, ou o próprio admin)
         if (!TenantContext.isSystemAdmin()) {
             if (!authorizationService.isOwner(companyId)) {
-                // Verifica se é o próprio usuário tentando remover a si mesmo
+
                 String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
                         .getAuthentication().getName();
                 User currentUser = userRepository.findByUsernameOrEmail(username)
                         .orElseThrow(() -> new AccessDeniedException("Usuário", userId, "Usuário não encontrado"));
-                
+
                 if (!currentUser.getId().equals(userId)) {
                     throw new AccessDeniedException("Empresa", companyId, "Apenas OWNER pode remover administradores");
                 }
             }
         }
 
-        // Não permite remover o último OWNER
         if (admin.getRole() == CompanyAdminRole.OWNER) {
             long ownerCount = companyAdminRepository.findByCompanyIdAndRole(companyId, CompanyAdminRole.OWNER).size();
             if (ownerCount <= 1) {

@@ -102,7 +102,7 @@ export const ChatScreen: React.FC = () => {
 
     try {
       const response = await apiService.sendMessage(text, conversationId, user.id);
-      
+
       setConversationId(response.conversationId);
 
       const aiMessage: Message = {
@@ -140,7 +140,7 @@ export const ChatScreen: React.FC = () => {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.role === 'USER';
-    
+
     return (
       <View
         style={[
@@ -170,8 +170,6 @@ export const ChatScreen: React.FC = () => {
     );
   };
 
-  // Mostra loading apenas durante carregamento inicial do histórico
-  // A autenticação já foi verificada no App.tsx antes de renderizar esta tela
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
@@ -210,8 +208,8 @@ export const ChatScreen: React.FC = () => {
           />
         )}
 
-        <ChatInput 
-          onSendMessage={handleSendMessage} 
+        <ChatInput
+          onSendMessage={handleSendMessage}
           disabled={isSending || isLoadingHistory}
         />
       </KeyboardAvoidingView>
@@ -326,4 +324,3 @@ const styles = StyleSheet.create({
     color: Colors.mutedForeground,
   },
 });
-

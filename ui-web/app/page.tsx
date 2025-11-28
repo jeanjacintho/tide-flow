@@ -18,7 +18,7 @@ import { Iphone } from "@/components/ui/iphone";
 export default function Home() {
   return (
     <div className="relative flex flex-col min-h-screen overflow-hidden bg-background">
-      {/* Header */}
+      {}
       <header className="relative z-10 border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">
@@ -70,14 +70,14 @@ export default function Home() {
           </div>
         </div>
       </header>
-      
-      {/* Main Content */}
+
+      {}
       <main className="relative z-10 flex-1">
         <div className="container mx-auto px-4 py-8 lg:py-12">
           <div className="grid gap-12 items-center lg:grid-cols-[40%_60%]">
-            {/* Left Side - Hero Content */}
+            {}
             <div className="space-y-8">
-              {/* Social Proof */}
+              {}
               <div className="group relative mx-auto flex items-center justify-center rounded-full px-4 py-1.5 shadow-[inset_0_-8px_10px_oklch(86.06%_0.1766_134.52/0.1)] transition-shadow duration-500 ease-out hover:shadow-[inset_0_-5px_10px_oklch(86.06%_0.1766_134.52/0.2)] w-fit">
                 <span
                   className={cn(
@@ -104,18 +104,18 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Headline */}
+              {}
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
                 <span className="text-foreground">Identifique o burnout</span>{' '}
                 <AuroraText>antes que ele destrua sua equipe</AuroraText>
               </h1>
 
-              {/* Subtitle */}
+              {}
               <p className="text-lg text-muted-foreground max-w-xl">
                 Infraestrutura de bem-estar emocional em poucas linhas. Feito para RH, gestores e empresas que valorizam prevenção.
               </p>
 
-              {/* CTA Buttons */}
+              {}
               <div className="flex items-center gap-4">
                 <Link href="/register">
                   <Button size="lg" className="gap-2">
@@ -128,7 +128,7 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Features */}
+              {}
               <div className="grid grid-cols-2 gap-6 pt-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -169,12 +169,12 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Side - UI Images */}
+            {}
             <div className="relative hidden lg:block h-[600px] overflow-visible">
-              {/* Background - UI Web (positioned to the right, 30% cropped from right) */}
+              {}
               <div className="absolute right-0 top-0 w-4/5 h-full overflow-hidden flex items-center justify-end">
                 <div className="relative h-full rounded-lg border border-border overflow-hidden" style={{ width: '100%' }}>
-                  <Image 
+                  <Image
                     src="/ui-web.webp"
                     alt="UI Web"
                     fill
@@ -184,10 +184,10 @@ export default function Home() {
                   />
                 </div>
               </div>
-              {/* Overlay - UI Mobile with iPhone mock (left side) */}
+              {}
               <div className="absolute left-0 bottom-0 w-2/5 h-full z-10 flex items-end justify-start">
                 <div className="relative w-full max-w-[280px]" style={{ transform: 'scale(0.8)', transformOrigin: 'left bottom' }}>
-                  <Iphone 
+                  <Iphone
                     src="/ui-mobile.webp"
                     className="w-full h-auto drop-shadow-2xl"
                   />

@@ -9,33 +9,33 @@ import java.util.List;
 import java.util.UUID;
 
 public class ReportGenerationRequest {
-    
+
     @NotNull(message = "Company ID is required")
     private UUID companyId;
-    
+
     private UUID departmentId;
-    
+
     @NotNull(message = "Report type is required")
     private ReportType reportType;
-    
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate periodStart;
-    
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate periodEnd;
-    
+
     private String title;
-    
+
     private List<String> includeSections;
-    
+
     private Boolean generateInsights = true;
-    
+
     private Boolean generateRecommendations = true;
-    
+
     private String customPrompt;
-    
+
     private String eventDescription;
-    
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate eventDate;
 

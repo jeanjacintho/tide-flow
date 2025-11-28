@@ -67,7 +67,7 @@ public class Company {
             subscriptionPlan = SubscriptionPlan.FREE;
         }
         if (maxEmployees == null) {
-            maxEmployees = 7; // Default para plano FREE
+            maxEmployees = 7;
         }
     }
 

@@ -120,7 +120,7 @@ class MemoriaServiceTest {
         memoriasData.add(memoriaData);
         responseMap.put("memorias", memoriasData);
         responseMap.put("gatilhos", new ArrayList<>());
-        
+
         when(memoriaRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
@@ -143,14 +143,14 @@ class MemoriaServiceTest {
         memoriaData.put("relevancia", 50);
         memoriasData.add(memoriaData);
         responseMap.put("memorias", memoriasData);
-        
+
         List<Map<String, Object>> gatilhosData = new ArrayList<>();
         Map<String, Object> gatilhoData = new HashMap<>();
         gatilhoData.put("tipo", "SITUACAO");
         gatilhoData.put("descricao", "Trabalho");
         gatilhosData.add(gatilhoData);
         responseMap.put("gatilhos", gatilhosData);
-        
+
         when(memoriaRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CompletableFuture<Void> future = memoriaService.processarMensagemParaMemoriaConsolidada(
@@ -240,4 +240,3 @@ class MemoriaServiceTest {
         verify(memoriaRepository).save(any(Memoria.class));
     }
 }
-

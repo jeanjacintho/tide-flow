@@ -28,22 +28,14 @@ public class SubscriptionScheduler {
         this.subscriptionService = subscriptionService;
     }
 
-    /**
-     * Verifica assinaturas expiradas a cada minuto.
-     * Se a data de próxima cobrança já passou e o status ainda é ACTIVE ou TRIAL,
-     * marca como SUSPENDED ou EXPIRED.
-     */
-    @Scheduled(fixedRate = 60000) // Roda a cada 1 minuto
+    @Scheduled(fixedRate = 60000)
     @Transactional
     @SuppressWarnings("null")
     public void checkExpiredSubscriptions() {
         logger.info("Checking for expired subscriptions...");
-        
+
         LocalDateTime now = LocalDateTime.now();
-        
-        // Busca assinaturas ativas que venceram (nextBillingDate < agora)
-        // Com LocalDateTime, agora temos precisão de minutos para suportar testes com durações curtas.
-        
+
         List<CompanySubscription> expiredTrials = subscriptionRepository.findExpiredSubscriptions(now, SubscriptionStatus.TRIAL);
         for (CompanySubscription sub : expiredTrials) {
             if (sub.getCompany() != null && sub.getCompany().getId() != null) {
@@ -60,12 +52,7 @@ public class SubscriptionScheduler {
             if (sub.getCompany() != null && sub.getCompany().getId() != null) {
                 UUID companyId = sub.getCompany().getId();
                 logger.info("Active subscription expired for company: {}", companyId);
-                // Aqui poderíamos tentar renovar via Stripe se não fosse automático,
-                // mas como o Stripe é automático, se chegou aqui é porque falhou ou não sincronizou.
-                // Vamos apenas logar ou marcar como pendente de pagamento se necessário.
-                // Por enquanto, mantemos como ACTIVE até o Stripe dizer o contrário (via webhook), 
-                // ou podemos suspender se quisermos ser rigorosos.
-                // Para o teste do usuário, vamos suspender para ele ver o efeito.
+
                 subscriptionService.suspendSubscription(companyId);
             } else {
                 logger.warn("Subscription {} has null company or company ID, skipping", sub.getId());
@@ -73,5 +60,3 @@ public class SubscriptionScheduler {
         }
     }
 }
-
-

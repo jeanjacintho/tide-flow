@@ -74,18 +74,16 @@ public class ConversationService {
         conversation.addMessage(userMessage);
         conversationMessageRepository.save(userMessage);
 
-        // Analisa risco de forma assíncrona
         riskDetectionService.analyzeRisk(request.getMessage(), request.getUserId())
                 .subscribe(
                     riskAnalysis -> {
-                        logger.info("Análise de risco concluída para usuário {}: detectado={}, nível={}, confiança={}", 
+                        logger.info("Análise de risco concluída para usuário {}: detectado={}, nível={}, confiança={}",
                             request.getUserId(), riskAnalysis.isRiskDetected(), riskAnalysis.getRiskLevel(), riskAnalysis.getConfidence());
-                        
+
                         if (riskAnalysis.isRiskDetected()) {
                             logger.info("Risco detectado! Nível: {}, Motivo: {}", riskAnalysis.getRiskLevel(), riskAnalysis.getReason());
-                            
-                            // Publica alerta para HIGH, CRITICAL ou MEDIUM (adicionando MEDIUM para não perder alertas importantes)
-                            if (riskAnalysis.getRiskLevel().equals("HIGH") || 
+
+                            if (riskAnalysis.getRiskLevel().equals("HIGH") ||
                                 riskAnalysis.getRiskLevel().equals("CRITICAL") ||
                                 riskAnalysis.getRiskLevel().equals("MEDIUM")) {
                                 logger.info("Publicando alerta de risco para usuário {} com nível {}", request.getUserId(), riskAnalysis.getRiskLevel());
@@ -96,7 +94,7 @@ public class ConversationService {
                         } else {
                             logger.debug("Nenhum risco detectado na mensagem do usuário {}", request.getUserId());
                         }
-                    }, 
+                    },
                     error -> {
                         logger.error("Erro ao analisar risco para usuário {}: {}", request.getUserId(), error.getMessage(), error);
                     }
@@ -105,9 +103,8 @@ public class ConversationService {
         List<Map<String, String>> history = buildHistoryFromMessages(existingMessages);
         history.add(Map.of("role", "user", "content", request.getMessage()));
 
-        // Recupera memórias relevantes do usuário de forma assíncrona
         Mono<String> memoriasMono = memoriaService.recuperarMemoriasRelevantesAsync(
-                request.getUserId(), 
+                request.getUserId(),
                 request.getMessage()
         );
 
@@ -130,13 +127,12 @@ public class ConversationService {
 
                     conversationRepository.save(conversation);
 
-                    // Extrai análise emocional e memórias em uma única requisição (otimização)
                     return llmClient.extractEmotionalAnalysisAndMemories(request.getMessage(), aiResponse)
                             .map(jsonResponse -> {
                                 try {
-                                    // Limpa a resposta se vier com markdown
+
                                     jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
-                                    
+
                                     Map<String, Object> responseMap;
                                     try {
                                         responseMap = objectMapper.readValue(jsonResponse, new TypeReference<Map<String, Object>>() {});
@@ -144,26 +140,23 @@ public class ConversationService {
                                         logger.error("Erro ao fazer parse do JSON consolidado: {}", e.getMessage(), e);
                                         throw new RuntimeException("Erro ao processar resposta da IA", e);
                                     }
-                                    
-                                    // Processa análise emocional
+
                                     Map<String, Object> analiseEmocionalData = extractMapFromResponse(responseMap, "analiseEmocional");
-                                    
+
                                     EmotionalAnalysis analysis = parseEmotionalAnalysis(analiseEmocionalData);
                                     analysis.setUsuarioId(request.getUserId());
                                     analysis.setConversationId(conversation.getId());
                                     analysis.setMessageId(userMessage.getId());
                                     analysis.setSequenceNumber(userMessage.getSequenceNumber());
-                                    
-                                    // Busca informações do usuário para preencher department_id e company_id
+
                                     userInfoService.getUserInfo(request.getUserId(), null)
                                         .ifPresent(userInfo -> {
                                             analysis.setDepartmentId(userInfo.departmentId());
                                             analysis.setCompanyId(userInfo.companyId());
                                         });
-                                    
+
                                     EmotionalAnalysis savedAnalysis = emotionalAnalysisRepository.save(analysis);
-                                    
-                                    // Processa agregação em tempo real se department_id e company_id estiverem disponíveis
+
                                     if (savedAnalysis.getDepartmentId() != null && savedAnalysis.getCompanyId() != null) {
                                         try {
                                             aggregationService.processNewEmotionalAnalysis(savedAnalysis);
@@ -172,7 +165,6 @@ public class ConversationService {
                                         }
                                     }
 
-                                    // Processa memórias e gatilhos de forma assíncrona
                                     memoriaService.processarMensagemParaMemoriaConsolidada(
                                             request.getUserId(),
                                             request.getMessage(),
@@ -193,17 +185,15 @@ public class ConversationService {
                                     defaultAnalysis.setConversationId(conversation.getId());
                                     defaultAnalysis.setMessageId(userMessage.getId());
                                     defaultAnalysis.setSequenceNumber(userMessage.getSequenceNumber());
-                                    
-                                    // Busca informações do usuário
+
                                     userInfoService.getUserInfo(request.getUserId(), null)
                                         .ifPresent(userInfo -> {
                                             defaultAnalysis.setDepartmentId(userInfo.departmentId());
                                             defaultAnalysis.setCompanyId(userInfo.companyId());
                                         });
-                                    
+
                                     EmotionalAnalysis savedDefaultAnalysis = emotionalAnalysisRepository.save(defaultAnalysis);
-                                    
-                                    // Processa agregação em tempo real se disponível
+
                                     if (savedDefaultAnalysis.getDepartmentId() != null && savedDefaultAnalysis.getCompanyId() != null) {
                                         try {
                                             aggregationService.processNewEmotionalAnalysis(savedDefaultAnalysis);
@@ -211,7 +201,7 @@ public class ConversationService {
                                             logger.warn("Erro ao processar agregação em tempo real: {}", aggregationError.getMessage());
                                         }
                                     }
-                                    
+
                                     return new ConversationResponse(
                                             aiResponse,
                                             conversation.getId().toString(),
@@ -257,24 +247,21 @@ public class ConversationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Constrói o system prompt incluindo as memórias do usuário.
-     */
     private String buildSystemPromptWithMemories(String memoriasFormatadas) {
         StringBuilder promptBuilder = new StringBuilder();
-        
+
         promptBuilder.append("Você é um diário pessoal com IA. Seja empático, acolhedor e faça perguntas relevantes.\n");
         promptBuilder.append("Use um tom acolhedor, mas profissional. Faça perguntas curtas e reflexivas que instigam o usuário a se aprofundar e falar mais.\n");
         promptBuilder.append("Valide os sentimentos compartilhados e faça conexões com o que já foi mencionado.\n");
         promptBuilder.append("Evite palavras intimistas como 'amor', 'querido', etc.\n");
         promptBuilder.append("Sempre termine suas respostas com uma pergunta curta que convide o usuário a continuar explorando seus sentimentos.\n");
         promptBuilder.append("Mantenha a conversa fluida e natural, como uma sessão de terapia.\n\n");
-        
+
         if (!memoriasFormatadas.isEmpty()) {
             promptBuilder.append(memoriasFormatadas);
             promptBuilder.append("\n");
         }
-        
+
         promptBuilder.append("IMPORTANTE: Você tem acesso às memórias importantes do usuário. ");
         promptBuilder.append("Use essas informações para fazer perguntas relevantes e mostrar que se lembra de eventos, objetivos e preferências mencionados anteriormente. ");
         promptBuilder.append("Por exemplo, se o usuário mencionou que está esperando resultado de uma prova, você pode perguntar sobre isso em conversas futuras quando for pertinente. ");
@@ -283,10 +270,6 @@ public class ConversationService {
         return promptBuilder.toString();
     }
 
-
-    /**
-     * Extrai um Map de um responseMap de forma type-safe.
-     */
     private Map<String, Object> extractMapFromResponse(Map<String, Object> responseMap, String key) {
         Object obj = responseMap.getOrDefault(key, new HashMap<>());
         if (obj instanceof Map<?, ?>) {
@@ -302,9 +285,6 @@ public class ConversationService {
         return new HashMap<>();
     }
 
-    /**
-     * Extrai uma lista de strings de um Map de forma type-safe.
-     */
     private List<String> extractStringListFromMap(Map<String, Object> map, String key) {
         Object obj = map.getOrDefault(key, new ArrayList<>());
         if (obj instanceof List<?>) {
@@ -320,40 +300,37 @@ public class ConversationService {
         return new ArrayList<>();
     }
 
-    /**
-     * Parse análise emocional de um Map de dados.
-     */
     private EmotionalAnalysis parseEmotionalAnalysis(Map<String, Object> analysisData) {
         String primaryEmotional = (String) analysisData.getOrDefault("primaryEmotional", "neutro");
         if (primaryEmotional == null || primaryEmotional.isEmpty()) {
             primaryEmotional = "neutro";
         }
-        
-        Integer intensity = 50; // Default
+
+        Integer intensity = 50;
         Object intensityObj = analysisData.get("intensity");
         if (intensityObj instanceof Number) {
             intensity = ((Number) intensityObj).intValue();
-            // Garante que está entre 0 e 100
+
             intensity = Math.max(0, Math.min(100, intensity));
         }
-        
+
         List<String> triggers = extractStringListFromMap(analysisData, "triggers");
-        
+
         String context = (String) analysisData.getOrDefault("context", "");
         if (context == null) {
             context = "";
         }
-        // Limita o tamanho do contexto
+
         if (context.length() > 500) {
             context = context.substring(0, 497) + "...";
         }
-        
-        String suggestion = (String) analysisData.getOrDefault("suggestion", 
+
+        String suggestion = (String) analysisData.getOrDefault("suggestion",
                 "Continue conversando para entender melhor suas emoções.");
         if (suggestion == null || suggestion.isEmpty()) {
             suggestion = "Continue conversando para entender melhor suas emoções.";
         }
-        
+
         return new EmotionalAnalysis(
                 primaryEmotional,
                 intensity,
@@ -363,9 +340,6 @@ public class ConversationService {
         );
     }
 
-    /**
-     * Cria uma análise emocional padrão em caso de erro.
-     */
     private EmotionalAnalysis createDefaultEmotionalAnalysis() {
         return new EmotionalAnalysis(
                 "neutro",
@@ -384,10 +358,10 @@ public class ConversationService {
                 Conversation conversation = conversationRepository
                         .findByIdAndUserId(uuid, userId)
                         .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
-                
+
                 List<ConversationMessage> messages = conversationMessageRepository
                         .findByConversationIdOrderBySequenceNumberAsc(conversation.getId());
-                
+
                 return new ConversationHistoryResponse(
                         conversation.getId(),
                         conversation.getUserId(),
@@ -404,24 +378,23 @@ public class ConversationService {
     @Transactional(readOnly = true)
     public Flux<ConversationSummaryResponse> getUserConversations(String userId) {
         List<Conversation> conversations = conversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        
-        // Busca todas as contagens e últimas mensagens de uma vez (evita N+1)
+
         Map<UUID, Long> messageCounts = new HashMap<>();
         Map<UUID, String> lastMessages = new HashMap<>();
-        
+
         for (Conversation conv : conversations) {
             messageCounts.put(conv.getId(), conversationMessageRepository.countByConversationId(conv.getId()));
-            
+
             conversationMessageRepository.findLastMessageByConversationId(conv.getId())
                     .stream()
                     .findFirst()
                     .ifPresent(msg -> {
                         String content = msg.getContent();
-                        lastMessages.put(conv.getId(), 
+                        lastMessages.put(conv.getId(),
                                 content.length() > 100 ? content.substring(0, 100) + "..." : content);
                     });
         }
-        
+
         return Flux.fromIterable(conversations)
                 .map(conversation -> new ConversationSummaryResponse(
                         conversation.getId(),
@@ -433,4 +406,3 @@ public class ConversationService {
                 ));
     }
 }
-

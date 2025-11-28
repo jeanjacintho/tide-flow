@@ -18,10 +18,10 @@ public record SubscriptionResponseDTO(
     BigDecimal monthlyBill
 ) {
     public static SubscriptionResponseDTO fromEntity(CompanySubscription subscription, BigDecimal monthlyBill) {
-        UUID companyId = subscription.getCompany() != null 
-            ? subscription.getCompany().getId() 
+        UUID companyId = subscription.getCompany() != null
+            ? subscription.getCompany().getId()
             : null;
-        
+
         return new SubscriptionResponseDTO(
             subscription.getId(),
             companyId,
@@ -35,4 +35,3 @@ public record SubscriptionResponseDTO(
         );
     }
 }
-

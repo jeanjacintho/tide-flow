@@ -51,65 +51,59 @@ export default function AppLayout({
 
   const mainMenuItems = useMemo(() => {
     const items = [];
-    
-    // Dashboard sempre aparece primeiro para HR_MANAGER, ADMIN e OWNER
+
     if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/dashboard', 
-        icon: LayoutDashboard, 
-        label: 'Painel', 
-        pathname: '/dashboard' 
+      items.push({
+        href: '/dashboard',
+        icon: LayoutDashboard,
+        label: 'Painel',
+        pathname: '/dashboard'
       });
     }
-    
-    // Employee Directory - apenas OWNER
+
     if (user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/employees', 
-        icon: Users, 
-        label: 'Diretório de Funcionários', 
-        pathname: '/employees' 
+      items.push({
+        href: '/employees',
+        icon: Users,
+        label: 'Diretório de Funcionários',
+        pathname: '/employees'
       });
     }
-    
-    // Attendance & Leave (Departamentos) - apenas OWNER
+
     if (user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/attendance', 
-        icon: Calendar, 
-        label: 'Departamentos', 
-        pathname: '/attendance' 
+      items.push({
+        href: '/attendance',
+        icon: Calendar,
+        label: 'Departamentos',
+        pathname: '/attendance'
       });
     }
-    
-    // Payroll (Subscription) - OWNER e ADMIN
+
     if (user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN') {
-      items.push({ 
-        href: '/subscription', 
-        icon: Wallet, 
-        label: 'Assinatura', 
-        pathname: '/subscription' 
+      items.push({
+        href: '/subscription',
+        icon: Wallet,
+        label: 'Assinatura',
+        pathname: '/subscription'
       });
     }
-    
-    // Reports & Analytics - HR_MANAGER, ADMIN e OWNER
+
     if (user?.companyRole === 'HR_MANAGER' || user?.companyRole === 'ADMIN' || user?.companyRole === 'OWNER') {
-      items.push({ 
-        href: '/reports', 
-        icon: PieChart, 
-        label: 'Relatórios e Análises', 
-        pathname: '/reports' 
+      items.push({
+        href: '/reports',
+        icon: PieChart,
+        label: 'Relatórios e Análises',
+        pathname: '/reports'
       });
     }
-    
-    // Chat sempre disponível
-    items.push({ 
-      href: '/chat', 
-      icon: MessageSquare, 
-      label: 'Chat', 
-      pathname: '/chat' 
+
+    items.push({
+      href: '/chat',
+      icon: MessageSquare,
+      label: 'Chat',
+      pathname: '/chat'
     });
-    
+
     return items;
   }, [user]);
 

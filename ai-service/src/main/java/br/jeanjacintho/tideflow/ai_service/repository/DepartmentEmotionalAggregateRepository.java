@@ -13,21 +13,21 @@ import java.util.UUID;
 
 @Repository
 public interface DepartmentEmotionalAggregateRepository extends JpaRepository<DepartmentEmotionalAggregate, UUID> {
-    
+
     Optional<DepartmentEmotionalAggregate> findByDepartmentIdAndDate(UUID departmentId, LocalDate date);
-    
+
     List<DepartmentEmotionalAggregate> findByDepartmentIdAndDateBetween(
-        UUID departmentId, 
-        LocalDate startDate, 
+        UUID departmentId,
+        LocalDate startDate,
         LocalDate endDate
     );
-    
+
     List<DepartmentEmotionalAggregate> findByCompanyIdAndDateBetween(
-        UUID companyId, 
-        LocalDate startDate, 
+        UUID companyId,
+        LocalDate startDate,
         LocalDate endDate
     );
-    
+
     @Query("SELECT d FROM DepartmentEmotionalAggregate d WHERE d.companyId = :companyId AND d.date = :date")
     List<DepartmentEmotionalAggregate> findAllByCompanyIdAndDate(
         @Param("companyId") UUID companyId,

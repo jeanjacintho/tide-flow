@@ -26,10 +26,10 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        // Ignora requisições de login e registro - não precisam de token
+
         String path = request.getRequestURI();
         if (path != null && (
-            path.equals("/auth/login") || 
+            path.equals("/auth/login") ||
             path.equals("/auth/register") ||
             path.equals("/api/public/register-company") ||
             path.equals("/api/subscriptions/webhook")
@@ -37,7 +37,7 @@ public class SecurityFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         var token = this.recoverToken(request);
         if(token != null) {
             try {
@@ -47,7 +47,6 @@ public class SecurityFilter extends OncePerRequestFilter {
                 var authHeader = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authHeader);
 
-                // Extrai informações de tenant do token e armazena no TenantContext
                 UUID companyId = tokenService.getCompanyIdFromToken(token);
                 UUID departmentId = tokenService.getDepartmentIdFromToken(token);
                 String companyRole = tokenService.getCompanyRoleFromToken(token);
@@ -66,7 +65,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                     TenantContext.setSystemRole(systemRole);
                 }
             } catch (Exception e) {
-                // Token inválido ou usuário não encontrado - continua sem autenticação
+
             }
         }
         filterChain.doFilter(request, response);

@@ -22,15 +22,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ReportViewPage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: ['HR_MANAGER', 'ADMIN', 'OWNER'],
     redirectTo: '/chat'
   });
-  
+
   const params = useParams();
   const router = useRouter();
   const reportId = params.id as string;
-  
+
   const [report, setReport] = useState<CorporateReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,8 +45,7 @@ export default function ReportViewPage() {
       setLoading(true);
       const data = await apiService.getReport(reportId);
       setReport(data);
-      
-      // Se o relatório está sendo gerado, recarrega após alguns segundos
+
       if (data.status === 'GENERATING' || data.status === 'PENDING') {
         setTimeout(() => loadReport(), 5000);
       }
@@ -97,7 +96,7 @@ export default function ReportViewPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar
         </Button>
-        
+
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">{report.title}</h1>

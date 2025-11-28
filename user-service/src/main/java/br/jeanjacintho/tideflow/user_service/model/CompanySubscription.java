@@ -58,7 +58,7 @@ public class CompanySubscription {
 
     public CompanySubscription() {}
 
-    public CompanySubscription(Company company, SubscriptionPlan planType, BigDecimal pricePerUser, 
+    public CompanySubscription(Company company, SubscriptionPlan planType, BigDecimal pricePerUser,
                               Integer totalUsers, BillingCycle billingCycle, LocalDateTime nextBillingDate) {
         this.company = company;
         this.planType = planType;

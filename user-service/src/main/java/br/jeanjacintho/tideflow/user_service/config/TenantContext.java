@@ -2,10 +2,6 @@ package br.jeanjacintho.tideflow.user_service.config;
 
 import java.util.UUID;
 
-/**
- * Contexto de tenant usando ThreadLocal para armazenar informações da empresa atual.
- * Garante isolamento de dados por empresa em requisições multi-tenant.
- */
 public class TenantContext {
     private static final ThreadLocal<UUID> COMPANY_ID = new ThreadLocal<>();
     private static final ThreadLocal<UUID> DEPARTMENT_ID = new ThreadLocal<>();
@@ -44,17 +40,10 @@ public class TenantContext {
         return SYSTEM_ROLE.get();
     }
 
-    /**
-     * Verifica se o usuário atual é SYSTEM_ADMIN (acesso total ao sistema).
-     */
     public static boolean isSystemAdmin() {
         return "SYSTEM_ADMIN".equals(SYSTEM_ROLE.get());
     }
 
-    /**
-     * Limpa o contexto do tenant após o processamento da requisição.
-     * Deve ser chamado no final do filtro para evitar vazamento de memória.
-     */
     public static void clear() {
         COMPANY_ID.remove();
         DEPARTMENT_ID.remove();

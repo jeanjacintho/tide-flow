@@ -20,7 +20,7 @@ public class UserServiceApplication {
 		try {
 			Dotenv dotenv = null;
 			java.io.File envFile = new java.io.File("../.env");
-			
+
 			if (envFile.exists()) {
 				dotenv = Dotenv.configure().directory("../").filename(".env").ignoreIfMissing().load();
 			} else {
@@ -41,7 +41,7 @@ public class UserServiceApplication {
 					System.setProperty(entry.getKey(), entry.getValue());
 				}
 			});
-			
+
 			logger.info("Carregadas {} variáveis do .env", dotenv.entries().size());
 		} catch (Exception e) {
 			logger.debug("Arquivo .env não encontrado ou erro ao carregar: {}", e.getMessage());

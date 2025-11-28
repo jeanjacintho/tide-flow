@@ -17,7 +17,7 @@ export default function DepartmentInsightsPage() {
   const params = useParams();
   const departmentId = params.id as string;
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  
+
   const { data, loading, error } = useDepartmentInsights(departmentId, selectedDate);
 
   if (loading) {
@@ -111,7 +111,7 @@ export default function DepartmentInsightsPage() {
         </div>
       </div>
 
-      {/* Overview Cards */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className={getStressColorClasses(data.stressColor)}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -177,7 +177,7 @@ export default function DepartmentInsightsPage() {
         </Card>
       </div>
 
-      {/* Keywords Chart */}
+      {}
       {keywordsData.length > 0 && (
         <Card>
           <CardHeader>
@@ -190,8 +190,8 @@ export default function DepartmentInsightsPage() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={keywordsData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="keyword" 
+                <XAxis
+                  dataKey="keyword"
                   angle={-45}
                   textAnchor="end"
                   height={100}
@@ -206,7 +206,7 @@ export default function DepartmentInsightsPage() {
         </Card>
       )}
 
-      {/* Top Triggers */}
+      {}
       {data.topTriggers && Object.keys(data.topTriggers).length > 0 && (
         <Card>
           <CardHeader>

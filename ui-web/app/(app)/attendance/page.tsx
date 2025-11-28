@@ -31,17 +31,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 export default function AttendancePage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: 'OWNER',
     redirectTo: '/chat'
   });
-  
+
   if (isChecking || !hasAccess) {
     return null;
   }
-  
+
   const { user } = useAuth();
-  
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDepartmentDialogOpen, setIsDepartmentDialogOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function AttendancePage() {
 
   const loadDepartments = async () => {
     if (!user?.companyId) return;
-    
+
     try {
       setLoading(true);
       const departmentsData = await apiService.getCompanyDepartments(user.companyId);

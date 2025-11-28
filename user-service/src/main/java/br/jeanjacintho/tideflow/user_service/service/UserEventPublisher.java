@@ -19,7 +19,3 @@ public class UserEventPublisher {
         rabbitTemplate.convertAndSend(RabbitMQConfig.USER_CREATED_QUEUE, event);
     }
 }
-
-
-
-

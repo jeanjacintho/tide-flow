@@ -12,7 +12,6 @@ import { CurrentPlanCard } from '@/components/subscription/current-plan-card';
 import { UsageCard } from '@/components/subscription/usage-card';
 import { PaymentHistoryTable } from '@/components/subscription/payment-history-table';
 
-
 interface Subscription {
   id: string;
   companyId: string;
@@ -33,16 +32,16 @@ interface UsageInfo {
 }
 
 export default function SubscriptionPage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: ['OWNER', 'ADMIN'],
     redirectTo: '/chat'
   });
   const { user } = useAuth();
-  
+
   if (isChecking || !hasAccess) {
     return null;
   }
-  
+
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +56,7 @@ export default function SubscriptionPage() {
 
   const fetchSubscriptionData = async () => {
     if (!user?.companyId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -78,62 +77,56 @@ export default function SubscriptionPage() {
 
   const handleUpgrade = async () => {
     if (!user?.companyId) return;
-    
+
     try {
       setUpgrading(true);
       setError(null);
-      
+
       const successUrl = `${window.location.origin}/subscription?success=true`;
       const cancelUrl = `${window.location.origin}/subscription?canceled=true`;
-      
+
       const { checkoutUrl } = await apiService.createCheckoutSession(
         user.companyId,
         successUrl,
         cancelUrl
       );
-      
-      // Redireciona para o Stripe Checkout
+
       window.location.href = checkoutUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar sessão de checkout');
       setUpgrading(false);
     }
   };
-  
-  // Verifica se há parâmetros de sucesso ou cancelamento na URL
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
       setError(null);
       setLoading(true);
-      
-      // Remove o parâmetro da URL
+
       window.history.replaceState({}, '', window.location.pathname);
-      
-      // Faz polling para verificar se o plano foi atualizado
+
       if (user?.companyId) {
         let attempts = 0;
-        const maxAttempts = 10; // Tenta por até 20 segundos (10 tentativas * 2 segundos)
-        
+        const maxAttempts = 10;
+
         const checkSubscription = async () => {
           try {
             const subData = await apiService.getSubscription(user.companyId!);
-            
-            // Se o plano foi atualizado para ENTERPRISE, para o polling
+
             if (subData.planType === 'ENTERPRISE') {
               setSubscription(subData as Subscription);
               setLoading(false);
               return;
             }
-            
-            // Se ainda não atualizou e não excedeu tentativas, tenta novamente
+
             attempts++;
             if (attempts < maxAttempts) {
               setTimeout(checkSubscription, 2000);
             } else {
-              // Após todas as tentativas, atualiza mesmo assim
+
               setSubscription(subData as Subscription);
               setLoading(false);
               setError('O pagamento foi processado, mas pode levar alguns minutos para o plano ser atualizado. Recarregue a página em alguns instantes.');
@@ -148,8 +141,7 @@ export default function SubscriptionPage() {
             }
           }
         };
-        
-        // Inicia a verificação após 2 segundos
+
         setTimeout(checkSubscription, 2000);
       }
     } else if (params.get('canceled') === 'true') {
@@ -187,7 +179,7 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      {/* Current Subscription */}
+      {}
       {subscription && (
         <CurrentPlanCard
           planName={
@@ -201,8 +193,8 @@ export default function SubscriptionPage() {
             subscription.billingCycle === 'MONTHLY' ? 'Mensal' : 'Anual'
           }
           nextBillingDate={
-            subscription.planType === 'FREE' 
-              ? undefined 
+            subscription.planType === 'FREE'
+              ? undefined
               : subscription.nextBillingDate
                 ? new Date(subscription.nextBillingDate).toLocaleDateString('pt-BR', {
                     day: '2-digit',
@@ -218,7 +210,7 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Usage Info */}
+      {}
       {usageInfo && (
         <UsageCard
           activeUsers={usageInfo.activeUsers}
@@ -228,7 +220,7 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Plan Comparison - Only show when plan is FREE */}
+      {}
       {subscription?.planType === 'FREE' && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <PlanCard
@@ -266,7 +258,7 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {/* Payment History */}
+      {}
       {user?.companyId && (
         <PaymentHistoryTable companyId={user.companyId} />
       )}

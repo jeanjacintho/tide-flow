@@ -32,20 +32,16 @@ public class AuthorizationService implements UserDetailsService {
                     return new UsernameNotFoundException("Usuário não encontrado: " + username);
                 });
 
-        // Verifica se o usuário está ativo
         if (user.getIsActive() == null || !user.getIsActive()) {
             logger.warn("Tentativa de login com usuário inativo: {}", username);
             throw new UsernameNotFoundException("Usuário inativo: " + username);
         }
 
-        // Verifica se a senha está presente
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             logger.error("Usuário encontrado mas sem senha configurada: {}", username);
             throw new UsernameNotFoundException("Usuário sem senha configurada: " + username);
         }
 
-        // Retorna o mesmo identificador que foi passado no login (username ou email)
-        // Isso garante que o Spring Security possa fazer a autenticação corretamente
         return org.springframework.security.core.userdetails.User.builder()
                 .username(username)
                 .password(user.getPassword().trim())
@@ -59,15 +55,13 @@ public class AuthorizationService implements UserDetailsService {
 
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
-        
-        // Todos os usuários são USER por padrão
+
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        
-        // SYSTEM_ADMIN tem acesso total ao sistema
+
         if (user.getSystemRole() != null && user.getSystemRole() == br.jeanjacintho.tideflow.user_service.model.SystemRole.SYSTEM_ADMIN) {
             authorities.add(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"));
         }
-        
+
         return authorities;
     }
 }

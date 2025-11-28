@@ -16,7 +16,6 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { hasAccess, isChecking } = useRequireRole(roleOptions);
 
-  // Mostra loading enquanto verifica permissão
   if (isChecking) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -25,12 +24,9 @@ export function ProtectedRoute({
     );
   }
 
-  // Se não tem permissão, mostra fallback ou nada (o hook já redirecionou)
   if (!hasAccess) {
     return <>{fallback}</>;
   }
 
-  // Tem permissão, renderiza o conteúdo
   return <>{children}</>;
 }
-

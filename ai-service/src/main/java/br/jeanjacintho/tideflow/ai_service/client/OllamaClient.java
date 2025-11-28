@@ -120,7 +120,7 @@ public class OllamaClient implements LLMClient {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .timeout(Duration.ofMillis(timeout * 2)) // Timeout maior para extração
+                .timeout(Duration.ofMillis(timeout * 2))
                 .map(response -> {
                     Object responseObj = response.get("response");
                     return responseObj != null ? responseObj.toString() : "{\"memorias\": []}";
@@ -258,4 +258,3 @@ public class OllamaClient implements LLMClient {
                 .onErrorReturn("{\"analiseEmocional\": {}, \"memorias\": [], \"gatilhos\": []}");
     }
 }
-

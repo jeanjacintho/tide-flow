@@ -11,13 +11,13 @@ import java.util.UUID;
 
 @Repository
 public interface ReportSectionRepository extends JpaRepository<ReportSection, UUID> {
-    
+
     List<ReportSection> findByReportIdOrderBySectionOrderAsc(UUID reportId);
-    
+
     @Query("SELECT s FROM ReportSection s WHERE s.report.id = :reportId " +
            "AND s.sectionType = :sectionType ORDER BY s.sectionOrder ASC")
     List<ReportSection> findByReportIdAndSectionType(
         @Param("reportId") UUID reportId, @Param("sectionType") String sectionType);
-    
+
     void deleteByReportId(UUID reportId);
 }

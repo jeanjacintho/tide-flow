@@ -120,7 +120,7 @@ export function DepartmentHeatmap({ departments, loading }: DepartmentHeatmapPro
                       {dept.stressLevel?.toFixed(1) ?? 'N/D'}%
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">{dept.activeUsers ?? 0}</span>

@@ -45,16 +45,12 @@ public class CorporateDashboardController {
         this.impactAnalysisService = impactAnalysisService;
     }
 
-    /**
-     * GET /api/corporate/dashboard/{companyId}
-     * Retorna dados gerais do dashboard para uma empresa.
-     */
     @GetMapping("/dashboard/{companyId}")
     public ResponseEntity<DashboardOverviewDTO> getDashboard(
             @PathVariable UUID companyId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         logger.info("GET /api/corporate/dashboard/{} - date: {}", companyId, date);
-        
+
         try {
             DashboardOverviewDTO overview = dashboardService.getDashboardOverview(companyId, date);
             return ResponseEntity.ok(overview);
@@ -64,19 +60,15 @@ public class CorporateDashboardController {
         }
     }
 
-    /**
-     * GET /api/corporate/stress-timeline/{companyId}
-     * Retorna sismógrafo de stress (timeline de stress ao longo do tempo).
-     */
     @GetMapping("/stress-timeline/{companyId}")
     public ResponseEntity<StressTimelineDTO> getStressTimeline(
             @PathVariable UUID companyId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "day") String granularity) {
-        logger.info("GET /api/corporate/stress-timeline/{} - {} to {} (granularity: {})", 
+        logger.info("GET /api/corporate/stress-timeline/{} - {} to {} (granularity: {})",
             companyId, startDate, endDate, granularity);
-        
+
         try {
             StressTimelineDTO timeline = stressTimelineService.getStressTimeline(
                 companyId, startDate, endDate, granularity
@@ -88,10 +80,6 @@ public class CorporateDashboardController {
         }
     }
 
-    /**
-     * GET /api/corporate/department-heatmap/{companyId}
-     * Retorna mapa de calor por departamento.
-     */
     @GetMapping("/department-heatmap/{companyId}")
     public ResponseEntity<DepartmentHeatmapDTO> getDepartmentHeatmap(
             @PathVariable UUID companyId,
@@ -99,9 +87,9 @@ public class CorporateDashboardController {
         if (date == null) {
             date = LocalDate.now();
         }
-        
+
         logger.info("GET /api/corporate/department-heatmap/{} - date: {}", companyId, date);
-        
+
         try {
             DepartmentHeatmapDTO heatmap = heatmapService.getDepartmentHeatmap(companyId, date);
             return ResponseEntity.ok(heatmap);
@@ -111,16 +99,12 @@ public class CorporateDashboardController {
         }
     }
 
-    /**
-     * GET /api/corporate/turnover-prediction/{companyId}
-     * Retorna predição de turnover para uma empresa ou departamento.
-     */
     @GetMapping("/turnover-prediction/{companyId}")
     public ResponseEntity<TurnoverPredictionDTO> getTurnoverPrediction(
             @PathVariable UUID companyId,
             @RequestParam(required = false) UUID departmentId) {
         logger.info("GET /api/corporate/turnover-prediction/{} - departmentId: {}", companyId, departmentId);
-        
+
         try {
             TurnoverPredictionDTO prediction = turnoverPredictionService.predictTurnoverRisk(
                 companyId, departmentId
@@ -132,18 +116,14 @@ public class CorporateDashboardController {
         }
     }
 
-    /**
-     * GET /api/corporate/impact-analysis/{companyId}
-     * Retorna análise de impacto de uma decisão ou evento.
-     */
     @GetMapping("/impact-analysis/{companyId}")
     public ResponseEntity<ImpactAnalysisDTO> getImpactAnalysis(
             @PathVariable UUID companyId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate eventDate,
             @RequestParam String eventDescription) {
-        logger.info("GET /api/corporate/impact-analysis/{} - eventDate: {}, description: {}", 
+        logger.info("GET /api/corporate/impact-analysis/{} - eventDate: {}, description: {}",
             companyId, eventDate, eventDescription);
-        
+
         try {
             ImpactAnalysisDTO impact = impactAnalysisService.analyzeDecisionImpact(
                 companyId, eventDate, eventDescription
@@ -155,10 +135,6 @@ public class CorporateDashboardController {
         }
     }
 
-    /**
-     * GET /api/corporate/department/{departmentId}/insights
-     * Retorna insights detalhados por departamento.
-     */
     @GetMapping("/department/{departmentId}/insights")
     public ResponseEntity<DepartmentHeatmapDTO.DepartmentHeatmapItem> getDepartmentInsights(
             @PathVariable UUID departmentId,
@@ -166,16 +142,16 @@ public class CorporateDashboardController {
         if (date == null) {
             date = LocalDate.now();
         }
-        
+
         logger.info("GET /api/corporate/department/{}/insights - date: {}", departmentId, date);
-        
+
         try {
             DepartmentHeatmapDTO.DepartmentHeatmapItem item = heatmapService.getDepartmentInsights(departmentId, date);
-            
+
             if (item == null) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             return ResponseEntity.ok(item);
         } catch (Exception e) {
             logger.error("Erro ao obter insights do departamento {}: {}", departmentId, e.getMessage(), e);

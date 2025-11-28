@@ -17,30 +17,30 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentHistoryRepository extends JpaRepository<PaymentHistory, UUID> {
-    
+
     Page<PaymentHistory> findByCompanyIdOrderByPaymentDateDesc(UUID companyId, Pageable pageable);
-    
+
     List<PaymentHistory> findByCompanyIdOrderByPaymentDateDesc(UUID companyId);
-    
+
     Optional<PaymentHistory> findByStripeInvoiceId(String stripeInvoiceId);
-    
+
     List<PaymentHistory> findByCompanyIdAndStatusOrderByPaymentDateDesc(
-        UUID companyId, 
+        UUID companyId,
         PaymentStatus status
     );
-    
+
     @Query("SELECT SUM(p.amount) FROM PaymentHistory p WHERE p.company.id = :companyId AND p.status = :status")
     BigDecimal sumAmountByCompanyIdAndStatus(
         @Param("companyId") UUID companyId,
         @Param("status") PaymentStatus status
     );
-    
+
     @Query("SELECT COUNT(p) FROM PaymentHistory p WHERE p.company.id = :companyId AND p.status = :status")
     Long countByCompanyIdAndStatus(
         @Param("companyId") UUID companyId,
         @Param("status") PaymentStatus status
     );
-    
+
     @Query("SELECT p FROM PaymentHistory p WHERE p.company.id = :companyId " +
            "AND p.paymentDate BETWEEN :startDate AND :endDate " +
            "ORDER BY p.paymentDate DESC")
@@ -49,6 +49,6 @@ public interface PaymentHistoryRepository extends JpaRepository<PaymentHistory, 
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
-    
+
     boolean existsByStripeInvoiceId(String stripeInvoiceId);
 }

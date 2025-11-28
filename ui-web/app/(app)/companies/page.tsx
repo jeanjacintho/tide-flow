@@ -31,21 +31,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 export default function CompaniesPage() {
-  // PROTEÇÃO DA ROTA: Apenas SYSTEM_ADMIN pode acessar
-  // Este hook DEVE ser o primeiro a ser chamado
-  const { hasAccess, isChecking } = useRequireRole({ 
+
+  const { hasAccess, isChecking } = useRequireRole({
     systemRole: 'SYSTEM_ADMIN',
     redirectTo: '/chat'
   });
-  
-  // BLOQUEIO TOTAL: Não renderiza NADA enquanto verifica ou se não tiver acesso
+
   if (isChecking || !hasAccess) {
     return null;
   }
-  
+
   const { user } = useAuth();
-  
-  // Todos os hooks devem ser chamados após a verificação de acesso
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -266,7 +263,7 @@ export default function CompaniesPage() {
                     <TableCell>{company.subscriptionPlan}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        company.status === 'ACTIVE' 
+                        company.status === 'ACTIVE'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : company.status === 'TRIAL'
                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'

@@ -8,7 +8,3 @@ public record UserCreatedEvent(
     String email
 ) {
 }
-
-
-
-

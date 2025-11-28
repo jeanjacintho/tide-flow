@@ -217,11 +217,11 @@ class ConversationServiceTest {
     void testGetConversationHistorySuccess() {
         when(conversationRepository.findByIdAndUserId(conversationId, userId))
                 .thenReturn(Optional.of(conversation));
-        
+
         List<ConversationMessage> messages = new ArrayList<>();
         ConversationMessage msg = new ConversationMessage(MessageRole.USER, "Mensagem teste", 1);
         messages.add(msg);
-        
+
         when(conversationMessageRepository.findByConversationIdOrderBySequenceNumberAsc(conversationId))
                 .thenReturn(messages);
 
@@ -250,7 +250,7 @@ class ConversationServiceTest {
     void testGetUserConversations() {
         List<Conversation> conversations = new ArrayList<>();
         conversations.add(conversation);
-        
+
         when(conversationRepository.findByUserIdOrderByCreatedAtDesc(userId))
                 .thenReturn(conversations);
         when(conversationMessageRepository.countByConversationId(conversationId))
@@ -288,4 +288,3 @@ class ConversationServiceTest {
         return consolidated;
     }
 }
-

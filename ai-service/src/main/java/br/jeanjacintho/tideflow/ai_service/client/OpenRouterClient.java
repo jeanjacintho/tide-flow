@@ -14,10 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Cliente para interagir com a API do OpenRouter.
- * Suporta múltiplos modelos através do OpenRouter, incluindo x-ai/grok-4.1-fast.
- */
 @Component
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "llm.provider", havingValue = "openrouter")
 public class OpenRouterClient implements LLMClient {
@@ -48,7 +44,7 @@ public class OpenRouterClient implements LLMClient {
     public Mono<String> generateResponse(String prompt) {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "user", "content", prompt));
-        
+
         return chatWithHistory(messages);
     }
 
@@ -69,7 +65,7 @@ public class OpenRouterClient implements LLMClient {
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException ex = (WebClientResponseException) error;
-                        logger.error("Erro na API do OpenRouter (Status: {}): {}", 
+                        logger.error("Erro na API do OpenRouter (Status: {}): {}",
                                 ex.getStatusCode(), sanitizeErrorResponse(ex.getResponseBodyAsString()));
                     } else {
                         logger.error("Erro ao chamar API do OpenRouter: {}", error.getMessage());
@@ -264,15 +260,11 @@ public class OpenRouterClient implements LLMClient {
                 .onErrorReturn("{\"analiseEmocional\": {}, \"memorias\": [], \"gatilhos\": []}");
     }
 
-    /**
-     * Constrói o request body para chat/completions do OpenRouter (formato OpenAI).
-     */
     private Map<String, Object> buildChatRequest(List<Map<String, String>> messages) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", modelName);
         requestBody.put("messages", messages);
 
-        // Configurações de geração
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("temperature", 0.7);
         parameters.put("max_tokens", 8192);
@@ -281,44 +273,33 @@ public class OpenRouterClient implements LLMClient {
         return requestBody;
     }
 
-    /**
-     * Loga erros da API do OpenRouter de forma segura (sanitiza informações sensíveis).
-     */
     private void logError(Throwable error) {
         if (error instanceof WebClientResponseException) {
             WebClientResponseException ex = (WebClientResponseException) error;
-            logger.error("Erro na API do OpenRouter (Status: {}): {}", 
+            logger.error("Erro na API do OpenRouter (Status: {}): {}",
                     ex.getStatusCode(), sanitizeErrorResponse(ex.getResponseBodyAsString()));
         } else {
             logger.error("Erro ao chamar API do OpenRouter: {}", error.getMessage());
         }
     }
 
-    /**
-     * Sanitiza mensagens de erro para remover informações sensíveis (como API keys).
-     */
     private String sanitizeErrorResponse(String errorResponse) {
         if (errorResponse == null || errorResponse.isEmpty()) {
             return "Sem detalhes do erro";
         }
-        
-        // Remove possíveis vazamentos de API key
+
         String sanitized = errorResponse
                 .replaceAll("(?i)api[_-]?key", "***")
                 .replaceAll("(?i)authorization", "***")
                 .replaceAll("sk-or-v1-[A-Za-z0-9_-]+", "***REDACTED***");
-        
-        // Limita o tamanho para evitar logs muito grandes
+
         if (sanitized.length() > 500) {
             sanitized = sanitized.substring(0, 497) + "...";
         }
-        
+
         return sanitized;
     }
 
-    /**
-     * Extrai o texto da resposta do OpenRouter (formato OpenAI).
-     */
     @SuppressWarnings("unchecked")
     private String extractTextFromResponse(Map<String, Object> response) {
         try {
@@ -341,4 +322,3 @@ public class OpenRouterClient implements LLMClient {
         }
     }
 }
-

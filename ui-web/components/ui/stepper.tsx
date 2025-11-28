@@ -21,7 +21,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
 
           return (
             <div key={step} className="flex items-center flex-1">
-              {/* Step Circle */}
+              {}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={cn(
@@ -49,7 +49,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                 </span>
               </div>
 
-              {/* Connector Line */}
+              {}
               {index < steps.length - 1 && (
                 <div
                   className={cn(
@@ -65,4 +65,3 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
     </div>
   );
 }
-

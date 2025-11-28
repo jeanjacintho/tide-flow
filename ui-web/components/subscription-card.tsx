@@ -14,8 +14,7 @@ export function SubscriptionCard() {
   const [loading, setLoading] = useState(true);
 
   const companyId = user?.companyId;
-  
-  // Apenas OWNER e ADMIN podem ver o card de assinatura
+
   const canViewSubscription = user?.companyRole === 'OWNER' || user?.companyRole === 'ADMIN';
 
   const fetchSubscription = useCallback(async () => {
@@ -23,13 +22,13 @@ export function SubscriptionCard() {
       setLoading(false);
       return;
     }
-    
+
     try {
       const data = await apiService.getSubscription(companyId);
       setSubscription(data);
     } catch (error) {
       console.error('Erro ao buscar assinatura:', error);
-      // Se não conseguir buscar, assume que não tem assinatura (null)
+
       setSubscription(null);
     } finally {
       setLoading(false);
@@ -45,10 +44,7 @@ export function SubscriptionCard() {
   }, [companyId, canViewSubscription, fetchSubscription]);
 
   const shouldShow = useMemo(() => {
-    // Mostra o card se:
-    // 1. Usuário pode ver (OWNER ou ADMIN)
-    // 2. Não está carregando
-    // 3. Não tem assinatura OU a assinatura é FREE
+
     return canViewSubscription && !loading && (!subscription || subscription.planType === 'FREE');
   }, [canViewSubscription, loading, subscription]);
 

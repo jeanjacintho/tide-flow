@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class EmotionalAggregationService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(EmotionalAggregationService.class);
-    private static final int MIN_USERS_FOR_AGGREGATION = 5; // k-anonymity
-    
+    private static final int MIN_USERS_FOR_AGGREGATION = 5;
+
     private final EmotionalAnalysisRepository emotionalAnalysisRepository;
     private final DepartmentEmotionalAggregateRepository departmentAggregateRepository;
     private final CompanyEmotionalAggregateRepository companyAggregateRepository;
@@ -39,43 +39,41 @@ public class EmotionalAggregationService {
     @Transactional
     public DepartmentEmotionalAggregate aggregateByDepartment(UUID departmentId, LocalDate date) {
         logger.info("Agregando dados emocionais para departamento {} na data {}", departmentId, date);
-        
+
         LocalDateTime startDateTime = date.atStartOfDay();
         LocalDateTime endDateTime = date.atTime(LocalTime.MAX);
-        
+
         List<EmotionalAnalysis> analyses = emotionalAnalysisRepository.findByDepartmentIdAndDateRange(
             departmentId, startDateTime, endDateTime
         );
-        
+
         if (analyses.isEmpty()) {
             logger.warn("Nenhuma análise encontrada para departamento {} na data {}", departmentId, date);
             return null;
         }
-        
-        // Valida k-anonymity
+
         long uniqueUsers = analyses.stream()
             .map(EmotionalAnalysis::getUsuarioId)
             .distinct()
             .count();
-            
+
         if (uniqueUsers < MIN_USERS_FOR_AGGREGATION) {
-            logger.warn("Departamento {} não atende k-anonymity ({} usuários < {} mínimo) na data {}", 
+            logger.warn("Departamento {} não atende k-anonymity ({} usuários < {} mínimo) na data {}",
                 departmentId, uniqueUsers, MIN_USERS_FOR_AGGREGATION, date);
             return null;
         }
-        
+
         UUID companyId = analyses.stream()
             .map(EmotionalAnalysis::getCompanyId)
             .filter(Objects::nonNull)
             .findFirst()
             .orElse(null);
-            
+
         if (companyId == null) {
             logger.warn("CompanyId não encontrado para departamento {}", departmentId);
             return null;
         }
-        
-        // Calcula métricas agregadas
+
         double avgStressLevel = calculateAvgStressLevel(analyses);
         double avgEmotionalIntensity = calculateAvgEmotionalIntensity(analyses);
         Map<String, Integer> primaryEmotions = calculatePrimaryEmotions(analyses);
@@ -85,12 +83,11 @@ public class EmotionalAggregationService {
             .count();
         long totalMessages = analyses.size();
         long riskAlertsCount = countRiskAlerts(analyses);
-        
-        // Busca ou cria agregação
+
         DepartmentEmotionalAggregate aggregate = departmentAggregateRepository
             .findByDepartmentIdAndDate(departmentId, date)
             .orElse(new DepartmentEmotionalAggregate());
-        
+
         aggregate.setDepartmentId(departmentId);
         aggregate.setCompanyId(companyId);
         aggregate.setDate(date);
@@ -101,31 +98,30 @@ public class EmotionalAggregationService {
         aggregate.setTotalMessages(totalMessages);
         aggregate.setRiskAlertsCount(riskAlertsCount);
         aggregate.setUniqueUsersCount(uniqueUsers);
-        
+
         DepartmentEmotionalAggregate saved = departmentAggregateRepository.save(aggregate);
-        logger.info("Agregação de departamento salva: {} - {} usuários, {} conversas, stress médio: {}", 
+        logger.info("Agregação de departamento salva: {} - {} usuários, {} conversas, stress médio: {}",
             departmentId, uniqueUsers, totalConversations, avgStressLevel);
-        
+
         return saved;
     }
 
     @Transactional
     public CompanyEmotionalAggregate aggregateByCompany(UUID companyId, LocalDate date) {
         logger.info("Agregando dados emocionais para empresa {} na data {}", companyId, date);
-        
+
         LocalDateTime startDateTime = date.atStartOfDay();
         LocalDateTime endDateTime = date.atTime(LocalTime.MAX);
-        
+
         List<EmotionalAnalysis> analyses = emotionalAnalysisRepository.findByCompanyIdAndDateRange(
             companyId, startDateTime, endDateTime
         );
-        
+
         if (analyses.isEmpty()) {
             logger.warn("Nenhuma análise encontrada para empresa {} na data {}", companyId, date);
             return null;
         }
-        
-        // Calcula métricas agregadas
+
         double avgStressLevel = calculateAvgStressLevel(analyses);
         long totalActiveUsers = analyses.stream()
             .map(EmotionalAnalysis::getUsuarioId)
@@ -137,8 +133,7 @@ public class EmotionalAggregationService {
             .count();
         long totalMessages = analyses.size();
         long riskAlertsCount = countRiskAlerts(analyses);
-        
-        // Agrega por departamento
+
         Map<String, Object> departmentBreakdown = analyses.stream()
             .filter(a -> a.getDepartmentId() != null)
             .collect(Collectors.groupingBy(
@@ -158,12 +153,11 @@ public class EmotionalAggregationService {
                     }
                 )
             ));
-        
-        // Busca ou cria agregação
+
         CompanyEmotionalAggregate aggregate = companyAggregateRepository
             .findByCompanyIdAndDate(companyId, date)
             .orElse(new CompanyEmotionalAggregate());
-        
+
         aggregate.setCompanyId(companyId);
         aggregate.setDate(date);
         aggregate.setAvgStressLevel(avgStressLevel);
@@ -172,11 +166,11 @@ public class EmotionalAggregationService {
         aggregate.setTotalConversations(totalConversations);
         aggregate.setTotalMessages(totalMessages);
         aggregate.setRiskAlertsCount(riskAlertsCount);
-        
+
         CompanyEmotionalAggregate saved = companyAggregateRepository.save(aggregate);
-        logger.info("Agregação de empresa salva: {} - {} usuários, {} conversas, stress médio: {}", 
+        logger.info("Agregação de empresa salva: {} - {} usuários, {} conversas, stress médio: {}",
             companyId, totalActiveUsers, totalConversations, avgStressLevel);
-        
+
         return saved;
     }
 
@@ -204,17 +198,13 @@ public class EmotionalAggregationService {
             logger.warn("Análise emocional sem department_id ou company_id, pulando agregação em tempo real");
             return;
         }
-        
+
         LocalDate analysisDate = analysis.getCreatedAt().toLocalDate();
-        
-        // Agrega por departamento
+
         aggregateByDepartment(analysis.getDepartmentId(), analysisDate);
-        
-        // Agrega por empresa
+
         aggregateByCompany(analysis.getCompanyId(), analysisDate);
     }
-
-    // Métodos auxiliares privados
 
     private double calculateAvgStressLevel(List<EmotionalAnalysis> analyses) {
         return analyses.stream()
@@ -239,8 +229,7 @@ public class EmotionalAggregationService {
     }
 
     private long countRiskAlerts(List<EmotionalAnalysis> analyses) {
-        // Assumindo que análises com intensity > 80 são consideradas de risco
-        // Isso pode ser ajustado conforme a lógica de negócio
+
         return analyses.stream()
             .filter(a -> a.getIntensity() != null && a.getIntensity() > 80)
             .count();

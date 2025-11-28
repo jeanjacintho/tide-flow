@@ -124,7 +124,6 @@ class SecurityFilterTest {
 
         securityFilter.doFilterInternal(request, response, filterChain);
 
-        // O filtro deve tentar remover "Bearer " mesmo que não exista
         verify(filterChain).doFilter(request, response);
     }
 
@@ -146,4 +145,3 @@ class SecurityFilterTest {
         verify(tokenService).validateToken(validToken);
     }
 }
-

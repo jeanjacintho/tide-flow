@@ -124,10 +124,9 @@ class EmailServiceTest {
 
         ArgumentCaptor<CreateEmailOptions> captor = ArgumentCaptor.forClass(CreateEmailOptions.class);
         verify(emails).send(captor.capture());
-        
+
         CreateEmailOptions capturedOptions = captor.getValue();
         assertEquals(1, capturedOptions.getTo().size());
         assertEquals(devEmail, capturedOptions.getTo().get(0));
     }
 }
-

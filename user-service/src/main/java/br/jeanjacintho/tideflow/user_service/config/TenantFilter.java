@@ -10,10 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-/**
- * Filtro responsável por limpar o TenantContext após o processamento da requisição.
- * Garante que não há vazamento de informações entre requisições diferentes.
- */
 @Component
 public class TenantFilter extends OncePerRequestFilter {
 
@@ -22,7 +18,7 @@ public class TenantFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            // Sempre limpa o contexto após o processamento da requisição
+
             TenantContext.clear();
         }
     }

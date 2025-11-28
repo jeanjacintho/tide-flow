@@ -7,4 +7,3 @@ public enum TipoMemoria {
     EVENTO,
     RELACIONAMENTO
 }
-

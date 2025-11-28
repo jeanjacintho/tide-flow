@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 @CrossOrigin(origins = "*")
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    
+
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -42,19 +42,18 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody AuthenticationDTO authenticationDTO) {
         try {
             var userPassword = new UsernamePasswordAuthenticationToken(
-                    authenticationDTO.username() != null ? authenticationDTO.username().trim() : null, 
+                    authenticationDTO.username() != null ? authenticationDTO.username().trim() : null,
                     authenticationDTO.password());
-            
+
             var auth = authenticationManager.authenticate(userPassword);
             UserDetails userDetails = (UserDetails) auth.getPrincipal();
-            
-            // Busca o usuário completo do banco com relacionamentos para incluir informações de tenant no token
+
             User fullUser = userRepository.findByUsernameOrEmailWithCompanyAndDepartment(userDetails.getUsername())
                     .orElseThrow(() -> {
                         logger.error("Usuário não encontrado após autenticação: {}", userDetails.getUsername());
                         return new RuntimeException("Usuário não encontrado");
                     });
-            
+
             String token = tokenService.generateToken(fullUser);
             return ResponseEntity.ok(new LoginResponseDTO(token));
         } catch (BadCredentialsException e) {

@@ -245,5 +245,3 @@ public class PaymentHistory {
         this.updatedAt = updatedAt;
     }
 }
-
-

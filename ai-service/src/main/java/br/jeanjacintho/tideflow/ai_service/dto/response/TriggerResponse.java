@@ -113,4 +113,3 @@ public class TriggerResponse {
         this.dataUltimaObservacao = dataUltimaObservacao;
     }
 }
-

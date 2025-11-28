@@ -37,18 +37,18 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 export default function EmployeesPage() {
-  const { hasAccess, isChecking } = useRequireRole({ 
+  const { hasAccess, isChecking } = useRequireRole({
     companyRole: 'OWNER',
     redirectTo: '/chat'
   });
-  
+
   if (isChecking || !hasAccess) {
     return null;
   }
-  
+
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ export default function EmployeesPage() {
 
   const loadData = async () => {
     if (!user?.companyId) return;
-    
+
     try {
       setLoading(true);
       const [departmentsData, usersData] = await Promise.all([
@@ -150,12 +150,12 @@ export default function EmployeesPage() {
 
   const handleCheckLimitBeforeCreate = async (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!user?.companyId) return;
 
     try {
       const usageInfo: UsageInfo = await apiService.getUsageInfo(user.companyId);
-      
+
       if (usageInfo.atLimit || usageInfo.remainingSlots === 0) {
         toast.error('Limite de funcionários atingido', {
           description: `Você possui ${usageInfo.activeUsers} funcionários de ${usageInfo.maxUsers} permitidos no plano atual. Faça upgrade para o plano Enterprise para adicionar mais funcionários.`,
@@ -167,7 +167,7 @@ export default function EmployeesPage() {
         });
         return;
       }
-      
+
       setIsUserDialogOpen(true);
     } catch (error) {
       console.error('Erro ao verificar limite:', error);

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
-    
+
     private final Resend resend;
     private final String fromEmail;
     private final boolean emailEnabled;
@@ -32,14 +32,14 @@ public class EmailService {
         this.emailEnabled = emailEnabled;
         this.devMode = devModeStr != null && !devModeStr.isEmpty() && Boolean.parseBoolean(devModeStr);
         this.devEmail = devEmail != null && !devEmail.isEmpty() ? devEmail : null;
-        
+
         if (apiKey == null || apiKey.isEmpty()) {
             logger.warn("RESEND_API_KEY não configurada. Emails não serão enviados.");
             this.resend = null;
         } else {
             this.resend = new Resend(apiKey);
         }
-        
+
         if (devMode) {
             if (devEmail == null || devEmail.isEmpty()) {
                 logger.warn("Modo dev ativado mas EMAIL_DEVMODE não configurado. Emails não serão redirecionados.");
@@ -84,7 +84,7 @@ public class EmailService {
 
             CreateEmailResponse response = resend.emails().send(params);
             if (devMode) {
-                logger.info("Email de boas-vindas enviado com sucesso para {} (redirecionado de {}) (ID: {})", 
+                logger.info("Email de boas-vindas enviado com sucesso para {} (redirecionado de {}) (ID: {})",
                     devEmail, to, response.getId());
             } else {
                 logger.info("Email de boas-vindas enviado com sucesso para: {} (ID: {})", to, response.getId());
@@ -121,7 +121,7 @@ public class EmailService {
 
             CreateEmailResponse response = resend.emails().send(params);
             if (devMode) {
-                logger.info("Email de convite enviado com sucesso para {} (redirecionado de {}) (ID: {})", 
+                logger.info("Email de convite enviado com sucesso para {} (redirecionado de {}) (ID: {})",
                     devEmail, to, response.getId());
             } else {
                 logger.info("Email de convite enviado com sucesso para: {} (ID: {})", to, response.getId());
@@ -171,7 +171,7 @@ public class EmailService {
     private String buildInvitationEmailHtml(String name, String email, String temporaryPassword, String companyName) {
         String userName = name != null && !name.isEmpty() ? name : "Usuário";
         String company = companyName != null && !companyName.isEmpty() ? companyName : "sua empresa";
-        
+
         return String.format(
             "<!DOCTYPE html>" +
             "<html>" +
@@ -226,4 +226,3 @@ public class EmailService {
         );
     }
 }
-

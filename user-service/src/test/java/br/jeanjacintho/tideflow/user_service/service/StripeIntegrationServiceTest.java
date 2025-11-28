@@ -119,18 +119,18 @@ class StripeIntegrationServiceTest {
     void testStartCheckoutSessionSuccess() throws StripeException {
         String checkoutUrl = "https://checkout.stripe.com/test";
         CreateCheckoutSessionRequestDTO request = new CreateCheckoutSessionRequestDTO(
-                testCompanyId, 
-                "https://example.com/success", 
+                testCompanyId,
+                "https://example.com/success",
                 "https://example.com/cancel"
         );
 
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
         when(stripeService.getOrCreateEnterprisePrice()).thenReturn(testPriceId);
         when(stripeService.createCheckoutSession(
-                eq(testCompanyId), 
-                eq(testCustomerId), 
-                eq(testPriceId), 
-                anyString(), 
+                eq(testCompanyId),
+                eq(testCustomerId),
+                eq(testPriceId),
+                anyString(),
                 anyString()
         )).thenReturn(checkoutUrl);
 
@@ -141,10 +141,10 @@ class StripeIntegrationServiceTest {
         verify(subscriptionRepository).findByCompanyId(testCompanyId);
         verify(stripeService).getOrCreateEnterprisePrice();
         verify(stripeService).createCheckoutSession(
-                eq(testCompanyId), 
-                eq(testCustomerId), 
-                eq(testPriceId), 
-                anyString(), 
+                eq(testCompanyId),
+                eq(testCustomerId),
+                eq(testPriceId),
+                anyString(),
                 anyString()
         );
     }
@@ -154,8 +154,8 @@ class StripeIntegrationServiceTest {
     void testStartCheckoutSessionCreatesFreeSubscription() throws StripeException {
         String checkoutUrl = "https://checkout.stripe.com/test";
         CreateCheckoutSessionRequestDTO request = new CreateCheckoutSessionRequestDTO(
-                testCompanyId, 
-                null, 
+                testCompanyId,
+                null,
                 null
         );
 
@@ -179,8 +179,8 @@ class StripeIntegrationServiceTest {
     @DisplayName("startCheckoutSession - Deve lançar RuntimeException quando Stripe falha")
     void testStartCheckoutSessionStripeException() {
         CreateCheckoutSessionRequestDTO request = new CreateCheckoutSessionRequestDTO(
-                testCompanyId, 
-                null, 
+                testCompanyId,
+                null,
                 null
         );
 
@@ -188,10 +188,10 @@ class StripeIntegrationServiceTest {
         try {
             doThrow(new RuntimeException("Stripe error")).when(stripeService).getOrCreateEnterprisePrice();
         } catch (StripeException e) {
-            // Won't happen in test
+
         }
 
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.startCheckoutSession(request));
     }
 
@@ -232,7 +232,7 @@ class StripeIntegrationServiceTest {
     void testCancelSubscriptionNotFound() {
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
+        assertThrows(ResourceNotFoundException.class,
                 () -> stripeIntegrationService.cancelSubscription(testCompanyId));
     }
 
@@ -264,7 +264,7 @@ class StripeIntegrationServiceTest {
 
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
 
-        assertThrows(IllegalStateException.class, 
+        assertThrows(IllegalStateException.class,
                 () -> stripeIntegrationService.forceSyncWithStripe(testCompanyId));
     }
 
@@ -275,7 +275,7 @@ class StripeIntegrationServiceTest {
 
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
 
-        assertThrows(IllegalStateException.class, 
+        assertThrows(IllegalStateException.class,
                 () -> stripeIntegrationService.forceSyncWithStripe(testCompanyId));
     }
 
@@ -315,7 +315,7 @@ class StripeIntegrationServiceTest {
                 throw new RuntimeException("Subscription not found");
             });
         } catch (StripeException e) {
-            // Won't happen in test setup
+
         }
 
         Map<String, Object> result = stripeIntegrationService.testSubscriptionLookup(
@@ -332,7 +332,7 @@ class StripeIntegrationServiceTest {
         stripeSubscription.setId(testSubscriptionId);
         stripeSubscription.setCustomer(testCustomerId);
         stripeSubscription.setStatus("active");
-        
+
         Map<String, String> metadata = new HashMap<>();
         metadata.put("company_id", testCompanyId.toString());
         stripeSubscription.setMetadata(metadata);
@@ -353,7 +353,7 @@ class StripeIntegrationServiceTest {
     void testCheckStripeMetadataStripeException() throws StripeException {
         doThrow(new RuntimeException("Stripe error")).when(stripeService).getSubscription(testSubscriptionId);
 
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.checkStripeMetadata(testSubscriptionId));
     }
 
@@ -362,7 +362,7 @@ class StripeIntegrationServiceTest {
     void testProcessWebhookNoSecret() {
         when(stripeService.getWebhookSecret()).thenReturn(null);
 
-        assertThrows(IllegalStateException.class, 
+        assertThrows(IllegalStateException.class,
                 () -> stripeIntegrationService.processWebhook("payload", "signature"));
     }
 
@@ -371,7 +371,7 @@ class StripeIntegrationServiceTest {
     void testProcessWebhookNoSignature() {
         when(stripeService.getWebhookSecret()).thenReturn("whsec_test");
 
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(IllegalArgumentException.class,
                 () -> stripeIntegrationService.processWebhook("payload", null));
     }
 
@@ -380,8 +380,7 @@ class StripeIntegrationServiceTest {
     void testProcessWebhookInvalidSignature() {
         when(stripeService.getWebhookSecret()).thenReturn("whsec_test");
 
-        // Simula exceção de parsing JSON que é capturada e relançada como RuntimeException
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.processWebhook("invalid_payload", "invalid_signature"));
     }
 
@@ -392,9 +391,9 @@ class StripeIntegrationServiceTest {
         doThrow(new RuntimeException("Stripe API error"))
                 .when(stripeService).cancelSubscription(testSubscriptionId);
 
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.cancelSubscription(testCompanyId));
-        
+
         verify(stripeService).cancelSubscription(testSubscriptionId);
     }
 
@@ -430,9 +429,9 @@ class StripeIntegrationServiceTest {
         doThrow(new RuntimeException("Sync failed"))
                 .when(subscriptionService).syncSubscriptionFromStripe(anyString(), any(Subscription.class));
 
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.forceSyncWithStripe(testCompanyId));
-        
+
         verify(stripeService).getSubscription(testSubscriptionId);
         verify(subscriptionService).syncSubscriptionFromStripe(eq(testCustomerId), eq(stripeSubscription));
     }
@@ -444,9 +443,9 @@ class StripeIntegrationServiceTest {
         doThrow(new RuntimeException("Subscription not found"))
                 .when(stripeService).getSubscription(testSubscriptionId);
 
-        assertThrows(RuntimeException.class, 
+        assertThrows(RuntimeException.class,
                 () -> stripeIntegrationService.forceSyncWithStripe(testCompanyId));
-        
+
         verify(stripeService).getSubscription(testSubscriptionId);
     }
 
@@ -500,10 +499,10 @@ class StripeIntegrationServiceTest {
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
         when(stripeService.getOrCreateEnterprisePrice()).thenReturn(testPriceId);
         when(stripeService.createCheckoutSession(
-                eq(testCompanyId), 
-                eq(testCustomerId), 
-                eq(testPriceId), 
-                anyString(), 
+                eq(testCompanyId),
+                eq(testCustomerId),
+                eq(testPriceId),
+                anyString(),
                 anyString()))
                 .thenReturn("https://checkout.stripe.com/test");
 
@@ -531,10 +530,10 @@ class StripeIntegrationServiceTest {
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
         when(stripeService.getOrCreateEnterprisePrice()).thenReturn(testPriceId);
         when(stripeService.createCheckoutSession(
-                eq(testCompanyId), 
-                eq(testCustomerId), 
-                eq(testPriceId), 
-                eq(customSuccessUrl), 
+                eq(testCompanyId),
+                eq(testCustomerId),
+                eq(testPriceId),
+                eq(customSuccessUrl),
                 eq(customCancelUrl)))
                 .thenReturn("https://checkout.stripe.com/test");
 

@@ -31,7 +31,7 @@ public class MemoriaService {
     private final ObjectMapper objectMapper;
     private final TriggerService triggerService;
 
-    public MemoriaService(MemoriaRepository memoriaRepository, LLMClient llmClient, 
+    public MemoriaService(MemoriaRepository memoriaRepository, LLMClient llmClient,
                          ObjectMapper objectMapper, TriggerService triggerService) {
         this.memoriaRepository = memoriaRepository;
         this.llmClient = llmClient;
@@ -39,28 +39,23 @@ public class MemoriaService {
         this.triggerService = triggerService;
     }
 
-    /**
-     * Processa mensagem e resposta da IA para extrair e salvar memórias usando dados consolidados.
-     * Versão otimizada que recebe o JSON já processado da requisição consolidada.
-     * Executa de forma assíncrona para não travar a resposta ao usuário.
-     */
     @Async
     @Transactional
     public CompletableFuture<Void> processarMensagemParaMemoriaConsolidada(
-            String usuarioId, 
-            String userMessage, 
+            String usuarioId,
+            String userMessage,
             String aiResponse,
             Map<String, Object> responseMap
     ) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 logger.info("Iniciando processamento consolidado de memórias para usuário: {}", usuarioId);
-                
+
                 List<Map<String, Object>> memoriasData = extractMapListFromResponse(responseMap, "memorias");
 
                 if (memoriasData == null || memoriasData.isEmpty()) {
                     logger.info("Nenhuma memória extraída da conversa");
-                    // Ainda processa gatilhos mesmo sem memórias
+
                     triggerService.processarGatilhos(usuarioId, responseMap);
                     return null;
                 }
@@ -78,15 +73,13 @@ public class MemoriaService {
                     }
                 }
 
-                // Batch save de todas as memórias
                 if (!memoriasParaSalvar.isEmpty()) {
                     memoriaRepository.saveAll(memoriasParaSalvar);
                     logger.info("Total de memórias salvas: {}", memoriasParaSalvar.size());
-                    // Invalida cache de memórias relevantes para este usuário
+
                     invalidarCacheMemorias(usuarioId);
                 }
 
-                // Processa gatilhos extraídos
                 triggerService.processarGatilhos(usuarioId, responseMap);
 
                 return null;
@@ -97,69 +90,49 @@ public class MemoriaService {
         });
     }
 
-
-    /**
-     * Recupera memórias relevantes do usuário para incluir no contexto da conversa.
-     * Usa cache para evitar buscar do banco toda vez.
-     */
     @Cacheable(value = "memoriasRelevantes", key = "#usuarioId", unless = "#result == null || #result.isEmpty()")
     @Transactional(readOnly = true)
     public Mono<String> recuperarMemoriasRelevantesAsync(String usuarioId, String mensagemAtual) {
         return Mono.fromCallable(() -> {
             List<Memoria> memorias = memoriaRepository.findMemoriasRelevantes(usuarioId);
-            
+
             if (memorias.isEmpty()) {
                 return "";
             }
 
-            // Filtra e limita as mais relevantes
             List<Memoria> memoriasSelecionadas = memorias.stream()
                     .limit(MAX_MEMORIAS_RELEVANTES)
                     .collect(Collectors.toList());
 
-            // Atualiza contadores de referência (assíncrono)
             atualizarReferencias(memoriasSelecionadas);
 
-            // Formata memórias para o prompt
             return formatarMemoriasParaPrompt(memoriasSelecionadas);
         });
     }
 
-    /**
-     * Versão síncrona mantida para compatibilidade (usa cache).
-     */
     @Cacheable(value = "memoriasRelevantes", key = "#usuarioId", unless = "#result == null || #result.isEmpty()")
     @Transactional(readOnly = true)
     public String recuperarMemoriasRelevantes(String usuarioId, String mensagemAtual) {
         List<Memoria> memorias = memoriaRepository.findMemoriasRelevantes(usuarioId);
-        
+
         if (memorias.isEmpty()) {
             return "";
         }
 
-        // Filtra e limita as mais relevantes
         List<Memoria> memoriasSelecionadas = memorias.stream()
                 .limit(MAX_MEMORIAS_RELEVANTES)
                 .collect(Collectors.toList());
 
-        // Atualiza contadores de referência (assíncrono)
         atualizarReferencias(memoriasSelecionadas);
 
-        // Formata memórias para o prompt
         return formatarMemoriasParaPrompt(memoriasSelecionadas);
     }
 
-    /**
-     * Invalida o cache de memórias relevantes para um usuário.
-     */
     @CacheEvict(value = "memoriasRelevantes", key = "#usuarioId")
     public void invalidarCacheMemorias(String usuarioId) {
         logger.debug("Cache de memórias invalidado para usuário: {}", usuarioId);
     }
 
-    /**
-     * Extrai uma lista de Maps de um responseMap de forma type-safe.
-     */
     private List<Map<String, Object>> extractMapListFromResponse(Map<String, Object> responseMap, String key) {
         Object obj = responseMap.getOrDefault(key, new ArrayList<>());
         if (obj instanceof List<?>) {
@@ -182,9 +155,6 @@ public class MemoriaService {
         return new ArrayList<>();
     }
 
-    /**
-     * Formata memórias em texto para incluir no prompt do Ollama.
-     */
     private String formatarMemoriasParaPrompt(List<Memoria> memorias) {
         if (memorias.isEmpty()) {
             return "";
@@ -192,20 +162,17 @@ public class MemoriaService {
 
         StringBuilder sb = new StringBuilder();
         sb.append("=== MEMÓRIAS DO USUÁRIO ===\n\n");
-        
+
         for (Memoria memoria : memorias) {
             sb.append(String.format("- [%s] %s\n", memoria.getTipo().name(), memoria.getConteudo()));
         }
-        
+
         sb.append("\nUse essas informações para fazer conexões relevantes e mostrar que você se lembra do usuário. ");
         sb.append("Não mencione explicitamente que está consultando memórias, apenas use o contexto naturalmente.\n");
-        
+
         return sb.toString();
     }
 
-    /**
-     * Atualiza contadores de referência das memórias usadas.
-     */
     @Async
     @Transactional
     public void atualizarReferencias(List<Memoria> memorias) {
@@ -215,9 +182,6 @@ public class MemoriaService {
         }
     }
 
-    /**
-     * Sugere uma pergunta proativa baseada em memórias antigas não referenciadas.
-     */
     @Transactional(readOnly = true)
     public Optional<String> sugerirPerguntaProativa(String usuarioId) {
         java.time.LocalDateTime dataLimite = java.time.LocalDateTime.now()
@@ -230,7 +194,6 @@ public class MemoriaService {
             return Optional.empty();
         }
 
-        // Pega a memória mais relevante que não foi referenciada recentemente
         Memoria memoria = memoriasAntigas.get(0);
 
         try {
@@ -240,10 +203,10 @@ public class MemoriaService {
             ).block();
 
             if (pergunta != null && !pergunta.trim().isEmpty()) {
-                // Atualiza referência da memória usada
+
                 memoria.incrementarReferencia();
                 memoriaRepository.save(memoria);
-                
+
                 return Optional.of(pergunta);
             }
         } catch (Exception e) {
@@ -253,16 +216,13 @@ public class MemoriaService {
         return Optional.empty();
     }
 
-    /**
-     * Cria uma entidade Memoria a partir dos dados extraídos pelo Ollama.
-     */
     private Memoria criarMemoriaFromData(String usuarioId, Map<String, Object> data, String contexto) {
         String tipoStr = (String) data.get("tipo");
         TipoMemoria tipo;
         try {
             tipo = TipoMemoria.valueOf(tipoStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            tipo = TipoMemoria.FATO_PESSOAL; // Default
+            tipo = TipoMemoria.FATO_PESSOAL;
         }
 
         String conteudo = (String) data.get("conteudo");
@@ -270,7 +230,7 @@ public class MemoriaService {
             throw new IllegalArgumentException("Conteúdo da memória não pode ser vazio");
         }
 
-        Integer relevancia = 50; // Default
+        Integer relevancia = 50;
         Object relevanciaObj = data.get("relevancia");
         if (relevanciaObj instanceof Number) {
             relevancia = ((Number) relevanciaObj).intValue();
@@ -291,4 +251,3 @@ public class MemoriaService {
         return new Memoria(usuarioId, conteudo, tipo, contexto, relevancia);
     }
 }
-

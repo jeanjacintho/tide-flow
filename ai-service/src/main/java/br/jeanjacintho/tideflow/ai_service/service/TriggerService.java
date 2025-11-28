@@ -25,9 +25,6 @@ public class TriggerService {
         this.triggerRepository = triggerRepository;
     }
 
-    /**
-     * Processa e salva gatilhos extraídos de uma conversa.
-     */
     @Async
     @Transactional
     public CompletableFuture<Void> processarGatilhos(String usuarioId, Map<String, Object> memoriaData) {
@@ -43,28 +40,27 @@ public class TriggerService {
                 for (Map<String, Object> gatilhoData : gatilhosData) {
                     try {
                         Trigger trigger = criarTriggerFromData(usuarioId, gatilhoData);
-                        
-                        // Verifica se já existe gatilho similar
+
                         Optional<Trigger> existingTrigger = triggerRepository
                                 .findByUsuarioIdAndDescricaoSimilar(usuarioId, trigger.getDescricao());
-                        
+
                         if (existingTrigger.isPresent()) {
-                            // Atualiza gatilho existente
+
                             Trigger existing = existingTrigger.get();
                             existing.incrementarFrequencia();
-                            // Atualiza impacto se for mais forte
+
                             if (trigger.getImpacto() > existing.getImpacto()) {
                                 existing.setImpacto(trigger.getImpacto());
                             }
-                            // Atualiza emoção associada se for diferente
-                            if (trigger.getEmocaoAssociada() != null && 
+
+                            if (trigger.getEmocaoAssociada() != null &&
                                 !trigger.getEmocaoAssociada().equals(existing.getEmocaoAssociada())) {
                                 existing.setEmocaoAssociada(trigger.getEmocaoAssociada());
                             }
                             triggerRepository.save(existing);
                             logger.info("Gatilho atualizado: {} - {}", existing.getTipo(), existing.getDescricao());
                         } else {
-                            // Cria novo gatilho
+
                             triggerRepository.save(trigger);
                             logger.info("Gatilho salvo: {} - {}", trigger.getTipo(), trigger.getDescricao());
                         }
@@ -81,16 +77,13 @@ public class TriggerService {
         });
     }
 
-    /**
-     * Cria uma entidade Trigger a partir dos dados extraídos pelo Ollama.
-     */
     private Trigger criarTriggerFromData(String usuarioId, Map<String, Object> data) {
         String tipoStr = (String) data.get("tipo");
         TipoGatilho tipo;
         try {
             tipo = TipoGatilho.valueOf(tipoStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            tipo = TipoGatilho.SITUACAO; // Default
+            tipo = TipoGatilho.SITUACAO;
         }
 
         String descricao = (String) data.get("descricao");
@@ -98,7 +91,7 @@ public class TriggerService {
             throw new IllegalArgumentException("Descrição do gatilho não pode ser vazia");
         }
 
-        Integer impacto = 5; // Default
+        Integer impacto = 5;
         Object impactoObj = data.get("impacto");
         if (impactoObj instanceof Number) {
             impacto = ((Number) impactoObj).intValue();
@@ -107,7 +100,7 @@ public class TriggerService {
         String emocaoAssociada = (String) data.get("emocaoAssociada");
         String contexto = (String) data.get("contexto");
 
-        Boolean positivo = false; // Default
+        Boolean positivo = false;
         Object positivoObj = data.get("positivo");
         if (positivoObj instanceof Boolean) {
             positivo = (Boolean) positivoObj;
@@ -133,4 +126,3 @@ public class TriggerService {
         return triggerRepository.findByUsuarioIdAndPositivoAndAtivoTrue(usuarioId, false);
     }
 }
-

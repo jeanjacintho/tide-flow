@@ -160,4 +160,3 @@ class TriggerServiceTest {
         assertFalse(result.get(0).getPositivo());
     }
 }
-

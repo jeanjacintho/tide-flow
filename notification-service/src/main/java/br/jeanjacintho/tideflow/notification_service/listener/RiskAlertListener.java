@@ -21,7 +21,7 @@ public class RiskAlertListener {
     @RabbitListener(queues = "risk.alert")
     public void handleRiskAlert(Map<String, Object> eventMap) {
         logger.info("Alerta de risco recebido no notification-service: {}", eventMap.keySet());
-        
+
         try {
             String userName = (String) eventMap.getOrDefault("userName", "Usuário");
             String trustedEmail = (String) eventMap.getOrDefault("trustedEmail", "");

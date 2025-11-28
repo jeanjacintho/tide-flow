@@ -18,9 +18,9 @@ import java.util.UUID;
 public class StressTimelineService {
 
     private static final Logger logger = LoggerFactory.getLogger(StressTimelineService.class);
-    
-    private static final double STRESS_PEAK_THRESHOLD = 0.30; // 30% de aumento
-    private static final double STRESS_ALERT_THRESHOLD = 0.20; // 20% de aumento
+
+    private static final double STRESS_PEAK_THRESHOLD = 0.30;
+    private static final double STRESS_ALERT_THRESHOLD = 0.20;
 
     private final CompanyEmotionalAggregateRepository companyAggregateRepository;
 
@@ -28,24 +28,15 @@ public class StressTimelineService {
         this.companyAggregateRepository = companyAggregateRepository;
     }
 
-    /**
-     * Obtém timeline de stress para uma empresa no período especificado.
-     * 
-     * @param companyId ID da empresa
-     * @param startDate Data inicial
-     * @param endDate Data final
-     * @param granularity Granularidade: "hour", "day", "week", "month"
-     * @return StressTimelineDTO com pontos temporais e alertas
-     */
     @Transactional(readOnly = true)
     public StressTimelineDTO getStressTimeline(UUID companyId, LocalDate startDate, LocalDate endDate, String granularity) {
-        logger.info("Obtendo timeline de stress para empresa {} de {} a {} com granularidade {}", 
+        logger.info("Obtendo timeline de stress para empresa {} de {} a {} com granularidade {}",
             companyId, startDate, endDate, granularity);
-        
+
         List<CompanyEmotionalAggregate> aggregates = companyAggregateRepository.findByCompanyIdAndDateBetween(
             companyId, startDate, endDate
         );
-        
+
         if (aggregates.isEmpty()) {
             logger.warn("Nenhuma agregação encontrada para empresa {} no período especificado", companyId);
             return new StressTimelineDTO(
@@ -71,17 +62,14 @@ public class StressTimelineService {
         );
     }
 
-    /**
-     * Constrói pontos da timeline baseado na granularidade especificada.
-     */
     private List<StressTimelineDTO.StressTimelinePoint> buildTimelinePoints(
             List<CompanyEmotionalAggregate> aggregates, String granularity) {
-        
+
         List<StressTimelineDTO.StressTimelinePoint> points = new ArrayList<>();
-        
+
         for (CompanyEmotionalAggregate aggregate : aggregates) {
             LocalDateTime timestamp = aggregate.getDate().atStartOfDay();
-            
+
             points.add(new StressTimelineDTO.StressTimelinePoint(
                 timestamp,
                 aggregate.getAvgStressLevel(),
@@ -89,18 +77,15 @@ public class StressTimelineService {
                 aggregate.getTotalConversations()
             ));
         }
-        
+
         return points;
     }
 
-    /**
-     * Detecta picos e alertas de stress na timeline.
-     */
     private List<StressTimelineDTO.StressAlert> detectStressAlerts(
             List<StressTimelineDTO.StressTimelinePoint> points) {
-        
+
         List<StressTimelineDTO.StressAlert> alerts = new ArrayList<>();
-        
+
         if (points.size() < 2) {
             return alerts;
         }
@@ -108,15 +93,15 @@ public class StressTimelineService {
         for (int i = 1; i < points.size(); i++) {
             StressTimelineDTO.StressTimelinePoint current = points.get(i);
             StressTimelineDTO.StressTimelinePoint previous = points.get(i - 1);
-            
+
             if (previous.stressLevel() != null && current.stressLevel() != null) {
                 double change = (current.stressLevel() - previous.stressLevel()) / previous.stressLevel();
-                
+
                 if (change >= STRESS_PEAK_THRESHOLD) {
                     alerts.add(new StressTimelineDTO.StressAlert(
                         current.timestamp(),
                         "PEAK",
-                        String.format("Pico de stress detectado: aumento de %.1f%% em relação ao período anterior", 
+                        String.format("Pico de stress detectado: aumento de %.1f%% em relação ao período anterior",
                             change * 100),
                         current.stressLevel(),
                         change * 100
@@ -125,7 +110,7 @@ public class StressTimelineService {
                     alerts.add(new StressTimelineDTO.StressAlert(
                         current.timestamp(),
                         "ALERT",
-                        String.format("Alerta de stress: aumento de %.1f%% em relação ao período anterior", 
+                        String.format("Alerta de stress: aumento de %.1f%% em relação ao período anterior",
                             change * 100),
                         current.stressLevel(),
                         change * 100
@@ -133,7 +118,7 @@ public class StressTimelineService {
                 }
             }
         }
-        
+
         return alerts;
     }
 }

@@ -8,4 +8,3 @@ public record CreateCheckoutSessionRequestDTO(
     String successUrl,
     String cancelUrl
 ) {}
-

@@ -30,7 +30,7 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
       setLoading(true);
       setError(null);
       const data = await apiService.getPaymentHistory(companyId, 0, 50);
-      // Handle both paginated response and array response
+
       if (Array.isArray(data)) {
         setPayments(data);
       } else if (data.content) {
@@ -195,7 +195,7 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-0.5 min-w-0">
-                      <span 
+                      <span
                         className="text-sm font-medium truncate"
                         title={payment.invoiceNumber || payment.stripeInvoiceId || 'N/D'}
                       >
@@ -239,5 +239,3 @@ export function PaymentHistoryTable({ companyId, className }: PaymentHistoryTabl
     </Card>
   );
 }
-
-

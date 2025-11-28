@@ -61,7 +61,6 @@ export function ImpactAnalysis({ companyId }: ImpactAnalysisProps) {
     },
   ] : [];
 
-
   return (
     <Card>
       <CardHeader>

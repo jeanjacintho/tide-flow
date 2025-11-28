@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class CorporateReportResponseDTO {
-    
+
     private UUID id;
     private UUID companyId;
     private UUID departmentId;

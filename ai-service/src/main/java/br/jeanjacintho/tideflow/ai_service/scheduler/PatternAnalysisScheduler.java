@@ -28,16 +28,12 @@ public class PatternAnalysisScheduler {
         this.conversationRepository = conversationRepository;
     }
 
-    /**
-     * Executa análise de padrões diariamente às 2h da manhã.
-     * Analisa padrões para todos os usuários que têm conversas.
-     */
-    @Scheduled(cron = "0 0 2 * * ?") // Todo dia às 2h da manhã
+    @Scheduled(cron = "0 0 2 * * ?")
     public void analisarPadroesDiariamente() {
         logger.info("Iniciando análise diária de padrões temporais");
-        
+
         try {
-            // Busca todos os userIds únicos que têm conversas
+
             List<String> userIds = conversationRepository.findAll().stream()
                     .map(conversation -> conversation.getUserId())
                     .distinct()
@@ -48,7 +44,7 @@ public class PatternAnalysisScheduler {
             for (String userId : userIds) {
                 try {
                     patternAnalysisService.analisarPadroesTemporais(userId);
-                    // Também analisa correlação gatilho-emoção
+
                     triggerAnalysisService.analisarCorrelacaoGatilhoEmocao(userId);
                 } catch (Exception e) {
                     logger.error("Erro ao analisar padrões/gatilhos para usuário {}: {}", userId, e.getMessage(), e);
@@ -61,4 +57,3 @@ public class PatternAnalysisScheduler {
         }
     }
 }
-

@@ -65,9 +65,6 @@ public class StripeIntegrationService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Inicia o fluxo de checkout no Stripe garantindo todos os pré-requisitos.
-     */
     public CheckoutSessionResponseDTO startCheckoutSession(CreateCheckoutSessionRequestDTO request) {
         CompanySubscription subscription = ensureLocalSubscription(request.companyId());
         Company company = ensureCompanyLoaded(subscription, request.companyId());
@@ -97,9 +94,6 @@ public class StripeIntegrationService {
         }
     }
 
-    /**
-     * Cancela uma assinatura no Stripe e sincroniza o estado local.
-     */
     public void cancelSubscription(UUID companyId) {
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
@@ -117,7 +111,6 @@ public class StripeIntegrationService {
             }
         }
 
-        // Atualiza estado local para FREE
         String stripeCustomerId = subscription.getStripeCustomerId() != null
                 ? subscription.getStripeCustomerId()
                 : (stripeSubscriptionId != null ? fetchCustomerFromStripe(stripeSubscriptionId) : null);
@@ -136,13 +129,10 @@ public class StripeIntegrationService {
         }
     }
 
-    /**
-     * Processa todos os webhooks vindos do Stripe.
-     */
     public void processWebhook(String payload, String signatureHeader) {
-        logger.info("📥 Webhook received - Payload length: {}, Signature present: {}", 
+        logger.info("📥 Webhook received - Payload length: {}, Signature present: {}",
                 payload != null ? payload.length() : 0, signatureHeader != null && !signatureHeader.isEmpty());
-        
+
         String webhookSecret = stripeService.getWebhookSecret();
         if (webhookSecret == null || webhookSecret.isEmpty()) {
             logger.error("❌ Webhook secret not configured");
@@ -199,9 +189,6 @@ public class StripeIntegrationService {
         }
     }
 
-    /**
-     * Força sincronização de assinatura e histórico diretamente do Stripe.
-     */
     public Map<String, Object> forceSyncWithStripe(UUID companyId) {
         Map<String, Object> result = new HashMap<>();
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
@@ -215,8 +202,7 @@ public class StripeIntegrationService {
         if (stripeCustomerId == null || stripeCustomerId.isEmpty()) {
             throw new IllegalStateException("Assinatura não possui Stripe Customer ID");
         }
-        
-        // Após a verificação, sabemos que stripeCustomerId não é null
+
         final String nonNullCustomerId = stripeCustomerId;
 
         try {
@@ -232,9 +218,6 @@ public class StripeIntegrationService {
         return result;
     }
 
-    /**
-     * Endpoint utilitário para testar as estratégias de lookup.
-     */
     public Map<String, Object> testSubscriptionLookup(String subscriptionId, String customerId, String invoiceId) {
         Map<String, Object> result = new HashMap<>();
         result.put("subscriptionId", subscriptionId);
@@ -256,9 +239,6 @@ public class StripeIntegrationService {
         return result;
     }
 
-    /**
-     * Verifica metadados diretamente no Stripe.
-     */
     public Map<String, Object> checkStripeMetadata(String subscriptionId) {
         Map<String, Object> result = new HashMap<>();
         try {
@@ -277,10 +257,6 @@ public class StripeIntegrationService {
         }
     }
 
-    /* -------------------------------------------------------
-       Métodos privados utilitários
-     ------------------------------------------------------- */
-
     private CompanySubscription ensureLocalSubscription(UUID companyId) {
         return subscriptionRepository.findByCompanyId(companyId)
                 .orElseGet(() -> createFreeSubscription(companyId));
@@ -291,7 +267,7 @@ public class StripeIntegrationService {
         if (companyId == null) {
             throw new IllegalArgumentException("Company ID cannot be null");
         }
-        // Após a verificação, sabemos que companyId não é null
+
         final UUID nonNullCompanyId = companyId;
         Company company = companyRepository.findById(nonNullCompanyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", nonNullCompanyId));
@@ -386,7 +362,7 @@ public class StripeIntegrationService {
             }
 
             UUID companyId = UUID.fromString(companyIdStr);
-            // Após UUID.fromString, sabemos que companyId não é null
+
             final UUID nonNullCompanyId = companyId;
             try {
                 Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
@@ -415,12 +391,11 @@ public class StripeIntegrationService {
                 logger.warn("⚠️ subscription.updated missing subscriptionId or customerId");
                 return;
             }
-            
+
             logger.info("📋 Syncing subscription - subscriptionId: {}, customerId: {}", subscriptionId, customerId);
             Subscription stripeSubscription = stripeService.getSubscription(subscriptionId);
             subscriptionService.syncSubscriptionFromStripe(customerId, stripeSubscription);
-            
-            // Verifica invoices recentes pagas que podem não ter sido registradas
+
             checkAndRecordRecentPaidInvoices(subscriptionId, customerId);
         } catch (Exception e) {
             logger.error("❌ Erro ao processar subscription.updated: {}", e.getMessage(), e);
@@ -449,10 +424,9 @@ public class StripeIntegrationService {
             String customerId = invoice.path("customer").asText(null);
             String invoiceStatus = invoice.path("status").asText(null);
 
-            logger.info("📄 Invoice details - ID: {}, Subscription: {}, Customer: {}, Status: {}", 
+            logger.info("📄 Invoice details - ID: {}, Subscription: {}, Customer: {}, Status: {}",
                     invoiceId, subscriptionId, customerId, invoiceStatus);
 
-            // Extração robusta do valor pago
             BigDecimal amountPaid = null;
             if (invoice.has("amount_paid") && !invoice.path("amount_paid").isNull()) {
                 long amountPaidCents = invoice.path("amount_paid").asLong(0);
@@ -476,7 +450,6 @@ public class StripeIntegrationService {
                 return;
             }
 
-            // Se subscriptionId não estiver no evento, busca diretamente do Stripe
             Invoice invoiceFromStripe = null;
             if (subscriptionId == null || subscriptionId.isEmpty()) {
                 logger.info("🔍 Subscription ID not in event, fetching invoice from Stripe: {}", invoiceId);
@@ -487,17 +460,16 @@ public class StripeIntegrationService {
                         logger.info("✅ Found subscriptionId from Stripe invoice: {}", subscriptionId);
                     } else {
                         logger.warn("⚠️ Invoice {} has no subscription, may be a one-time payment", invoiceId);
-                        // Para pagamentos únicos sem subscription, ainda podemos registrar usando apenas customerId
+
                         if (customerId != null && !customerId.isEmpty()) {
                             CompanySubscription subscription = findSubscriptionRobustly(null, customerId, invoiceId);
                             if (subscription != null) {
                                 logger.info("✅ Found subscription by customerId for one-time payment");
-                                subscriptionId = subscription.getStripeSubscriptionId(); // Pode ser null, mas tentamos
+                                subscriptionId = subscription.getStripeSubscriptionId();
                             }
                         }
                     }
-                    
-                    // Se amountPaid ainda for null ou zero, tenta usar o valor do invoice do Stripe
+
                     if ((amountPaid == null || amountPaid.compareTo(BigDecimal.ZERO) == 0) && invoiceFromStripe.getAmountPaid() != null && invoiceFromStripe.getAmountPaid() > 0) {
                         amountPaid = BigDecimal.valueOf(invoiceFromStripe.getAmountPaid()).divide(BigDecimal.valueOf(100));
                         logger.info("💰 Updated amountPaid from Stripe invoice: {}", amountPaid);
@@ -509,7 +481,7 @@ public class StripeIntegrationService {
 
             if (subscriptionId == null || subscriptionId.isEmpty()) {
                 logger.error("❌ Subscription ID is still null for invoice {} after Stripe lookup, cannot process payment", invoiceId);
-                // Mesmo sem subscriptionId, tentamos registrar usando apenas customerId se disponível
+
                 if (customerId == null || customerId.isEmpty()) {
                     logger.error("❌ Customer ID also null, cannot process payment");
                     return;
@@ -517,39 +489,37 @@ public class StripeIntegrationService {
                 logger.warn("⚠️ Attempting to process payment without subscriptionId, using customerId only");
             }
 
-            logger.info("🔍 Looking up subscription - subscriptionId: {}, customerId: {}, invoiceId: {}", 
+            logger.info("🔍 Looking up subscription - subscriptionId: {}, customerId: {}, invoiceId: {}",
                     subscriptionId, customerId, invoiceId);
 
-            // Busca subscription mesmo se subscriptionId for null (usa customerId ou invoiceId)
             CompanySubscription subscription = findSubscriptionRobustly(
-                    subscriptionId != null && !subscriptionId.isEmpty() ? subscriptionId : null, 
-                    customerId, 
+                    subscriptionId != null && !subscriptionId.isEmpty() ? subscriptionId : null,
+                    customerId,
                     invoiceId);
             if (subscription == null) {
-                logger.error("❌ Não foi possível localizar assinatura para invoice {} - subscriptionId: {}, customerId: {}", 
+                logger.error("❌ Não foi possível localizar assinatura para invoice {} - subscriptionId: {}, customerId: {}",
                         invoiceId, subscriptionId, customerId);
                 return;
             }
-            
-            // Se encontramos a subscription mas subscriptionId estava null, atualiza
+
             if ((subscriptionId == null || subscriptionId.isEmpty()) && subscription.getStripeSubscriptionId() != null) {
                 subscriptionId = subscription.getStripeSubscriptionId();
                 logger.info("🔧 Updated subscriptionId from found subscription: {}", subscriptionId);
             }
 
-            logger.info("✅ Subscription found - Company: {}, Subscription DB ID: {}", 
+            logger.info("✅ Subscription found - Company: {}, Subscription DB ID: {}",
                     subscription.getCompany().getId(), subscription.getId());
 
-            Long periodStart = invoice.has("period_start") && !invoice.path("period_start").isNull() 
+            Long periodStart = invoice.has("period_start") && !invoice.path("period_start").isNull()
                     ? invoice.path("period_start").asLong() : null;
-            Long periodEnd = invoice.has("period_end") && !invoice.path("period_end").isNull() 
+            Long periodEnd = invoice.has("period_end") && !invoice.path("period_end").isNull()
                     ? invoice.path("period_end").asLong() : null;
             String paymentIntentId = invoice.path("payment_intent").asText(null);
             String chargeId = invoice.path("charge").asText(null);
             String description = invoice.path("description").asText(null);
             String invoiceNumber = invoice.path("number").asText(null);
 
-            logger.info("💾 Recording payment - Invoice: {}, Amount: {}, Company: {}", 
+            logger.info("💾 Recording payment - Invoice: {}, Amount: {}, Company: {}",
                     invoiceId, amountPaid, subscription.getCompany().getId());
 
             recordPaymentSafely(
@@ -587,12 +557,11 @@ public class StripeIntegrationService {
 
             logger.info("📄 Invoice finalized - ID: {}, Status: {}, Subscription: {}, Customer: {}", invoiceId, invoiceStatus, subscriptionId, customerId);
 
-            // Se a invoice já está paga quando é finalizada, registra imediatamente
             if ("paid".equals(invoiceStatus)) {
                 logger.info("💰 Invoice {} is already paid when finalized, recording payment", invoiceId);
                 handleInvoicePaymentSucceeded(event);
             } else {
-                logger.info("⏭️ Invoice {} finalized but not yet paid (status: {}), will be recorded when payment succeeds", 
+                logger.info("⏭️ Invoice {} finalized but not yet paid (status: {}), will be recorded when payment succeeds",
                         invoiceId, invoiceStatus);
             }
         } catch (Exception e) {
@@ -623,7 +592,6 @@ public class StripeIntegrationService {
                     ? BigDecimal.valueOf(invoice.path("amount_due").asLong()).divide(BigDecimal.valueOf(100))
                     : BigDecimal.ZERO;
 
-            // Após verificação, sabemos que invoiceId não é null
             final String nonNullInvoiceId = invoiceId;
             PaymentHistoryRepository repository = this.paymentHistoryRepository;
             repository.findByStripeInvoiceId(nonNullInvoiceId).ifPresentOrElse(
@@ -651,41 +619,38 @@ public class StripeIntegrationService {
     }
 
     private CompanySubscription findSubscriptionRobustly(String subscriptionId, String customerId, String invoiceId) {
-        logger.info("🔍 Subscription lookup START - subscriptionId={}, customerId={}, invoiceId={}", 
+        logger.info("🔍 Subscription lookup START - subscriptionId={}, customerId={}, invoiceId={}",
                 subscriptionId, customerId, invoiceId);
 
-        // Estratégia 1: Buscar por customerId
         if (customerId != null && !customerId.isEmpty()) {
             logger.info("🔍 Strategy 1: Looking up by customerId: {}", customerId);
             CompanySubscription byCustomer = subscriptionRepository.findByStripeCustomerId(customerId).orElse(null);
             if (byCustomer != null) {
-                logger.info("✅ Found subscription by customerId - Company: {}, Subscription DB ID: {}", 
+                logger.info("✅ Found subscription by customerId - Company: {}, Subscription DB ID: {}",
                         byCustomer.getCompany().getId(), byCustomer.getId());
                 return byCustomer;
             }
             logger.info("❌ No subscription found by customerId");
         }
 
-        // Estratégia 2: Buscar por subscriptionId
         if (subscriptionId != null && !subscriptionId.isEmpty()) {
             logger.info("🔍 Strategy 2: Looking up by subscriptionId: {}", subscriptionId);
             CompanySubscription bySubscription = subscriptionRepository.findByStripeSubscriptionId(subscriptionId).orElse(null);
             if (bySubscription != null) {
-                logger.info("✅ Found subscription by subscriptionId - Company: {}, Subscription DB ID: {}", 
+                logger.info("✅ Found subscription by subscriptionId - Company: {}, Subscription DB ID: {}",
                         bySubscription.getCompany().getId(), bySubscription.getId());
                 return bySubscription;
             }
             logger.info("❌ No subscription found by subscriptionId");
         }
 
-        // Estratégia 3: Buscar no Stripe e usar metadata
         if (subscriptionId != null && !subscriptionId.isEmpty()) {
             logger.info("🔍 Strategy 3: Fetching subscription from Stripe and checking metadata");
             try {
                 Subscription stripeSub = stripeService.getSubscription(subscriptionId);
                 Map<String, String> metadata = stripeSub.getMetadata();
                 logger.info("📋 Stripe subscription metadata: {}", metadata);
-                
+
                 if (metadata != null && metadata.containsKey("company_id")) {
                     String companyIdStr = metadata.get("company_id");
                     logger.info("📋 Found company_id in metadata: {}", companyIdStr);
@@ -693,19 +658,18 @@ public class StripeIntegrationService {
                         UUID companyId = UUID.fromString(companyIdStr);
                         CompanySubscription byCompany = subscriptionRepository.findByCompanyId(companyId).orElse(null);
                         if (byCompany != null) {
-                            logger.info("✅ Found subscription by companyId from metadata - Company: {}, Subscription DB ID: {}", 
+                            logger.info("✅ Found subscription by companyId from metadata - Company: {}, Subscription DB ID: {}",
                                     byCompany.getCompany().getId(), byCompany.getId());
-                            
-                            // Atualiza IDs se necessário
+
                             boolean updated = false;
                             if (byCompany.getStripeSubscriptionId() == null || !byCompany.getStripeSubscriptionId().equals(subscriptionId)) {
-                                logger.info("🔧 Updating stripeSubscriptionId: {} -> {}", 
+                                logger.info("🔧 Updating stripeSubscriptionId: {} -> {}",
                                         byCompany.getStripeSubscriptionId(), subscriptionId);
                                 byCompany.setStripeSubscriptionId(subscriptionId);
                                 updated = true;
                             }
                             if (byCompany.getStripeCustomerId() == null || !byCompany.getStripeCustomerId().equals(stripeSub.getCustomer())) {
-                                logger.info("🔧 Updating stripeCustomerId: {} -> {}", 
+                                logger.info("🔧 Updating stripeCustomerId: {} -> {}",
                                         byCompany.getStripeCustomerId(), stripeSub.getCustomer());
                                 byCompany.setStripeCustomerId(stripeSub.getCustomer());
                                 updated = true;
@@ -725,13 +689,12 @@ public class StripeIntegrationService {
                     logger.warn("⚠️ No company_id found in subscription metadata");
                 }
 
-                // Estratégia 3b: Usar customerId do Stripe
                 String stripeCustomerId = stripeSub.getCustomer();
                 if (stripeCustomerId != null && !stripeCustomerId.isEmpty()) {
                     logger.info("🔍 Strategy 3b: Looking up by customerId from Stripe: {}", stripeCustomerId);
                     CompanySubscription byCustomer = subscriptionRepository.findByStripeCustomerId(stripeCustomerId).orElse(null);
                     if (byCustomer != null) {
-                        logger.info("✅ Found subscription by customerId from Stripe - Company: {}, Subscription DB ID: {}", 
+                        logger.info("✅ Found subscription by customerId from Stripe - Company: {}, Subscription DB ID: {}",
                                 byCustomer.getCompany().getId(), byCustomer.getId());
                         return byCustomer;
                     }
@@ -741,7 +704,6 @@ public class StripeIntegrationService {
             }
         }
 
-        // Estratégia 4: Buscar por invoiceId (se já existe histórico)
         if (invoiceId != null && !invoiceId.isEmpty()) {
             logger.info("🔍 Strategy 4: Looking up by invoiceId: {}", invoiceId);
             return paymentHistoryRepository.findByStripeInvoiceId(invoiceId)
@@ -752,7 +714,7 @@ public class StripeIntegrationService {
                     .orElse(null);
         }
 
-        logger.error("❌ All lookup strategies failed - subscriptionId: {}, customerId: {}, invoiceId: {}", 
+        logger.error("❌ All lookup strategies failed - subscriptionId: {}, customerId: {}, invoiceId: {}",
                 subscriptionId, customerId, invoiceId);
         return null;
     }
@@ -770,16 +732,14 @@ public class StripeIntegrationService {
                                      String description,
                                      String invoiceNumber) {
 
-        logger.info("💰 Recording payment - Invoice: {}, Amount: {}, Status: {}, Company: {}", 
+        logger.info("💰 Recording payment - Invoice: {}, Amount: {}, Status: {}, Company: {}",
                 invoiceId, amount, status, companyId);
-        
-        // Verifica se já existe
+
         if (paymentHistoryRepository.findByStripeInvoiceId(invoiceId).isPresent()) {
             logger.info("⏭️ Payment for invoice {} already exists. Skipping duplicate.", invoiceId);
             return;
         }
 
-        // Validações de null para parâmetros obrigatórios
         if (companyId == null) {
             logger.error("❌ Company ID is null, cannot record payment for invoice {}", invoiceId);
             throw new IllegalArgumentException("Company ID cannot be null");
@@ -793,7 +753,6 @@ public class StripeIntegrationService {
             throw new IllegalArgumentException("Payment status cannot be null");
         }
 
-        // Após validações, sabemos que são não-null
         final UUID nonNullCompanyId = companyId;
         final BigDecimal nonNullAmount = amount;
         final PaymentStatus nonNullStatus = status;
@@ -815,11 +774,11 @@ public class StripeIntegrationService {
                     description,
                     invoiceNumber
             );
-            logger.info("✅ Payment recorded successfully - ID: {}, Invoice: {}, Amount: {}", 
+            logger.info("✅ Payment recorded successfully - ID: {}, Invoice: {}, Amount: {}",
                     saved.getId(), invoiceId, amount);
         } catch (Exception e) {
             logger.error("❌ Error recording payment for invoice {}: {}", invoiceId, e.getMessage(), e);
-            throw e; // Re-throw para que o erro seja visível nos logs
+            throw e;
         }
     }
 
@@ -839,9 +798,9 @@ public class StripeIntegrationService {
             Invoice invoice = Invoice.retrieve(latestInvoiceId);
             String invoiceStatus = invoice.getStatus();
             Long amountPaidCents = invoice.getAmountPaid();
-            
+
             logger.info("📄 Invoice status: {}, amountPaid: {}", invoiceStatus, amountPaidCents);
-            
+
             if (!"paid".equals(invoiceStatus)) {
                 logger.warn("⚠️ Invoice {} is not paid (status: {}), skipping", latestInvoiceId, invoiceStatus);
                 return;
@@ -854,7 +813,7 @@ public class StripeIntegrationService {
 
             BigDecimal amountPaid = BigDecimal.valueOf(amountPaidCents).divide(BigDecimal.valueOf(100));
             logger.info("💰 Recording initial payment - Invoice: {}, Amount: {}", latestInvoiceId, amountPaid);
-            
+
             recordPaymentSafely(
                     companyId,
                     amountPaid,
@@ -883,7 +842,7 @@ public class StripeIntegrationService {
                 logger.error("❌ Customer ID is null or empty, cannot sync subscription state for subscription {}", subscriptionId);
                 return;
             }
-            // Após verificação, sabemos que resolvedCustomerId não é null
+
             final String nonNullCustomerId = resolvedCustomerId;
             subscriptionService.syncSubscriptionFromStripe(nonNullCustomerId, stripeSubscription);
         } catch (Exception e) {
@@ -891,10 +850,6 @@ public class StripeIntegrationService {
         }
     }
 
-    /**
-     * Verifica invoices recentes pagas que podem não ter sido registradas.
-     * Busca as últimas 10 invoices da subscription e registra quaisquer pagas que ainda não estejam no histórico.
-     */
     private void checkAndRecordRecentPaidInvoices(String subscriptionId, String customerId) {
         logger.info("🔍 Checking recent paid invoices for subscription: {}", subscriptionId);
         try {
@@ -921,16 +876,14 @@ public class StripeIntegrationService {
 
                 logger.info("📄 Checking invoice {} - Status: {}, AmountPaid: {}", invoiceId, invoiceStatus, amountPaidCents);
 
-                // Verifica se já existe no histórico
                 if (paymentHistoryRepository.findByStripeInvoiceId(invoiceId).isPresent()) {
                     logger.info("⏭️ Invoice {} already exists in payment history", invoiceId);
                     continue;
                 }
 
-                // Registra apenas se estiver paga e tiver valor > 0
                 if ("paid".equals(invoiceStatus) && amountPaidCents != null && amountPaidCents > 0) {
                     logger.info("💰 Found paid invoice not in history - Invoice: {}, Amount: {}", invoiceId, amountPaidCents);
-                    
+
                     BigDecimal amountPaid = BigDecimal.valueOf(amountPaidCents).divide(BigDecimal.valueOf(100));
                     recordPaymentSafely(
                             subscription.getCompany().getId(),
@@ -1011,4 +964,3 @@ public class StripeIntegrationService {
         }
     }
 }
-

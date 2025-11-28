@@ -26,14 +26,9 @@ public class PublicController {
         this.companyService = companyService;
     }
 
-    /**
-     * Endpoint público para registro self-service de empresas.
-     * Cria empresa, subscription FREE, departamento padrão, usuário OWNER e CompanyAdmin.
-     */
     @PostMapping("/register-company")
     public ResponseEntity<CompanyResponseDTO> registerCompany(@Valid @RequestBody RegisterCompanyRequestDTO requestDTO) {
         CompanyResponseDTO company = companyService.registerCompanyPublic(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(company);
     }
 }
-

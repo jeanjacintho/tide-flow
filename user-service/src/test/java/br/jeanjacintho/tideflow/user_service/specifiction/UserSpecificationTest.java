@@ -81,7 +81,7 @@ class UserSpecificationTest {
     @Test
     @DisplayName("withFilters - Deve criar specification com todos os filtros")
     void testWithFiltersAll() {
-        Specification<User> spec = UserSpecification.withFilters("John", "john@example.com", 
+        Specification<User> spec = UserSpecification.withFilters("John", "john@example.com",
                 "1234567890", "São Paulo", "SP");
 
         assertNotNull(spec);
@@ -98,10 +98,9 @@ class UserSpecificationTest {
     @Test
     @DisplayName("withFilters - Deve criar specification que funciona com case insensitive")
     void testWithFiltersCaseInsensitive() {
-        Specification<User> spec = UserSpecification.withFilters("JOHN", "JOHN@EXAMPLE.COM", 
+        Specification<User> spec = UserSpecification.withFilters("JOHN", "JOHN@EXAMPLE.COM",
                 null, "SÃO PAULO", "sp");
 
         assertNotNull(spec);
     }
 }
-

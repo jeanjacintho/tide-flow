@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
-    
+
     private final TokenValidationService tokenValidationService;
 
     public SecurityFilter(TokenValidationService tokenValidationService) {
@@ -30,48 +30,44 @@ public class SecurityFilter extends OncePerRequestFilter {
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        
+
         String path = request.getRequestURI();
-        
-        // Endpoints públicos não precisam de autenticação
+
         if (isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         String token = recoverToken(request);
         if (token != null) {
             try {
                 String username = tokenValidationService.validateToken(token);
-                
-                // Cria UserDetails básico
+
                 UserDetails userDetails = User.builder()
                         .username(username)
                         .password("")
                         .authorities(new ArrayList<>())
                         .build();
-                
-                UsernamePasswordAuthenticationToken authentication = 
+
+                UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                
-                // Armazena informações do token no request para uso posterior
+
                 UUID companyId = tokenValidationService.getCompanyIdFromToken(token);
                 UUID departmentId = tokenValidationService.getDepartmentIdFromToken(token);
                 String companyRole = tokenValidationService.getCompanyRoleFromToken(token);
                 String systemRole = tokenValidationService.getSystemRoleFromToken(token);
-                
+
                 request.setAttribute("companyId", companyId);
                 request.setAttribute("departmentId", departmentId);
                 request.setAttribute("companyRole", companyRole);
                 request.setAttribute("systemRole", systemRole);
-                
+
             } catch (Exception e) {
-                // Token inválido - continua sem autenticação
-                // O Spring Security vai bloquear se necessário
+
             }
         }
-        
+
         filterChain.doFilter(request, response);
     }
 
@@ -87,8 +83,8 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (path == null) {
             return false;
         }
-        // Adicione endpoints públicos aqui se necessário
-        return path.equals("/actuator/health") 
+
+        return path.equals("/actuator/health")
             || path.startsWith("/actuator/");
     }
 }

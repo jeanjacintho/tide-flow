@@ -85,7 +85,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = await this.getAuthToken();
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
@@ -112,7 +112,7 @@ class ApiService {
         const errorText = await response.text();
         console.error('Error response text:', errorText);
         let errorMessage = `HTTP error! status: ${response.status}`;
-        
+
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.message || errorJson.error || errorMessage;
@@ -120,13 +120,13 @@ class ApiService {
         } catch {
           errorMessage = errorText || errorMessage;
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const contentType = response.headers.get('content-type');
       const contentLength = response.headers.get('content-length');
-      
+
       if (
         response.status === 204 ||
         contentLength === '0' ||
@@ -139,10 +139,10 @@ class ApiService {
       const text = await response.text();
       console.log('Response text length:', text.length);
       console.log('Response text preview:', text.substring(0, 200));
-      
+
       if (!text || text.trim() === '') {
         console.warn('Empty response text received');
-        // Para login, não podemos retornar objeto vazio
+
         if (url.includes('/auth/login')) {
           throw new Error('Resposta vazia do servidor de autenticação');
         }
@@ -156,7 +156,7 @@ class ApiService {
       } catch (error) {
         console.error('Error parsing JSON response:', error);
         console.error('Response text:', text);
-        // Para login, não podemos retornar objeto vazio
+
         if (url.includes('/auth/login')) {
           throw new Error(`Erro ao processar resposta do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         }
@@ -177,7 +177,7 @@ class ApiService {
     userId?: string
   ): Promise<ConversationResponse> {
     const currentUserId = userId || (await this.getUserId());
-    
+
     if (!currentUserId) {
       throw new Error('User ID não encontrado. Faça login novamente.');
     }
@@ -209,7 +209,7 @@ class ApiService {
     userId?: string
   ): Promise<ConversationHistoryResponse> {
     const currentUserId = userId || (await this.getUserId());
-    
+
     if (!currentUserId) {
       throw new Error('User ID não encontrado. Faça login novamente.');
     }
@@ -229,7 +229,7 @@ class ApiService {
 
   async getUserConversations(userId?: string): Promise<any[]> {
     const currentUserId = userId || (await this.getUserId());
-    
+
     if (!currentUserId) {
       throw new Error('User ID não encontrado. Faça login novamente.');
     }
@@ -283,26 +283,21 @@ class ApiService {
 
   async getCurrentUser(): Promise<UserResponse> {
     const token = await this.getAuthToken();
-    
+
     if (!token) {
       throw new Error('Token não encontrado. Faça login novamente.');
     }
 
-    // Decodifica o token JWT para obter o user ID
-    // O token JWT tem formato: header.payload.signature
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
         throw new Error('Token inválido');
       }
 
-      // Decodifica o payload (segunda parte do token)
       const payload = JSON.parse(atob(parts[1]));
-      
-      // Tenta obter o user ID do payload
-      // O backend usa 'user_id' como claim no token JWT
+
       const userId = payload.user_id || payload.sub || payload.userId || payload.id;
-      
+
       if (!userId) {
         throw new Error('User ID não encontrado no token');
       }
@@ -330,4 +325,3 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
-

@@ -127,9 +127,9 @@ class BillingServiceTest {
         UUID nonExistentId = UUID.randomUUID();
         when(companyRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
+        assertThrows(ResourceNotFoundException.class,
                 () -> billingService.generateInvoice(nonExistentId, "2024-01"));
-        
+
         verify(companyRepository).findById(nonExistentId);
         verify(authorizationService, never()).canAccessCompany(any());
     }
@@ -140,9 +140,9 @@ class BillingServiceTest {
         when(companyRepository.findById(testCompanyId)).thenReturn(Optional.of(testCompany));
         when(authorizationService.canAccessCompany(testCompanyId)).thenReturn(false);
 
-        assertThrows(AccessDeniedException.class, 
+        assertThrows(AccessDeniedException.class,
                 () -> billingService.generateInvoice(testCompanyId, "2024-01"));
-        
+
         verify(companyRepository).findById(testCompanyId);
         verify(authorizationService).canAccessCompany(testCompanyId);
         verify(subscriptionRepository, never()).findByCompanyId(any());
@@ -155,9 +155,9 @@ class BillingServiceTest {
         when(authorizationService.canAccessCompany(testCompanyId)).thenReturn(true);
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
+        assertThrows(ResourceNotFoundException.class,
                 () -> billingService.generateInvoice(testCompanyId, "2024-01"));
-        
+
         verify(subscriptionRepository).findByCompanyId(testCompanyId);
     }
 
@@ -214,9 +214,9 @@ class BillingServiceTest {
     void testProcessPaymentSubscriptionNotFound() {
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
+        assertThrows(ResourceNotFoundException.class,
                 () -> billingService.processPayment(testCompanyId, new BigDecimal("1999.00")));
-        
+
         verify(subscriptionRepository).findByCompanyId(testCompanyId);
         verify(subscriptionRepository, never()).save(any());
     }
@@ -227,9 +227,9 @@ class BillingServiceTest {
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
         when(authorizationService.canAccessCompany(testCompanyId)).thenReturn(false);
 
-        assertThrows(AccessDeniedException.class, 
+        assertThrows(AccessDeniedException.class,
                 () -> billingService.processPayment(testCompanyId, new BigDecimal("1999.00")));
-        
+
         verify(authorizationService).canAccessCompany(testCompanyId);
         verify(subscriptionRepository, never()).save(any());
     }
@@ -351,7 +351,7 @@ class BillingServiceTest {
         when(authorizationService.canAccessCompany(testCompanyId)).thenReturn(true);
         when(subscriptionRepository.findByCompanyId(testCompanyId)).thenReturn(Optional.of(testSubscription));
 
-        assertThrows(Exception.class, 
+        assertThrows(Exception.class,
                 () -> billingService.generateInvoice(testCompanyId, "invalid-period"));
     }
 

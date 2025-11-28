@@ -72,4 +72,3 @@ public class ConversationSummaryResponse {
         this.lastMessagePreview = lastMessagePreview;
     }
 }
-

@@ -61,11 +61,10 @@ public class PaymentHistoryService {
             LocalDateTime billingPeriodEnd,
             String description,
             String invoiceNumber) {
-        
-        logger.info("💾 PaymentHistoryService.recordPayment START - Company: {}, Amount: {}, Status: {}, Invoice: {}", 
+
+        logger.info("💾 PaymentHistoryService.recordPayment START - Company: {}, Amount: {}, Status: {}, Invoice: {}",
                 companyId, amount, status, stripeInvoiceId);
 
-        // Verifica duplicata ANTES de buscar company/subscription
         if (stripeInvoiceId != null && !stripeInvoiceId.isEmpty()) {
             boolean exists = paymentHistoryRepository.existsByStripeInvoiceId(stripeInvoiceId);
             logger.info("🔍 Checking duplicate for invoice {}: exists={}", stripeInvoiceId, exists);
@@ -115,17 +114,13 @@ public class PaymentHistoryService {
 
         logger.info("💾 Saving PaymentHistory to database");
         PaymentHistory saved = paymentHistoryRepository.save(payment);
-        logger.info("✅ Payment recorded successfully - ID: {}, Company: {}, Invoice: {}, Amount: {}", 
+        logger.info("✅ Payment recorded successfully - ID: {}, Company: {}, Invoice: {}, Amount: {}",
                 saved.getId(), company.getId(), stripeInvoiceId, amount);
         return saved;
     }
 
     @Transactional(readOnly = true)
     public Page<PaymentHistory> getPaymentHistory(@NonNull UUID companyId, Pageable pageable) {
-        // Removida verificação estrita de autorização temporariamente para debug
-        // if (!authorizationService.canAccessCompany(companyId)) {
-        //     throw new AccessDeniedException("Empresa", companyId, "Usuário não tem acesso a esta empresa");
-        // }
 
         logger.info("Fetching payment history for company: {}", companyId);
         Page<PaymentHistory> result = paymentHistoryRepository.findByCompanyIdOrderByPaymentDateDesc(companyId, pageable);

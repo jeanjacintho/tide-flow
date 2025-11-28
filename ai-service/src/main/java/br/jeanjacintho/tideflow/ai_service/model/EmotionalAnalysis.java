@@ -77,7 +77,7 @@ public class EmotionalAnalysis {
     }
 
     public EmotionalAnalysis(String usuarioId, UUID conversationId, UUID messageId, Integer sequenceNumber,
-                            String primaryEmotional, Integer intensity, List<String> triggers, 
+                            String primaryEmotional, Integer intensity, List<String> triggers,
                             String context, String suggestion) {
         this.usuarioId = usuarioId;
         this.conversationId = conversationId;
@@ -90,8 +90,8 @@ public class EmotionalAnalysis {
         this.suggestion = suggestion;
     }
 
-    public EmotionalAnalysis(String usuarioId, UUID departmentId, UUID companyId, UUID conversationId, 
-                            UUID messageId, Integer sequenceNumber, String primaryEmotional, 
+    public EmotionalAnalysis(String usuarioId, UUID departmentId, UUID companyId, UUID conversationId,
+                            UUID messageId, Integer sequenceNumber, String primaryEmotional,
                             Integer intensity, List<String> triggers, String context, String suggestion) {
         this.usuarioId = usuarioId;
         this.departmentId = departmentId;

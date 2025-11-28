@@ -35,7 +35,7 @@ export const useAuth = (): UseAuthReturn => {
     try {
       const token = await AsyncStorage.getItem('auth_token');
       if (token) {
-        // Tenta carregar dados do usuário do AsyncStorage primeiro
+
         const userData = await AsyncStorage.getItem('user_data');
         if (userData) {
           try {
@@ -43,7 +43,7 @@ export const useAuth = (): UseAuthReturn => {
             if (parsedUser && parsedUser.id && parsedUser.name && parsedUser.email) {
               setUserState(parsedUser);
             } else {
-              // Dados inválidos, busca do backend
+
               await loadUserFromAPI();
             }
           } catch (error) {
@@ -51,7 +51,7 @@ export const useAuth = (): UseAuthReturn => {
             await loadUserFromAPI();
           }
         } else {
-          // Se não tiver dados salvos, busca do backend
+
           await loadUserFromAPI();
         }
       }
@@ -65,15 +65,15 @@ export const useAuth = (): UseAuthReturn => {
   const loadUserFromAPI = async () => {
     try {
       const userResponse = await apiService.getCurrentUser();
-      
+
       if (!userResponse) {
         throw new Error('Resposta do servidor inválida');
       }
-      
+
       if (!userResponse.id || !userResponse.name || !userResponse.email) {
         throw new Error('Dados do usuário incompletos');
       }
-      
+
       const user: User = {
         id: userResponse.id,
         name: userResponse.name || '',
@@ -85,11 +85,11 @@ export const useAuth = (): UseAuthReturn => {
         systemRole: userResponse.systemRole,
         companyRole: userResponse.companyRole,
       };
-      
+
       await setUser(user);
     } catch (error) {
       console.error('Error loading user from API:', error);
-      // Se falhar, limpa o token inválido
+
       await AsyncStorage.removeItem('auth_token');
     }
   };
@@ -98,30 +98,30 @@ export const useAuth = (): UseAuthReturn => {
     try {
       console.log('useAuth.login called with username:', username);
       setIsLoading(true);
-      
+
       console.log('Calling apiService.login...');
       const loginResponse = await apiService.login(username, password);
       console.log('apiService.login completed, response:', { hasToken: !!loginResponse.token });
-      
+
       if (loginResponse.token) {
         console.log('Token received, fetching user data...');
-        // Busca dados do usuário após login
+
         const userResponse = await apiService.getCurrentUser();
-        
+
         if (!userResponse) {
           throw new Error('Resposta do servidor inválida. Dados do usuário não encontrados.');
         }
-        
-        console.log('User data fetched:', { 
-          id: userResponse.id, 
+
+        console.log('User data fetched:', {
+          id: userResponse.id,
           name: userResponse.name,
-          hasName: !!userResponse.name 
+          hasName: !!userResponse.name
         });
-        
+
         if (!userResponse.id || !userResponse.name || !userResponse.email) {
           throw new Error('Dados do usuário incompletos recebidos do servidor.');
         }
-        
+
         const user: User = {
           id: userResponse.id,
           name: userResponse.name || '',
@@ -133,7 +133,7 @@ export const useAuth = (): UseAuthReturn => {
           systemRole: userResponse.systemRole,
           companyRole: userResponse.companyRole,
         };
-        
+
         console.log('Setting user state...');
         await setUser(user);
         console.log('User state set, login completed successfully');
@@ -186,4 +186,3 @@ export const useAuth = (): UseAuthReturn => {
     logout,
   };
 };
-

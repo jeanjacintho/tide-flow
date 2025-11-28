@@ -40,7 +40,7 @@ const formatMessageTime = (dateString: string): string => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     const currentYear = now.getFullYear();
-    
+
     if (year === currentYear) {
       return `${day}/${month} às ${time}`;
     } else {
@@ -78,7 +78,7 @@ export default function Chat() {
       setShowExamples(false);
     } catch (error) {
       console.error('Erro ao carregar histórico da conversa:', error);
-      // Se a conversa não existir mais, limpa o localStorage
+
       if (error instanceof Error && error.message.includes('not found')) {
         localStorage.removeItem(CONVERSATION_ID_KEY);
         setConversationId(undefined);
@@ -86,21 +86,18 @@ export default function Chat() {
     }
   }, [conversationId, user]);
 
-  // Salva conversationId no localStorage quando ele muda
   useEffect(() => {
     if (conversationId) {
       localStorage.setItem(CONVERSATION_ID_KEY, conversationId);
     }
   }, [conversationId]);
 
-  // Recupera conversationId do localStorage ao montar (se houver)
-  // O sistema de memória já mantém o contexto, então só precisamos carregar as mensagens visuais
   useEffect(() => {
     if (!user?.id) return;
 
     const savedConversationId = localStorage.getItem(CONVERSATION_ID_KEY);
     if (savedConversationId && !conversationId) {
-      // Usa setTimeout para evitar setState síncrono no effect
+
       setTimeout(() => {
         setConversationId(savedConversationId);
       }, 0);
@@ -108,14 +105,13 @@ export default function Chat() {
   }, [user?.id, conversationId]);
 
   useEffect(() => {
-    // Aguarda um pouco para a animação de expansão acontecer
+
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
   }, [messages]);
 
-  // Efeito para calcular opacidade baseada no scroll
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -124,12 +120,11 @@ export default function Chat() {
       const scrollTop = container.scrollTop;
       const scrollHeight = container.scrollHeight;
       const clientHeight = container.clientHeight;
-      
-      // Só aplica o efeito se houver scroll (conteúdo maior que o container)
+
       const hasScroll = scrollHeight > clientHeight;
-      
+
       if (!hasScroll) {
-        // Se não há scroll, todas as mensagens ficam opacas
+
         messageRefs.current.forEach((element) => {
           if (element) {
             element.style.opacity = '1';
@@ -138,48 +133,43 @@ export default function Chat() {
         return;
       }
 
-      // Atualiza opacidade de cada mensagem baseada na posição
       messageRefs.current.forEach((element) => {
         if (!element) return;
-        
+
         const rect = element.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-        
-        // Calcula a posição relativa da mensagem no container
+
         const relativeTop = rect.top - containerRect.top;
         const containerHeight = containerRect.height;
         const messageHeight = rect.height;
         const messageBottom = relativeTop + messageHeight;
-        
-        // Zona de fade (150px do topo e do fundo)
+
         const fadeZone = 150;
-        
+
         let opacity = 1;
-        
-        // Fade no topo: apenas quando há scroll para baixo e mensagem está saindo pelo topo
+
         if (scrollTop > 0 && relativeTop < fadeZone) {
-          // Mensagem está saindo pelo topo
+
           opacity = Math.max(0.3, relativeTop / fadeZone);
         }
-        // Fade no fundo: apenas quando não está no final do scroll e mensagem está saindo pelo fundo
+
         else if (scrollTop + clientHeight < scrollHeight - 10 && messageBottom > containerHeight - fadeZone) {
-          // Mensagem está saindo pelo fundo
+
           const distanceFromBottom = containerHeight - messageBottom;
           opacity = Math.max(0.3, distanceFromBottom / fadeZone);
         }
-        
+
         element.style.opacity = opacity.toString();
       });
     };
 
     container.addEventListener('scroll', handleScroll);
-    // Usa ResizeObserver para detectar mudanças no tamanho do conteúdo
+
     const resizeObserver = new ResizeObserver(() => {
       handleScroll();
     });
     resizeObserver.observe(container);
-    
-    // Chama uma vez para calcular opacidade inicial
+
     handleScroll();
 
     return () => {
@@ -190,14 +180,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (conversationId && user?.id) {
-      // Usa setTimeout para evitar chamada síncrona de setState
+
       const timer = setTimeout(() => {
         loadConversationHistory();
       }, 0);
       return () => clearTimeout(timer);
     }
   }, [conversationId, user?.id, loadConversationHistory]);
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,7 +201,6 @@ export default function Chat() {
       return;
     }
 
-    // Adiciona mensagem do usuário imediatamente
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       role: 'USER',
@@ -222,7 +210,6 @@ export default function Chat() {
     };
     setMessages(prev => [...prev, userMessage]);
 
-    // Mostra spinner da IA imediatamente
     setIsAiThinking(true);
 
     startTransition(() => {
@@ -233,11 +220,9 @@ export default function Chat() {
             conversationId,
             user.id
           );
-          
-          setConversationId(response.conversationId);
-          // O useEffect acima já salva no localStorage automaticamente
 
-          // Adiciona resposta da IA
+          setConversationId(response.conversationId);
+
           const aiMessage: Message = {
             id: `temp-ai-${Date.now()}`,
             role: 'ASSISTANT',
@@ -247,18 +232,17 @@ export default function Chat() {
           };
           setMessages(prev => [...prev, aiMessage]);
 
-          // Recarrega histórico completo para ter IDs corretos
           if (response.conversationId) {
             await loadConversationHistory();
           }
         } catch (error) {
           console.error('Erro ao enviar mensagem:', error);
           setMessage(currentMessage);
-          // Remove mensagem temporária do usuário em caso de erro
+
           setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
           alert(error instanceof Error ? error.message : 'Erro ao enviar mensagem. Tente novamente.');
         } finally {
-          // Remove spinner da IA
+
           setIsAiThinking(false);
         }
       })();
@@ -273,10 +257,10 @@ export default function Chat() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {messages.length === 0 && showExamples ? (
-        // Estado inicial - centralizado verticalmente, alinhado à esquerda
+
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-5xl space-y-6">
-            {/* Header */}
+            {}
             <div className="text-left">
               <h1 className="text-3xl font-bold">Chat</h1>
               <p className="text-muted-foreground mt-1">
@@ -284,7 +268,7 @@ export default function Chat() {
               </p>
             </div>
 
-            {/* Example Cards */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {EXAMPLE_QUERIES.map((example, index) => (
                 <Card
@@ -302,7 +286,7 @@ export default function Chat() {
               ))}
             </div>
 
-            {/* Input Area */}
+            {}
             <form onSubmit={handleSubmit}>
               <div className="relative flex items-center bg-card border border-border rounded-xl p-4">
                 <Input
@@ -317,7 +301,7 @@ export default function Chat() {
                   <span className="text-xs text-muted-foreground">
                     {message.length}/1000
                   </span>
-                  <SpeechInput 
+                  <SpeechInput
                     onTranscriptChange={(transcript) => setMessage(transcript)}
                     disabled={isPending || isAiThinking}
                     conversationId={conversationId}
@@ -337,9 +321,9 @@ export default function Chat() {
           </div>
         </div>
       ) : (
-        // Estado com chat - título no topo, input no bottom
+
         <div className="h-full flex flex-col overflow-hidden">
-          {/* Header - Top */}
+          {}
           <div className="flex-shrink-0 p-6 pb-4 border-b border-border">
             <h1 className="text-3xl font-bold">Chat</h1>
             <p className="text-muted-foreground mt-1">
@@ -347,8 +331,8 @@ export default function Chat() {
             </p>
           </div>
 
-          {/* Chat messages - Middle (flexible) */}
-          <div 
+          {}
+          <div
             ref={messagesContainerRef}
             className="flex-1 overflow-y-auto px-6 py-6 min-h-0"
           >
@@ -407,7 +391,7 @@ export default function Chat() {
             </div>
           </div>
 
-          {/* Input Area - Bottom (fixed) */}
+          {}
           <div className="flex-shrink-0 p-6 pt-4 bg-background">
             <form onSubmit={handleSubmit}>
               <div className="relative flex items-center bg-card border border-border rounded-xl p-4 max-w-4xl mx-auto">
@@ -423,7 +407,7 @@ export default function Chat() {
                   <span className="text-xs text-muted-foreground">
                     {message.length}/1000
                   </span>
-                  <SpeechInput 
+                  <SpeechInput
                     onTranscriptChange={(transcript) => setMessage(transcript)}
                     disabled={isPending || isAiThinking}
                     conversationId={conversationId}

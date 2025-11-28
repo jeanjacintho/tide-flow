@@ -63,19 +63,17 @@ class ApiService {
       throw new Error(error || `HTTP error! status: ${response.status}`);
     }
 
-    // Handle empty responses (204 No Content or 200 OK with no body)
     const contentType = response.headers.get('content-type');
     const contentLength = response.headers.get('content-length');
-    
+
     if (
-      response.status === 204 || 
+      response.status === 204 ||
       contentLength === '0' ||
       !contentType?.includes('application/json')
     ) {
       return {} as T;
     }
 
-    // Check if response has content before parsing
     const text = await response.text();
     if (!text || text.trim() === '') {
       return {} as T;
@@ -84,7 +82,7 @@ class ApiService {
     try {
       return JSON.parse(text) as T;
     } catch (error) {
-      // If JSON parsing fails, return empty object for void responses
+
       return {} as T;
     }
   }
@@ -142,7 +140,7 @@ class ApiService {
     }
 
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/conversations`, {
         method: 'POST',
@@ -164,7 +162,7 @@ class ApiService {
             errorMessage = errorText;
           }
         } catch {
-          // Ignore parsing errors
+
         }
         throw new Error(errorMessage);
       }
@@ -180,7 +178,7 @@ class ApiService {
 
   async getConversationHistory(conversationId: string, userId: string): Promise<ConversationHistoryResponse> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/conversations/${conversationId}`, {
         method: 'GET',
@@ -198,7 +196,7 @@ class ApiService {
             errorMessage = errorText;
           }
         } catch {
-          // Ignore parsing errors
+
         }
         throw new Error(errorMessage);
       }
@@ -244,7 +242,7 @@ class ApiService {
 
   async getUserConversations(userId: string): Promise<ConversationSummaryResponse[]> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/conversations/user/${userId}`, {
         method: 'GET',
@@ -261,7 +259,7 @@ class ApiService {
             errorMessage = errorText;
           }
         } catch {
-          // Ignore parsing errors
+
         }
         throw new Error(errorMessage);
       }
@@ -275,12 +273,11 @@ class ApiService {
     }
   }
 
-  // Corporate Dashboard APIs
   async getDashboardOverview(companyId: string, date?: string): Promise<DashboardOverviewDTO> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const params = date ? `?date=${date}` : '';
     const token = this.getAuthToken();
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/corporate/dashboard/${companyId}${params}`, {
         method: 'GET',
@@ -291,7 +288,7 @@ class ApiService {
       });
 
       if (response.status === 404) {
-        // Retorna dados vazios quando não há dados ainda
+
         return {
           companyId,
           date: date || new Date().toISOString().split('T')[0],
@@ -314,7 +311,7 @@ class ApiService {
 
       return response.json();
     } catch (error) {
-      // Em caso de erro de rede ou outro erro, retorna dados vazios
+
       console.warn('Erro ao buscar dashboard overview:', error);
       return {
         companyId,
@@ -340,7 +337,7 @@ class ApiService {
   ): Promise<StressTimelineDTO> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     try {
       const response = await fetch(
         `${AI_SERVICE_URL}/api/corporate/stress-timeline/${companyId}?startDate=${startDate}&endDate=${endDate}&granularity=${granularity}`,
@@ -387,7 +384,7 @@ class ApiService {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const params = date ? `?date=${date}` : '';
     const token = this.getAuthToken();
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department-heatmap/${companyId}${params}`, {
         method: 'GET',
@@ -425,7 +422,7 @@ class ApiService {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const params = departmentId ? `?departmentId=${departmentId}` : '';
     const token = this.getAuthToken();
-    
+
     try {
       const response = await fetch(`${AI_SERVICE_URL}/api/corporate/turnover-prediction/${companyId}${params}`, {
         method: 'GET',
@@ -458,7 +455,7 @@ class ApiService {
   ): Promise<ImpactAnalysisDTO> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     const response = await fetch(
       `${AI_SERVICE_URL}/api/corporate/impact-analysis/${companyId}?eventDate=${eventDate}&eventDescription=${encodeURIComponent(eventDescription)}`,
       {
@@ -482,7 +479,7 @@ class ApiService {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const params = date ? `?date=${date}` : '';
     const token = this.getAuthToken();
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/corporate/department/${departmentId}/insights${params}`, {
       method: 'GET',
       headers: {
@@ -499,11 +496,10 @@ class ApiService {
     return response.json();
   }
 
-  // Corporate Reports APIs
   async generateReport(request: ReportGenerationRequest): Promise<CorporateReportResponse> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/generate`, {
       method: 'POST',
       headers: {
@@ -524,7 +520,7 @@ class ApiService {
   async getReport(reportId: string): Promise<CorporateReportResponse> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/${reportId}`, {
       method: 'GET',
       headers: {
@@ -550,16 +546,16 @@ class ApiService {
   ): Promise<ReportListResponse> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     const params = new URLSearchParams({
       companyId,
       page: page.toString(),
       size: size.toString(),
     });
-    
+
     if (reportType) params.append('reportType', reportType);
     if (status) params.append('status', status);
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports?${params.toString()}`, {
       method: 'GET',
       headers: {
@@ -579,7 +575,7 @@ class ApiService {
   async getLatestReport(companyId: string, reportType?: string): Promise<CorporateReportResponse | null> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     try {
       const params = reportType ? `?reportType=${reportType}` : '';
       const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/company/${companyId}/latest${params}`, {
@@ -590,21 +586,18 @@ class ApiService {
         },
       });
 
-      // 404 significa que não há relatórios, não é um erro - retorna null silenciosamente
       if (response.status === 404) {
         return null;
       }
 
-      // Outros erros HTTP também retornam null para evitar erros no console
       if (!response.ok) {
-        // Não loga erro para 404, apenas retorna null
+
         return null;
       }
 
       return response.json();
     } catch (error) {
-      // Em caso de erro de rede ou outro erro, retorna null silenciosamente
-      // Não loga erro para evitar poluir o console
+
       return null;
     }
   }
@@ -618,17 +611,17 @@ class ApiService {
   ): Promise<ReportListResponse> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     try {
       const params = new URLSearchParams({
         companyId,
         page: page.toString(),
         size: size.toString(),
       });
-      
+
       if (reportType) params.append('reportType', reportType);
       if (status) params.append('status', status);
-      
+
       const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports?${params.toString()}`, {
         method: 'GET',
         headers: {
@@ -637,7 +630,6 @@ class ApiService {
         },
       });
 
-      // 404 significa que não há relatórios, retorna lista vazia
       if (response.status === 404) {
         return {
           reports: [],
@@ -648,7 +640,6 @@ class ApiService {
         };
       }
 
-      // Outros erros HTTP também retornam lista vazia
       if (!response.ok) {
         return {
           reports: [],
@@ -661,7 +652,7 @@ class ApiService {
 
       return response.json();
     } catch (error) {
-      // Em caso de erro de rede, retorna lista vazia
+
       return {
         reports: [],
         totalElements: 0,
@@ -675,7 +666,7 @@ class ApiService {
   async deleteReport(reportId: string): Promise<void> {
     const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8082';
     const token = this.getAuthToken();
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/corporate/reports/${reportId}`, {
       method: 'DELETE',
       headers: {
@@ -690,7 +681,6 @@ class ApiService {
     }
   }
 
-  // Company management APIs
   async getAllCompanies(): Promise<Company[]> {
     return this.request<Company[]>('/api/companies', {
       method: 'GET',
@@ -717,7 +707,6 @@ class ApiService {
     });
   }
 
-  // Subscription APIs
   async getSubscription(companyId: string): Promise<SubscriptionResponse> {
     return this.request<SubscriptionResponse>(`/api/subscriptions/companies/${companyId}`, {
       method: 'GET',
@@ -735,7 +724,6 @@ class ApiService {
     });
   }
 
-  // Public company registration
   async registerCompany(data: RegisterCompanyRequest): Promise<Company> {
     return this.request<Company>('/api/public/register-company', {
       method: 'POST',
@@ -743,7 +731,6 @@ class ApiService {
     });
   }
 
-  // Department management APIs
   async getCompanyDepartments(companyId: string): Promise<Department[]> {
     return this.request<Department[]>(`/api/companies/${companyId}/departments`, {
       method: 'GET',
@@ -770,7 +757,6 @@ class ApiService {
     });
   }
 
-  // User management APIs
   async getCompanyUsers(companyId: string): Promise<User[]> {
     return this.request<User[]>(`/api/companies/${companyId}/users`, {
       method: 'GET',
@@ -797,14 +783,12 @@ class ApiService {
     });
   }
 
-  // Usage tracking APIs
   async getUsageInfo(companyId: string): Promise<UsageInfo> {
     return this.request<UsageInfo>(`/api/subscriptions/companies/${companyId}/usage`, {
       method: 'GET',
     });
   }
 
-  // Payment history APIs
   async getPaymentHistory(companyId: string, page: number = 0, size: number = 20): Promise<{
     content: PaymentHistory[];
     totalElements: number;
@@ -886,7 +870,6 @@ export interface ConversationSummaryResponse {
 
 export const apiService = new ApiService();
 
-// Dashboard DTOs
 export interface DashboardOverviewDTO {
   companyId: string;
   date: string;
@@ -1013,7 +996,6 @@ export interface DepartmentInsightsDTO {
   topTriggers: Record<string, any> | null;
 }
 
-// Company DTOs
 export interface Company {
   id: string;
   name: string;
@@ -1068,7 +1050,6 @@ export interface CreateCompanyUserRequest {
   state?: string;
 }
 
-// Corporate Reports DTOs
 export interface ReportGenerationRequest {
   companyId: string;
   departmentId?: string;
@@ -1140,4 +1121,3 @@ export interface ReportSummary {
   createdAt: string;
   generatedAt?: string;
 }
-

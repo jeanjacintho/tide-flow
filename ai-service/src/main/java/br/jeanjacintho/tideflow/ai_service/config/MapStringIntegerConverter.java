@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Converter
 public class MapStringIntegerConverter implements AttributeConverter<Map<String, Integer>, String> {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override

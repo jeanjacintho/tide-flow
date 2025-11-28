@@ -27,7 +27,7 @@ public class DepartmentService {
     private final CompanyAuthorizationService authorizationService;
 
     @Autowired
-    public DepartmentService(DepartmentRepository departmentRepository, 
+    public DepartmentService(DepartmentRepository departmentRepository,
                             CompanyRepository companyRepository,
                             CompanyAuthorizationService authorizationService) {
         this.departmentRepository = departmentRepository;
@@ -40,17 +40,14 @@ public class DepartmentService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
 
-        // Valida acesso
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Empresa", companyId, "Usuário não tem acesso a esta empresa");
         }
 
-        // Valida permissão para criar departamento
         if (!TenantContext.isSystemAdmin() && !authorizationService.canManageUsers(companyId)) {
             throw new AccessDeniedException("Departamento", null, "Apenas OWNER, ADMIN ou HR_MANAGER podem criar departamentos");
         }
 
-        // Verifica se já existe departamento com mesmo nome na empresa
         if (departmentRepository.existsByCompanyIdAndName(companyId, requestDTO.name())) {
             throw new IllegalArgumentException("Já existe um departamento com o nome: " + requestDTO.name());
         }
@@ -65,8 +62,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", id));
 
         UUID companyId = department.getCompany().getId();
-        
-        // Valida acesso
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Departamento", id, "Usuário não tem acesso a este departamento");
         }
@@ -80,8 +76,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", id));
 
         UUID companyId = department.getCompany().getId();
-        
-        // Valida acesso e permissão
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Departamento", id, "Usuário não tem acesso a este departamento");
         }
@@ -90,8 +85,7 @@ public class DepartmentService {
             throw new AccessDeniedException("Departamento", id, "Apenas OWNER, ADMIN ou HR_MANAGER podem atualizar departamentos");
         }
 
-        // Verifica se nome já existe (se mudou)
-        if (!requestDTO.name().equals(department.getName()) 
+        if (!requestDTO.name().equals(department.getName())
             && departmentRepository.existsByCompanyIdAndName(companyId, requestDTO.name())) {
             throw new IllegalArgumentException("Já existe um departamento com o nome: " + requestDTO.name());
         }
@@ -109,8 +103,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", id));
 
         UUID companyId = department.getCompany().getId();
-        
-        // Valida acesso e permissão
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Departamento", id, "Usuário não tem acesso a este departamento");
         }
@@ -123,7 +116,7 @@ public class DepartmentService {
     }
 
     public List<DepartmentResponseDTO> getDepartmentsByCompany(@NonNull UUID companyId) {
-        // Valida acesso
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Empresa", companyId, "Usuário não tem acesso a esta empresa");
         }
@@ -138,13 +131,11 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", departmentId));
 
         UUID companyId = department.getCompany().getId();
-        
-        // Valida acesso
+
         if (!authorizationService.canAccessCompany(companyId)) {
             throw new AccessDeniedException("Departamento", departmentId, "Usuário não tem acesso a este departamento");
         }
 
-        // Retorna lista vazia (usuários serão retornados por endpoint específico)
         return List.of();
     }
 }

@@ -82,29 +82,29 @@ export function StressSeismograph({ data, loading }: StressSeismographProps) {
               ))}
             </div>
           )}
-          
+
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="timestamp" 
+              <XAxis
+                dataKey="timestamp"
                 tick={{ fontSize: 12 }}
               />
-              <YAxis 
+              <YAxis
                 domain={[0, 100]}
                 label={{ value: 'Nível de Stress', angle: -90, position: 'insideLeft' }}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                 formatter={(value: number) => [`${value.toFixed(1)}%`, 'Stress']}
               />
               <Legend />
               <ReferenceLine y={70} stroke="red" strokeDasharray="3 3" label="Alto Stress" />
               <ReferenceLine y={50} stroke="yellow" strokeDasharray="3 3" label="Médio Stress" />
-              <Line 
-                type="monotone" 
-                dataKey="stress" 
-                stroke="hsl(var(--primary))" 
+              <Line
+                type="monotone"
+                dataKey="stress"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}

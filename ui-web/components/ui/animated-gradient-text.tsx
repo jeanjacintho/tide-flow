@@ -17,10 +17,10 @@ export function AnimatedGradientText({
   colorTo,
   ...props
 }: AnimatedGradientTextProps) {
-  // Cores padrão baseadas no primary do projeto (verde)
+
   const defaultFrom = colorFrom || "oklch(86.06% 0.1766 134.52)";
   const defaultTo = colorTo || "oklch(70% 0.2 150)";
-  
+
   return (
     <span
       style={

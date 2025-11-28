@@ -43,7 +43,7 @@ import br.jeanjacintho.tideflow.user_service.specifiction.UserSpecification;
 
 @Service
 public class UserService {
-    
+
     private static final int NUMERIC_PASSWORD_MIN = 100000;
     private static final int NUMERIC_PASSWORD_MAX = 999999;
     private static final int NUMERIC_PASSWORD_LENGTH = 6;
@@ -51,7 +51,7 @@ public class UserService {
     private static final int NUMERIC_USERNAME_MAX_ATTEMPTS = 1000;
     private static final int COMPANY_PREFIX_LENGTH = 4;
     private static final int SEQUENTIAL_NUMBER_LENGTH = 4;
-    
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -91,22 +91,22 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         sendWelcomeEmailIfProvided(savedUser);
-        
+
         return UserResponseDTO.fromEntity(savedUser);
     }
-    
+
     private String generateUniqueUsername() {
         String username;
         int attempts = 0;
         do {
-            username = "user_" + System.currentTimeMillis() + "_" + 
+            username = "user_" + System.currentTimeMillis() + "_" +
                       String.valueOf(Math.abs(UUID.randomUUID().hashCode())).substring(0, 6);
             attempts++;
             if (attempts > USERNAME_GENERATION_MAX_ATTEMPTS) {
                 throw new RuntimeException("Não foi possível gerar username único após " + USERNAME_GENERATION_MAX_ATTEMPTS + " tentativas");
             }
         } while (userRepository.existsByUsername(username));
-        
+
         return username;
     }
 
@@ -127,32 +127,30 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         sendWelcomeEmailIfProvided(savedUser);
-        
+
         return UserResponseDTO.fromEntity(savedUser, companyAdminRepository);
     }
 
     public UserResponseDTO findById(@NonNull UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-        
+
         validateTenantAccess(user);
-        
+
         return UserResponseDTO.fromEntity(user, companyAdminRepository);
     }
 
     public Page<UserResponseDTO> findAll(String name, String email, String phone, String city, String state, @NonNull Pageable pageable) {
         Specification<User> specification = UserSpecification.withFilters(name, email, phone, city, state);
-        
-        // Adiciona filtro de company_id se estiver no contexto (multi-tenant)
-        // SYSTEM_ADMIN não tem filtro - vê todos os usuários de todas as empresas
+
         if (!TenantContext.isSystemAdmin()) {
             UUID currentCompanyId = TenantContext.getCompanyId();
             if (currentCompanyId != null) {
-                specification = specification.and((root, query, cb) -> 
+                specification = specification.and((root, query, cb) ->
                     cb.equal(root.get("company").get("id"), currentCompanyId));
             }
         }
-        
+
         return userRepository.findAll(specification, pageable)
                 .map(user -> UserResponseDTO.fromEntity(user, companyAdminRepository));
     }
@@ -186,9 +184,9 @@ public class UserService {
     public void deleteUser(@NonNull UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", id));
-        
+
         validateTenantAccess(user);
-        
+
         userRepository.deleteById(id);
     }
 
@@ -206,16 +204,15 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", requestDTO.departmentId()));
 
         validateCompanyAccess(companyId);
-        
-        // Valida limites de uso do plano
+
         usageTrackingService.validateUsageLimits(companyId);
-        
+
         String username = resolveUsername(requestDTO.username(), companyId);
         validateUsernameAndEmail(username, requestDTO.email());
         validateEmployeeId(companyId, requestDTO.employeeId());
 
         String temporaryPassword = generateNumericPassword();
-        
+
         User user = new User();
         user.setName(requestDTO.name());
         user.setUsername(username);
@@ -228,8 +225,7 @@ public class UserService {
         user.setMustChangePassword(true);
 
         User savedUser = userRepository.save(user);
-        
-        // Atualiza contagem de usuários na assinatura
+
         subscriptionService.updateUserCount(companyId);
 
         return new InviteUserResponseDTO(
@@ -249,16 +245,14 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Departamento", requestDTO.departmentId()));
 
         validateCompanyAccess(companyId);
-        
-        // Valida limites de uso do plano ANTES de criar o usuário
-        // Força flush para garantir que a contagem esteja atualizada
+
         userRepository.flush();
         usageTrackingService.validateUsageLimits(companyId);
-        
+
         String username = resolveUsername(requestDTO.username(), companyId);
         validateUsernameAndEmail(username, requestDTO.email());
         validateEmployeeId(companyId, requestDTO.employeeId());
-        
+
         User user = new User();
         user.setName(requestDTO.name());
         user.setUsername(username);
@@ -272,44 +266,40 @@ public class UserService {
         user.setState(requestDTO.state());
         user.setSystemRole(SystemRole.NORMAL);
         user.setMustChangePassword(false);
-        user.setIsActive(true); // Garante que o usuário está ativo
+        user.setIsActive(true);
 
         User savedUser = userRepository.save(user);
-        
-        // Atualiza contagem de usuários na assinatura
+
         subscriptionService.updateUserCount(companyId);
 
         return UserResponseDTO.fromEntity(savedUser, companyAdminRepository);
     }
 
     private String generateNumericUsername(UUID companyId) {
-        // Gera username numérico baseado no ID da empresa + número sequencial
-        // Formato: {companyId últimos 4 dígitos}{número sequencial de 4 dígitos}
+
         String companyIdStr = companyId.toString().replace("-", "");
         String companyPrefix = companyIdStr.substring(Math.max(0, companyIdStr.length() - COMPANY_PREFIX_LENGTH));
-        
-        // Usa count para evitar carregar todos os usuários
+
         Long userCount = userRepository.countActiveUsersByCompanyId(companyId);
         int nextNumber = userCount.intValue() + 1;
-        
-        // Garante que o username seja único
+
         String username;
         int attempts = 0;
         do {
             username = companyPrefix + String.format("%0" + SEQUENTIAL_NUMBER_LENGTH + "d", nextNumber + attempts);
             attempts++;
             if (attempts > NUMERIC_USERNAME_MAX_ATTEMPTS) {
-                // Fallback: usa timestamp
+
                 username = companyPrefix + String.valueOf(System.currentTimeMillis()).substring(8);
                 break;
             }
         } while (userRepository.existsByUsername(username));
-        
+
         return username;
     }
 
     private String generateNumericPassword() {
-        // Gera senha temporária numérica (6 dígitos) usando SecureRandom para maior segurança
+
         int password = NUMERIC_PASSWORD_MIN + secureRandom.nextInt(NUMERIC_PASSWORD_MAX - NUMERIC_PASSWORD_MIN + 1);
         return String.format("%0" + NUMERIC_PASSWORD_LENGTH + "d", password);
     }
@@ -344,24 +334,19 @@ public class UserService {
         User user = findUserByUsernameOrEmail(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário", authentication.getName()));
 
-        // Verifica se a senha atual está correta
         if (!passwordEncoder.matches(requestDTO.currentPassword(), user.getPassword())) {
             throw new InvalidPasswordException("Senha atual incorreta");
         }
 
-        // Verifica se a nova senha é diferente da atual
         if (passwordEncoder.matches(requestDTO.newPassword(), user.getPassword())) {
             throw new InvalidPasswordException("A nova senha deve ser diferente da senha atual");
         }
 
-        // Atualiza a senha e remove a flag de obrigatoriedade de alteração
         user.setPassword(passwordEncoder.encode(requestDTO.newPassword()));
         user.setMustChangePassword(false);
 
         userRepository.save(user);
     }
-
-    // Métodos privados auxiliares
 
     private Optional<User> findUserByUsernameOrEmail(String identifier) {
         return userRepository.findByUsernameOrEmail(identifier);
@@ -371,8 +356,8 @@ public class UserService {
         if (StringUtils.hasText(providedUsername)) {
             return providedUsername;
         }
-        return companyId != null 
-            ? generateNumericUsername(companyId) 
+        return companyId != null
+            ? generateNumericUsername(companyId)
             : generateUniqueUsername();
     }
 
@@ -380,7 +365,7 @@ public class UserService {
         if (userRepository.existsByUsername(username)) {
             throw new DuplicateUsernameException(username);
         }
-        
+
         if (StringUtils.hasText(email) && userRepository.existsByEmail(email)) {
             throw new DuplicateEmailException(email);
         }
@@ -390,7 +375,7 @@ public class UserService {
         if (!StringUtils.hasText(newEmail)) {
             return;
         }
-        
+
         String currentEmail = StringUtils.hasText(existingUser.getEmail()) ? existingUser.getEmail() : "";
         if (!currentEmail.equals(newEmail) && userRepository.existsByEmail(newEmail)) {
             throw new DuplicateEmailException(newEmail);
@@ -414,9 +399,9 @@ public class UserService {
         if (TenantContext.isSystemAdmin()) {
             return;
         }
-        
+
         UUID currentCompanyId = TenantContext.getCompanyId();
-        if (currentCompanyId != null && user.getCompany() != null && 
+        if (currentCompanyId != null && user.getCompany() != null &&
             !currentCompanyId.equals(user.getCompany().getId())) {
             throw new ResourceNotFoundException("Usuário", user.getId());
         }

@@ -7,10 +7,10 @@ import java.util.UUID;
 public record AddCompanyAdminRequestDTO(
     @NotNull(message = "ID do usuário é obrigatório")
     UUID userId,
-    
+
     @NotNull(message = "Role é obrigatório")
     CompanyAdminRole role,
-    
+
     String permissions
 ) {
 }

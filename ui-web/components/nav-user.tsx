@@ -109,4 +109,3 @@ export function NavUser({ user, onLogout }: NavUserProps) {
     </SidebarMenu>
   )
 }
-

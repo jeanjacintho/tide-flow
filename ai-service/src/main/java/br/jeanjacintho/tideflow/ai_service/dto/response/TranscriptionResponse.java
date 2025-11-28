@@ -27,4 +27,3 @@ public class TranscriptionResponse {
         this.conversationResponse = conversationResponse;
     }
 }
-

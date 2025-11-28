@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Converter
 public class MapJsonConverter implements AttributeConverter<Map<String, Object>, String> {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override

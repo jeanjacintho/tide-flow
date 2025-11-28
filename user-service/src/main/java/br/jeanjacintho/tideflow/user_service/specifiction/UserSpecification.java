@@ -17,10 +17,10 @@ public class UserSpecification {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
             }
 
-            if (email != null && !email.isEmpty()) {    
+            if (email != null && !email.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%"));
             }
-            
+
             if (phone != null && !phone.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("phone")), "%" + phone.toLowerCase() + "%"));
             }

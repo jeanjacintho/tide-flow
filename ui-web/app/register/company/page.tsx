@@ -77,7 +77,7 @@ export default function RegisterCompanyPage() {
 
   const validateStep = (step: number): boolean => {
     const stepErrors: Partial<Record<keyof RegisterCompanyFormData, string>> = {};
-    
+
     if (step === 1) {
       const companyResult = registerCompanySchema.shape.companyName.safeParse(formData.companyName);
       if (!companyResult.success) {
@@ -156,7 +156,7 @@ export default function RegisterCompanyPage() {
         }
       });
       setErrors(fieldErrors);
-      
+
       // Mostra toast com erros de validação
       const errorMessages = Object.values(fieldErrors).filter(Boolean);
       if (errorMessages.length > 0) {
@@ -164,7 +164,7 @@ export default function RegisterCompanyPage() {
           description: errorMessages[0],
         });
       }
-      
+
       // Navega para o step com erro
       if (Object.keys(fieldErrors).some(f => ['companyName', 'companyDomain'].includes(f))) {
         setCurrentStep(1);
@@ -192,12 +192,12 @@ export default function RegisterCompanyPage() {
           console.log('Sending request:', request);
           await apiService.registerCompany(request);
           console.log('Registration successful');
-          
+
           toast.success('Empresa cadastrada com sucesso!', {
             description: 'Redirecionando para login...',
             icon: <CheckCircle2 className="w-5 h-5" />,
           });
-          
+
           setTimeout(() => {
             router.push('/login/company');
           }, 1500);
@@ -219,7 +219,7 @@ export default function RegisterCompanyPage() {
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setTouchedFields(prev => new Set(prev).add(field));
-    
+
     if (errors[field]) {
       const fieldSchema = registerCompanySchema.shape[field];
       if (fieldSchema) {
@@ -267,7 +267,7 @@ export default function RegisterCompanyPage() {
           cr={1}
         />
       </div>
-      
+
       {/* Content */}
       <div className="relative z-10 w-full max-w-2xl space-y-6">
         {/* Header */}
@@ -575,6 +575,3 @@ export default function RegisterCompanyPage() {
     </div>
   );
 }
-
-
-

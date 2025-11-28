@@ -32,41 +32,34 @@ public class CorporateDashboardService {
         this.keywordAnalysisRepository = keywordAnalysisRepository;
     }
 
-    /**
-     * Obtém dados gerais do dashboard para uma empresa em uma data específica.
-     * 
-     * @param companyId ID da empresa
-     * @param date Data para análise (opcional, usa hoje se null)
-     * @return DashboardOverviewDTO com métricas agregadas
-     */
     @Transactional(readOnly = true)
     public DashboardOverviewDTO getDashboardOverview(UUID companyId, LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
         }
-        
+
         logger.info("Obtendo overview do dashboard para empresa {} na data {}", companyId, date);
-        
+
         CompanyEmotionalAggregate aggregate = companyAggregateRepository
             .findByCompanyIdAndDate(companyId, date)
             .orElse(null);
-        
+
         if (aggregate == null) {
             logger.warn("Nenhuma agregação encontrada para empresa {} na data {}", companyId, date);
             return createEmptyOverview(companyId, date);
         }
-        
+
         List<DepartmentKeywordAnalysis> keywordAnalyses = keywordAnalysisRepository
             .findByCompanyIdAndDateRange(companyId, date, date);
-        
+
         Map<String, Integer> topKeywords = extractTopKeywords(keywordAnalyses);
         Map<String, Object> topTriggers = extractTopTriggers(keywordAnalyses);
-        
+
         return new DashboardOverviewDTO(
             companyId,
             date,
             aggregate.getAvgStressLevel(),
-            aggregate.getAvgStressLevel(), // Usando stress como proxy para intensidade
+            aggregate.getAvgStressLevel(),
             aggregate.getTotalActiveUsers(),
             aggregate.getTotalConversations(),
             aggregate.getTotalMessages(),
@@ -77,12 +70,9 @@ public class CorporateDashboardService {
         );
     }
 
-    /**
-     * Extrai top keywords de todas as análises de departamento.
-     */
     private Map<String, Integer> extractTopKeywords(List<DepartmentKeywordAnalysis> keywordAnalyses) {
         Map<String, Integer> allKeywords = new HashMap<>();
-        
+
         for (DepartmentKeywordAnalysis analysis : keywordAnalyses) {
             if (analysis.getKeywords() != null) {
                 for (Map.Entry<String, Object> entry : analysis.getKeywords().entrySet()) {
@@ -94,7 +84,7 @@ public class CorporateDashboardService {
                 }
             }
         }
-        
+
         return allKeywords.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
             .limit(10)
@@ -106,12 +96,9 @@ public class CorporateDashboardService {
             ));
     }
 
-    /**
-     * Extrai top triggers de todas as análises de departamento.
-     */
     private Map<String, Object> extractTopTriggers(List<DepartmentKeywordAnalysis> keywordAnalyses) {
         Map<String, Integer> triggerFrequency = new HashMap<>();
-        
+
         for (DepartmentKeywordAnalysis analysis : keywordAnalyses) {
             if (analysis.getTopTriggers() != null) {
                 for (String trigger : analysis.getTopTriggers().keySet()) {
@@ -119,13 +106,13 @@ public class CorporateDashboardService {
                 }
             }
         }
-        
+
         Map<String, Object> topTriggers = new HashMap<>();
         triggerFrequency.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
             .limit(10)
             .forEach(entry -> topTriggers.put(entry.getKey(), entry.getValue()));
-        
+
         return topTriggers;
     }
 

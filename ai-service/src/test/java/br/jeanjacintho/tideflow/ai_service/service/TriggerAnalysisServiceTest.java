@@ -50,7 +50,7 @@ class TriggerAnalysisServiceTest {
     @BeforeEach
     void setUp() {
         userId = "user-123";
-        
+
         triggers = new ArrayList<>();
         Trigger trigger = new Trigger(userId, TipoGatilho.SITUACAO, "Trabalho estressante", 7, 1, "ansiedade", "contexto", false);
         triggers.add(trigger);
@@ -72,12 +72,12 @@ class TriggerAnalysisServiceTest {
             msg.setCreatedAt(LocalDateTime.now().minusDays(i));
             multipleMessages.add(msg);
         }
-        
+
         when(triggerRepository.findByUsuarioIdAndAtivoTrueOrderByImpactoDesc(userId))
                 .thenReturn(triggers);
         when(messageRepository.findByUserIdAndRoleOrderByCreatedAtAsc(userId, MessageRole.USER))
                 .thenReturn(multipleMessages);
-        
+
         EmotionalAnalysis analysis = new EmotionalAnalysis("ansiedade", 75, new ArrayList<>(), "contexto", "sugestão");
         when(emotionalAnalysisRepository.findByMessageId(any(UUID.class)))
                 .thenReturn(Optional.of(analysis));
@@ -111,4 +111,3 @@ class TriggerAnalysisServiceTest {
         triggerAnalysisService.analisarCorrelacaoGatilhoEmocao(userId);
     }
 }
-

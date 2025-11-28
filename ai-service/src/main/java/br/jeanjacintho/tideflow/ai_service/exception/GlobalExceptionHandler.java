@@ -22,5 +22,3 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", "Erro interno do servidor"));
     }
 }
-
-

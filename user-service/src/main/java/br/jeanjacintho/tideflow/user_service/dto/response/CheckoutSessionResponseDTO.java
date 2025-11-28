@@ -4,4 +4,3 @@ public record CheckoutSessionResponseDTO(
     String checkoutUrl,
     String sessionId
 ) {}
-

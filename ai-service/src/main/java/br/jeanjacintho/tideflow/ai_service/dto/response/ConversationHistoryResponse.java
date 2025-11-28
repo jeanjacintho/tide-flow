@@ -17,7 +17,7 @@ public class ConversationHistoryResponse {
 
     public ConversationHistoryResponse() {}
 
-    public ConversationHistoryResponse(UUID conversationId, String userId, 
+    public ConversationHistoryResponse(UUID conversationId, String userId,
                                        LocalDateTime createdAt, LocalDateTime updatedAt,
                                        List<ConversationMessage> messages) {
         this.conversationId = conversationId;
@@ -84,7 +84,7 @@ public class ConversationHistoryResponse {
 
         public MessageResponse() {}
 
-        public MessageResponse(UUID id, MessageRole role, String content, 
+        public MessageResponse(UUID id, MessageRole role, String content,
                               LocalDateTime createdAt, Integer sequenceNumber) {
             this.id = id;
             this.role = role;
@@ -134,4 +134,3 @@ public class ConversationHistoryResponse {
         }
     }
 }
-

@@ -29,7 +29,7 @@ public class ConversationController {
     private final WhisperClient whisperClient;
     private final MemoriaService memoriaService;
 
-    public ConversationController(ConversationService conversationService, 
+    public ConversationController(ConversationService conversationService,
                                   WhisperClient whisperClient,
                                   MemoriaService memoriaService) {
         this.conversationService = conversationService;
@@ -69,20 +69,20 @@ public class ConversationController {
             @RequestParam("audio") MultipartFile audioFile,
             @RequestParam(value = "conversationId", required = false) String conversationId,
             @RequestHeader("X-User-Id") String userId) {
-        
+
         try {
             byte[] audioData = audioFile.getBytes();
-            String filename = audioFile.getOriginalFilename() != null 
-                    ? audioFile.getOriginalFilename() 
+            String filename = audioFile.getOriginalFilename() != null
+                    ? audioFile.getOriginalFilename()
                     : "audio.webm";
-            
+
             return whisperClient.transcribeAudio(audioData, filename)
                     .flatMap(transcript -> {
-                        // Se houver conversationId, processa a conversa automaticamente
+
                         if (conversationId != null && !conversationId.isEmpty() && !transcript.isEmpty()) {
                             ConversationRequest request = new ConversationRequest(userId, transcript, conversationId);
                             return conversationService.processConversation(request)
-                                    .map(conversationResponse -> 
+                                    .map(conversationResponse ->
                                         ResponseEntity.ok(new TranscriptionResponse(transcript, conversationResponse))
                                     )
                                     .defaultIfEmpty(ResponseEntity.ok(new TranscriptionResponse(transcript, null)));
@@ -90,7 +90,7 @@ public class ConversationController {
                         return Mono.just(ResponseEntity.ok(new TranscriptionResponse(transcript, null)));
                     })
                     .defaultIfEmpty(ResponseEntity.badRequest().build());
-                    
+
         } catch (IOException e) {
             return Mono.just(ResponseEntity.badRequest()
                     .body(new TranscriptionResponse("Erro ao processar arquivo de áudio.", null)));
@@ -100,10 +100,10 @@ public class ConversationController {
     @GetMapping("/proactive-question/{userId}")
     public Mono<ResponseEntity<Map<String, String>>> getProactiveQuestion(
             @PathVariable String userId) {
-        
+
         return Mono.fromCallable((Callable<ResponseEntity<Map<String, String>>>) () -> {
             java.util.Optional<String> pergunta = memoriaService.sugerirPerguntaProativa(userId);
-            
+
             if (pergunta.isPresent()) {
                 return ResponseEntity.ok(Map.of("question", pergunta.get()));
             } else {
@@ -112,5 +112,3 @@ public class ConversationController {
         });
     }
 }
-
-

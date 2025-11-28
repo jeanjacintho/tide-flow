@@ -12,13 +12,13 @@ import java.util.Optional;
 
 @Repository
 public interface TriggerRepository extends JpaRepository<Trigger, Long> {
-    
+
     List<Trigger> findByUsuarioIdAndAtivoTrueOrderByImpactoDesc(String usuarioId);
-    
+
     List<Trigger> findByUsuarioIdAndTipoAndAtivoTrue(String usuarioId, TipoGatilho tipo);
-    
+
     List<Trigger> findByUsuarioIdAndPositivoAndAtivoTrue(String usuarioId, Boolean positivo);
-    
+
     @Query("SELECT t FROM Trigger t WHERE t.usuarioId = :usuarioId " +
            "AND LOWER(t.descricao) LIKE LOWER(CONCAT('%', :descricao, '%')) " +
            "AND t.ativo = true")
@@ -26,9 +26,8 @@ public interface TriggerRepository extends JpaRepository<Trigger, Long> {
         @Param("usuarioId") String usuarioId,
         @Param("descricao") String descricao
     );
-    
+
     @Query("SELECT t FROM Trigger t WHERE t.usuarioId = :usuarioId " +
            "AND t.ativo = true ORDER BY t.impacto DESC, t.frequencia DESC")
     List<Trigger> findGatilhosMaisImpactantes(@Param("usuarioId") String usuarioId);
 }
-

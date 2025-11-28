@@ -187,9 +187,6 @@ class UserRepositoryTest {
 
         Optional<User> foundUser = userRepository.findByEmail("JOHN@EXAMPLE.COM");
 
-        // O método findByEmail pode ser case-sensitive dependendo da configuração do banco
-        // Este teste verifica o comportamento atual
         assertNotNull(foundUser);
     }
 }
-

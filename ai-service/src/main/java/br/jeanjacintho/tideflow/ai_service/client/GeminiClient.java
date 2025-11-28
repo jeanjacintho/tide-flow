@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Cliente para interagir com a API do Google Gemini.
- */
 @Component
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "llm.provider", havingValue = "gemini")
 public class GeminiClient implements LLMClient {
@@ -74,8 +71,8 @@ public class GeminiClient implements LLMClient {
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException ex = (WebClientResponseException) error;
-                        // Não loga requestBody completo para evitar vazar informações sensíveis
-                        logger.error("Erro na API do Gemini (Status: {}): {}", 
+
+                        logger.error("Erro na API do Gemini (Status: {}): {}",
                                 ex.getStatusCode(), sanitizeErrorResponse(ex.getResponseBodyAsString()));
                     } else {
                         logger.error("Erro ao chamar API do Gemini: {}", error.getMessage());
@@ -250,9 +247,6 @@ public class GeminiClient implements LLMClient {
                 .onErrorReturn("{\"analiseEmocional\": {}, \"memorias\": [], \"gatilhos\": []}");
     }
 
-    /**
-     * Constrói o request body para generateContent do Gemini.
-     */
     private Map<String, Object> buildGenerateRequest(String prompt) {
         List<Map<String, Object>> parts = new ArrayList<>();
         parts.add(Map.of("text", prompt));
@@ -266,7 +260,6 @@ public class GeminiClient implements LLMClient {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("contents", contents);
 
-        // Configurações de geração
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", 0.7);
         generationConfig.put("topK", 40);
@@ -277,10 +270,6 @@ public class GeminiClient implements LLMClient {
         return requestBody;
     }
 
-    /**
-     * Constrói o request body para chat com histórico.
-     * O Gemini não aceita mensagens "system", então incorporamos o system prompt na primeira mensagem do usuário.
-     */
     private Map<String, Object> buildChatRequest(List<Map<String, String>> messages) {
         List<Map<String, Object>> contents = new ArrayList<>();
         String systemPrompt = null;
@@ -291,16 +280,14 @@ public class GeminiClient implements LLMClient {
             String contentText = message.get("content");
 
             if (contentText == null || contentText.trim().isEmpty()) {
-                continue; // Pula mensagens vazias
+                continue;
             }
 
-            // Gemini não aceita mensagens "system", então guardamos para incorporar na primeira mensagem do usuário
             if ("system".equals(role)) {
                 systemPrompt = contentText;
                 continue;
             }
 
-            // Gemini usa "user" e "model" ao invés de "assistant"
             String geminiRole;
             if ("assistant".equals(role)) {
                 geminiRole = "model";
@@ -308,7 +295,6 @@ public class GeminiClient implements LLMClient {
                 geminiRole = "user";
             }
 
-            // Incorpora system prompt na primeira mensagem do usuário
             String finalContent = contentText;
             if (isFirstUserMessage && systemPrompt != null && "user".equals(geminiRole)) {
                 finalContent = systemPrompt + "\n\n" + contentText;
@@ -326,7 +312,6 @@ public class GeminiClient implements LLMClient {
             contents.add(contentMap);
         }
 
-        // Se não houver mensagens válidas, retorna erro
         if (contents.isEmpty()) {
             throw new IllegalArgumentException("Nenhuma mensagem válida para enviar ao Gemini");
         }
@@ -334,7 +319,6 @@ public class GeminiClient implements LLMClient {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("contents", contents);
 
-        // Configurações de geração
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", 0.7);
         generationConfig.put("topK", 40);
@@ -345,44 +329,33 @@ public class GeminiClient implements LLMClient {
         return requestBody;
     }
 
-    /**
-     * Loga erros da API do Gemini de forma segura (sanitiza informações sensíveis).
-     */
     private void logError(Throwable error) {
         if (error instanceof WebClientResponseException) {
             WebClientResponseException ex = (WebClientResponseException) error;
-            logger.error("Erro na API do Gemini (Status: {}): {}", 
+            logger.error("Erro na API do Gemini (Status: {}): {}",
                     ex.getStatusCode(), sanitizeErrorResponse(ex.getResponseBodyAsString()));
         } else {
             logger.error("Erro ao chamar API do Gemini: {}", error.getMessage());
         }
     }
 
-    /**
-     * Sanitiza mensagens de erro para remover informações sensíveis (como API keys).
-     */
     private String sanitizeErrorResponse(String errorResponse) {
         if (errorResponse == null || errorResponse.isEmpty()) {
             return "Sem detalhes do erro";
         }
-        
-        // Remove possíveis vazamentos de API key
+
         String sanitized = errorResponse
                 .replaceAll("(?i)api[_-]?key", "***")
                 .replaceAll("(?i)X-goog-api-key", "***")
                 .replaceAll("AIzaSy[A-Za-z0-9_-]{35}", "***REDACTED***");
-        
-        // Limita o tamanho para evitar logs muito grandes
+
         if (sanitized.length() > 500) {
             sanitized = sanitized.substring(0, 497) + "...";
         }
-        
+
         return sanitized;
     }
 
-    /**
-     * Extrai o texto da resposta do Gemini.
-     */
     @SuppressWarnings("unchecked")
     private String extractTextFromResponse(Map<String, Object> response) {
         try {
@@ -410,4 +383,3 @@ public class GeminiClient implements LLMClient {
         }
     }
 }
-

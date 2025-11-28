@@ -46,7 +46,7 @@ class PatternAnalysisServiceTest {
     void setUp() {
         userId = "user-123";
         messages = new ArrayList<>();
-        
+
         for (int i = 0; i < 5; i++) {
             ConversationMessage msg = new ConversationMessage(MessageRole.USER, "Mensagem " + i, i + 1);
             msg.setCreatedAt(LocalDateTime.now().minusDays(i));
@@ -115,4 +115,3 @@ class PatternAnalysisServiceTest {
         verify(patternRepository).findByUsuarioIdAndAtivoTrueOrderByConfiancaDesc(userId);
     }
 }
-

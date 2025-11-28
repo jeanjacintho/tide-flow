@@ -68,7 +68,7 @@ class EmailServiceTest {
 
         enabledService.sendWelcomeEmail(testEmail, testName);
 
-        verify(mailSender).send(argThat((SimpleMailMessage message) -> 
+        verify(mailSender).send(argThat((SimpleMailMessage message) ->
             message.getTo() != null &&
             message.getTo()[0].equals(testEmail) &&
             message.getSubject().equals("Bem-vindo ao Tide Flow!") &&
@@ -83,9 +83,8 @@ class EmailServiceTest {
 
         enabledService.sendWelcomeEmail(testEmail, null);
 
-        verify(mailSender).send(argThat((SimpleMailMessage message) -> 
+        verify(mailSender).send(argThat((SimpleMailMessage message) ->
             message.getText().contains("Usuário")
         ));
     }
 }
-

@@ -52,30 +52,26 @@ public class CorporateReportController {
         if (token == null) {
             return false;
         }
-        return tokenValidationService.canAccessCorporateReports(token) 
+        return tokenValidationService.canAccessCorporateReports(token)
             && tokenValidationService.canAccessCompany(token, companyId);
     }
 
-    /**
-     * POST /api/corporate/reports/generate
-     * Gera um novo relatório corporativo de forma assíncrona.
-     */
     @PostMapping("/generate")
     public ResponseEntity<CorporateReportResponseDTO> generateReport(
             @Valid @RequestBody ReportGenerationRequest request,
             HttpServletRequest httpRequest) {
-        logger.info("POST /api/corporate/reports/generate - companyId: {}, type: {}", 
+        logger.info("POST /api/corporate/reports/generate - companyId: {}, type: {}",
             request.getCompanyId(), request.getReportType());
-        
+
         if (!hasPermission(httpRequest, request.getCompanyId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             CorporateReport report = reportService.generateReport(request);
             CorporateReportResponseDTO response = reportService.getReportById(report.getId())
                 .orElseThrow(() -> new RuntimeException("Relatório não encontrado após criação"));
-            
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             logger.error("Erro ao gerar relatório: {}", e.getMessage(), e);
@@ -83,27 +79,23 @@ public class CorporateReportController {
         }
     }
 
-    /**
-     * POST /api/corporate/reports/generate-async
-     * Gera um novo relatório corporativo de forma assíncrona e retorna imediatamente.
-     */
     @PostMapping("/generate-async")
     public ResponseEntity<CorporateReportResponseDTO> generateReportAsync(
             @Valid @RequestBody ReportGenerationRequest request,
             HttpServletRequest httpRequest) {
-        logger.info("POST /api/corporate/reports/generate-async - companyId: {}, type: {}", 
+        logger.info("POST /api/corporate/reports/generate-async - companyId: {}, type: {}",
             request.getCompanyId(), request.getReportType());
-        
+
         if (!hasPermission(httpRequest, request.getCompanyId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             CompletableFuture<CorporateReport> future = reportService.generateReportAsync(request);
             CorporateReport report = future.get();
             CorporateReportResponseDTO response = reportService.getReportById(report.getId())
                 .orElseThrow(() -> new RuntimeException("Relatório não encontrado após criação"));
-            
+
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
         } catch (Exception e) {
             logger.error("Erro ao gerar relatório assíncrono: {}", e.getMessage(), e);
@@ -111,34 +103,26 @@ public class CorporateReportController {
         }
     }
 
-    /**
-     * GET /api/corporate/reports/{reportId}
-     * Busca um relatório específico por ID.
-     */
     @GetMapping("/{reportId}")
     public ResponseEntity<CorporateReportResponseDTO> getReport(
             @PathVariable UUID reportId,
             HttpServletRequest request) {
         logger.info("GET /api/corporate/reports/{}", reportId);
-        
+
         Optional<CorporateReportResponseDTO> reportOpt = reportService.getReportById(reportId);
-        
+
         if (reportOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        
+
         CorporateReportResponseDTO report = reportOpt.get();
         if (!hasPermission(request, report.getCompanyId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         return ResponseEntity.ok(report);
     }
 
-    /**
-     * GET /api/corporate/reports
-     * Lista relatórios com filtros opcionais e paginação.
-     */
     @GetMapping
     public ResponseEntity<ReportListResponseDTO> listReports(
             @RequestParam UUID companyId,
@@ -147,13 +131,13 @@ public class CorporateReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest request) {
-        logger.info("GET /api/corporate/reports - companyId: {}, type: {}, status: {}, page: {}, size: {}", 
+        logger.info("GET /api/corporate/reports - companyId: {}, type: {}, status: {}, page: {}, size: {}",
             companyId, reportType, status, page, size);
-        
+
         if (!hasPermission(request, companyId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             ReportListResponseDTO response = reportService.listReports(companyId, reportType, status, page, size);
             return ResponseEntity.ok(response);
@@ -163,10 +147,6 @@ public class CorporateReportController {
         }
     }
 
-    /**
-     * GET /api/corporate/reports/company/{companyId}/date-range
-     * Lista relatórios de uma empresa em um intervalo de datas.
-     */
     @GetMapping("/company/{companyId}/date-range")
     public ResponseEntity<ReportListResponseDTO> getReportsByDateRange(
             @PathVariable UUID companyId,
@@ -175,13 +155,13 @@ public class CorporateReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest request) {
-        logger.info("GET /api/corporate/reports/company/{}/date-range - {} to {}", 
+        logger.info("GET /api/corporate/reports/company/{}/date-range - {} to {}",
             companyId, startDate, endDate);
-        
+
         if (!hasPermission(request, companyId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             ReportListResponseDTO response = reportService.listReports(companyId, null, null, page, size);
             return ResponseEntity.ok(response);
@@ -191,14 +171,10 @@ public class CorporateReportController {
         }
     }
 
-    /**
-     * DELETE /api/corporate/reports/{reportId}
-     * Deleta um relatório.
-     */
     @DeleteMapping("/{reportId}")
     public ResponseEntity<Void> deleteReport(@PathVariable UUID reportId) {
         logger.info("DELETE /api/corporate/reports/{}", reportId);
-        
+
         try {
             reportService.deleteReport(reportId);
             return ResponseEntity.noContent().build();
@@ -208,33 +184,29 @@ public class CorporateReportController {
         }
     }
 
-    /**
-     * GET /api/corporate/reports/company/{companyId}/latest
-     * Busca o relatório mais recente de um tipo específico para uma empresa.
-     */
     @GetMapping("/company/{companyId}/latest")
     public ResponseEntity<CorporateReportResponseDTO> getLatestReport(
             @PathVariable UUID companyId,
             @RequestParam(required = false) ReportType reportType,
             HttpServletRequest request) {
         logger.info("GET /api/corporate/reports/company/{}/latest - type: {}", companyId, reportType);
-        
+
         if (!hasPermission(request, companyId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         try {
             ReportListResponseDTO response = reportService.listReports(companyId, reportType, ReportStatus.COMPLETED, 0, 1);
-            
+
             if (response.getReports() != null && !response.getReports().isEmpty()) {
                 UUID latestReportId = response.getReports().get(0).getId();
                 Optional<CorporateReportResponseDTO> reportOpt = reportService.getReportById(latestReportId);
-                
+
                 if (reportOpt.isPresent()) {
                     return ResponseEntity.ok(reportOpt.get());
                 }
             }
-            
+
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Erro ao buscar relatório mais recente: {}", e.getMessage(), e);

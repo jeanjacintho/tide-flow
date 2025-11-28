@@ -31,19 +31,19 @@ import java.util.UUID;
 public class StripeService {
 
     private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
-    
+
     @Value("${STRIPE_SECRET_KEY:}")
     private String stripeSecretKey;
-    
+
     @Value("${STRIPE_PUBLISHABLE_KEY:}")
     private String stripePublishableKey;
-    
+
     @Value("${STRIPE_WEBHOOK_SECRET:}")
     private String webhookSecret;
-    
+
     @Value("${STRIPE_ENTERPRISE_PRICE_ID:}")
     private String enterprisePriceId;
-    
+
     @Value("${FRONTEND_URL:http://localhost:3000}")
     public String frontendUrl;
 
@@ -66,21 +66,16 @@ public class StripeService {
         }
     }
 
-    /**
-     * Cria ou retorna um customer no Stripe
-     */
     public String getOrCreateCustomer(UUID companyId, String companyName, String email) throws StripeException {
         logger.info("Getting or creating Stripe customer for company: {} with email: {}", companyId, email);
-        
-        // Primeiro, tenta buscar customer existente pelo metadata (company_id)
+
         try {
             CustomerListParams searchParams = CustomerListParams.builder()
                     .addExpand("data.metadata")
                     .build();
-            
+
             CustomerCollection customers = Customer.list(searchParams);
-            
-            // Busca customer com o mesmo company_id no metadata
+
             for (Customer existingCustomer : customers.getData()) {
                 Map<String, String> metadata = existingCustomer.getMetadata();
                 if (metadata != null && companyId.toString().equals(metadata.get("company_id"))) {
@@ -91,25 +86,20 @@ public class StripeService {
         } catch (StripeException e) {
             logger.warn("Error searching for existing customer, will create new one: {}", e.getMessage());
         }
-        
-        // Se não encontrou, cria um novo customer
+
         CustomerCreateParams customerParams = CustomerCreateParams.builder()
                 .setEmail(email)
                 .setName(companyName != null && !companyName.trim().isEmpty() ? companyName : "Company " + companyId.toString().substring(0, 8))
                 .putMetadata("company_id", companyId.toString())
                 .build();
-        
+
         Customer customer = Customer.create(customerParams);
         logger.info("Created new Stripe customer: {} for company: {}", customer.getId(), companyId);
-        
+
         return customer.getId();
     }
 
-    /**
-     * Cria um produto e preço no Stripe (se não existir)
-     */
     public String getOrCreateEnterprisePrice() throws StripeException {
-        // Se há um price ID configurado, tenta usar ele
         if (enterprisePriceId != null && !enterprisePriceId.isEmpty()) {
             try {
                 Price.retrieve(enterprisePriceId);
@@ -119,8 +109,7 @@ public class StripeService {
                 logger.warn("Configured price ID not found, will search or create new price: {}", e.getMessage());
             }
         }
-        
-        // Busca produto existente pelo nome
+
         String productName = "TideFlow Enterprise Plan";
         Product existingProduct = null;
         try {
@@ -128,7 +117,7 @@ public class StripeService {
                     .setLimit(100L)
                     .build();
             ProductCollection products = Product.list(productListParams);
-            
+
             for (Product product : products.getData()) {
                 if (productName.equals(product.getName())) {
                     existingProduct = product;
@@ -139,8 +128,7 @@ public class StripeService {
         } catch (StripeException e) {
             logger.warn("Error searching for existing product, will create new one: {}", e.getMessage());
         }
-        
-        // Se não encontrou produto, cria um novo
+
         Product product = existingProduct;
         if (product == null) {
             ProductCreateParams productParams = ProductCreateParams.builder()
@@ -148,12 +136,11 @@ public class StripeService {
                     .setDescription("Plano Enterprise - Usuários ilimitados e recursos avançados")
                     .putMetadata("plan_type", "ENTERPRISE")
                     .build();
-            
+
             product = Product.create(productParams);
             logger.info("Created new Stripe product: {}", product.getId());
         }
-        
-        // Busca preço existente para este produto com a moeda e valor configurados
+
         Price existingPrice = null;
         try {
             PriceListParams priceListParams = PriceListParams.builder()
@@ -161,10 +148,10 @@ public class StripeService {
                     .setLimit(100L)
                     .build();
             PriceCollection prices = Price.list(priceListParams);
-            
+
             for (Price price : prices.getData()) {
-                if (subscriptionCurrency.equalsIgnoreCase(price.getCurrency()) 
-                        && price.getUnitAmount() != null 
+                if (subscriptionCurrency.equalsIgnoreCase(price.getCurrency())
+                        && price.getUnitAmount() != null
                         && price.getUnitAmount().equals(subscriptionPrice)
                         && price.getRecurring() != null
                         && "month".equals(price.getRecurring().getInterval())) {
@@ -176,12 +163,11 @@ public class StripeService {
         } catch (StripeException e) {
             logger.warn("Error searching for existing price, will create new one: {}", e.getMessage());
         }
-        
-        // Se não encontrou preço, cria um novo
+
         if (existingPrice != null) {
             return existingPrice.getId();
         }
-        
+
         PriceCreateParams priceParams = PriceCreateParams.builder()
                 .setProduct(product.getId())
                 .setCurrency(subscriptionCurrency)
@@ -191,54 +177,38 @@ public class StripeService {
                         .build())
                 .putMetadata("plan_type", "ENTERPRISE")
                 .build();
-        
+
         Price price = Price.create(priceParams);
         logger.info("Created new Stripe price: {} ({} {})", price.getId(), subscriptionCurrency, subscriptionPrice);
-        
+
         return price.getId();
     }
 
-    /**
-     * Cria uma sessão de checkout do Stripe
-     */
-    public String createCheckoutSession(UUID companyId, String customerId, String priceId, 
+    public String createCheckoutSession(UUID companyId, String customerId, String priceId,
                                        String successUrl, String cancelUrl) throws StripeException {
         logger.info("Creating checkout session for company: {}", companyId);
-        
-        // Configura período de teste com base na configuração (em minutos)
-        // Nota: O Stripe requer trial_end >= 48 horas.
-        // Se durationMinutes < 48h (2880 min), usamos billing_cycle_anchor para forçar primeira cobrança rápida.
-        // Se durationMinutes >= 48h, usamos trial_end padrão.
-        
-        SessionCreateParams.SubscriptionData.Builder subscriptionDataBuilder = 
+
+        SessionCreateParams.SubscriptionData.Builder subscriptionDataBuilder =
                 SessionCreateParams.SubscriptionData.builder();
-        
-        // Adiciona metadata à subscription também para facilitar recuperação
-        // subscriptionDataBuilder.putMetadata("company_id", companyId.toString());
-        
+
         long durationSeconds = subscriptionDurationMinutes * 60L;
         long futureTimestamp = (System.currentTimeMillis() / 1000) + durationSeconds;
-        
-        if (subscriptionDurationMinutes < 2880) { // Menos de 48 horas
-             // Usamos billing_cycle_anchor para simular "fim do trial" (primeira cobrança)
+
+        if (subscriptionDurationMinutes < 2880) {
              subscriptionDataBuilder.setBillingCycleAnchor(futureTimestamp);
              logger.info("Using billing_cycle_anchor for short duration: {} minutes", subscriptionDurationMinutes);
         } else {
-             // Usamos trial_end padrão
              subscriptionDataBuilder.setTrialEnd(futureTimestamp);
              logger.info("Using trial_end for duration: {} minutes", subscriptionDurationMinutes);
         }
-        
-        // Metadata crítica para rastreabilidade - ADICIONA EM MÚLTIPLOS LUGARES
+
         Map<String, String> subscriptionMetadata = new HashMap<>();
         subscriptionMetadata.put("company_id", companyId.toString());
         subscriptionMetadata.put("created_at", String.valueOf(System.currentTimeMillis()));
         subscriptionMetadata.put("source", "tideflow_checkout");
 
-        // Adiciona metadata na subscription
         subscriptionDataBuilder.putAllMetadata(subscriptionMetadata);
 
-        // Cria params da sessão com metadata adicional
         Map<String, String> sessionMetadata = new HashMap<>();
         sessionMetadata.put("company_id", companyId.toString());
         sessionMetadata.put("customer_id", customerId);
@@ -260,19 +230,16 @@ public class StripeService {
 
         logger.info("Created checkout session with metadata - company_id: {}, customer_id: {}, subscription_metadata_keys: {}",
                 companyId, customerId, subscriptionMetadata.keySet());
-        
+
         Session session = Session.create(params);
         logger.info("Created checkout session: {}", session.getId());
-        
+
         return session.getUrl();
     }
 
-    /**
-     * Cria uma subscription no Stripe
-     */
     public Subscription createSubscription(String customerId, String priceId, int quantity) throws StripeException {
         logger.info("Creating subscription for customer: {}", customerId);
-        
+
         com.stripe.param.SubscriptionCreateParams params = com.stripe.param.SubscriptionCreateParams.builder()
                 .setCustomer(customerId)
                 .addItem(com.stripe.param.SubscriptionCreateParams.Item.builder()
@@ -281,65 +248,53 @@ public class StripeService {
                         .build())
                 .setPaymentBehavior(com.stripe.param.SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
                 .build();
-        
+
         Subscription subscription = Subscription.create(params);
         logger.info("Created subscription: {}", subscription.getId());
-        
+
         return subscription;
     }
 
-    /**
-     * Atualiza a quantidade de usuários em uma subscription
-     */
     public Subscription updateSubscriptionQuantity(String subscriptionId, int quantity) throws StripeException {
         logger.info("Updating subscription quantity: {} to {}", subscriptionId, quantity);
-        
+
         Subscription subscription = Subscription.retrieve(subscriptionId);
-        
+
         if (subscription.getItems().getData().isEmpty()) {
             throw new IllegalArgumentException("Subscription has no items");
         }
-        
+
         String subscriptionItemId = subscription.getItems().getData().get(0).getId();
-        
-        com.stripe.param.SubscriptionItemUpdateParams itemParams = 
+
+        com.stripe.param.SubscriptionItemUpdateParams itemParams =
             com.stripe.param.SubscriptionItemUpdateParams.builder()
                 .setQuantity((long) quantity)
                 .build();
-        
-        com.stripe.model.SubscriptionItem subscriptionItem = 
+
+        com.stripe.model.SubscriptionItem subscriptionItem =
             com.stripe.model.SubscriptionItem.retrieve(subscriptionItemId);
         subscriptionItem.update(itemParams);
-        
+
         Subscription updated = Subscription.retrieve(subscriptionId);
         logger.info("Updated subscription quantity");
-        
+
         return updated;
     }
 
-    /**
-     * Cancela uma subscription no Stripe
-     */
     public Subscription cancelSubscription(String subscriptionId) throws StripeException {
         logger.info("Canceling subscription: {}", subscriptionId);
-        
+
         Subscription subscription = Subscription.retrieve(subscriptionId);
         Subscription canceled = subscription.cancel();
         logger.info("Canceled subscription");
-        
+
         return canceled;
     }
 
-    /**
-     * Retorna uma subscription do Stripe
-     */
     public Subscription getSubscription(String subscriptionId) throws StripeException {
         return Subscription.retrieve(subscriptionId);
     }
 
-    /**
-     * Retorna um customer do Stripe
-     */
     public Customer getCustomer(String customerId) throws StripeException {
         return Customer.retrieve(customerId);
     }

@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 public class PatternAnalysisService {
 
     private static final Logger logger = LoggerFactory.getLogger(PatternAnalysisService.class);
-    private static final int MIN_OBSERVACOES_PADRAO = 3; // Mínimo de observações para considerar um padrão
-    private static final double MIN_CONFIANCA_PADRAO = 50.0; // Confiança mínima (0-100)
+    private static final int MIN_OBSERVACOES_PADRAO = 3;
+    private static final double MIN_CONFIANCA_PADRAO = 50.0;
 
     private final EmotionalPatternRepository patternRepository;
     private final ConversationMessageRepository messageRepository;
@@ -37,26 +37,21 @@ public class PatternAnalysisService {
         this.messageRepository = messageRepository;
     }
 
-    /**
-     * Analisa padrões temporais do usuário baseado no histórico de mensagens.
-     * Identifica padrões por: dia da semana, horário, mês, estação.
-     */
     @Transactional
     @Async
     public void analisarPadroesTemporais(String userId) {
         logger.info("Iniciando análise de padrões temporais para usuário: {}", userId);
-        
+
         try {
-            // Busca todas as mensagens do usuário de uma vez (evita N+1 queries)
+
             List<ConversationMessage> userMessages = messageRepository
                     .findByUserIdAndRoleOrderByCreatedAtAsc(userId, MessageRole.USER);
-            
+
             if (userMessages.isEmpty()) {
                 logger.info("Nenhuma mensagem encontrada para análise de padrões");
                 return;
             }
 
-            // Coleta dados das mensagens
             List<MessageData> messageDataList = new ArrayList<>();
             for (ConversationMessage msg : userMessages) {
                 messageDataList.add(new MessageData(msg.getCreatedAt()));
@@ -67,14 +62,12 @@ public class PatternAnalysisService {
                 return;
             }
 
-            // Analisa padrões e coleta para batch save
             List<EmotionalPattern> patternsToSave = new ArrayList<>();
             patternsToSave.addAll(analisarPadroesSemanais(userId, messageDataList));
             patternsToSave.addAll(analisarPadroesHorarios(userId, messageDataList));
             patternsToSave.addAll(analisarPadroesMensais(userId, messageDataList));
             patternsToSave.addAll(analisarPadroesSazonais(userId, messageDataList));
-            
-            // Batch save de todos os padrões
+
             if (!patternsToSave.isEmpty()) {
                 patternRepository.saveAll(patternsToSave);
                 logger.info("Salvos {} padrões temporais", patternsToSave.size());
@@ -95,14 +88,13 @@ public class PatternAnalysisService {
             if (entry.getValue().size() >= MIN_OBSERVACOES_PADRAO) {
                 DayOfWeek dia = entry.getKey();
                 String nomeDia = getNomeDiaSemana(dia);
-                
-                // Calcula confiança baseado na frequência
+
                 double confianca = calcularConfianca(entry.getValue().size(), messages.size());
-                
+
                 if (confianca >= MIN_CONFIANCA_PADRAO) {
                     EmotionalPattern pattern = patternRepository.findByUsuarioIdAndPadraoAndTipo(
                             userId, nomeDia, TipoPadrao.SEMANAL);
-                    
+
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
@@ -139,11 +131,11 @@ public class PatternAnalysisService {
             if (entry.getValue().size() >= MIN_OBSERVACOES_PADRAO) {
                 String horario = entry.getKey();
                 double confianca = calcularConfianca(entry.getValue().size(), messages.size());
-                
+
                 if (confianca >= MIN_CONFIANCA_PADRAO) {
                     EmotionalPattern pattern = patternRepository.findByUsuarioIdAndPadraoAndTipo(
                             userId, horario, TipoPadrao.DIARIO);
-                    
+
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
@@ -175,11 +167,11 @@ public class PatternAnalysisService {
                 Month mes = entry.getKey();
                 String nomeMes = getNomeMes(mes);
                 double confianca = calcularConfianca(entry.getValue().size(), messages.size());
-                
+
                 if (confianca >= MIN_CONFIANCA_PADRAO) {
                     EmotionalPattern pattern = patternRepository.findByUsuarioIdAndPadraoAndTipo(
                             userId, nomeMes, TipoPadrao.MENSAL);
-                    
+
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
@@ -221,11 +213,11 @@ public class PatternAnalysisService {
             if (entry.getValue().size() >= MIN_OBSERVACOES_PADRAO) {
                 String estacao = entry.getKey();
                 double confianca = calcularConfianca(entry.getValue().size(), messages.size());
-                
+
                 if (confianca >= MIN_CONFIANCA_PADRAO) {
                     EmotionalPattern pattern = patternRepository.findByUsuarioIdAndPadraoAndTipo(
                             userId, estacao, TipoPadrao.SAZONAL);
-                    
+
                     if (pattern != null) {
                         pattern.incrementarOcorrencia();
                         pattern.setConfianca(confianca);
@@ -248,9 +240,9 @@ public class PatternAnalysisService {
     }
 
     private double calcularConfianca(int ocorrencias, int total) {
-        // Confiança baseada na frequência relativa
+
         double frequencia = (double) ocorrencias / total;
-        // Normaliza para 0-100, com peso maior para mais observações
+
         return Math.min(100.0, frequencia * 100 * (1 + Math.log10(ocorrencias)));
     }
 
@@ -289,7 +281,6 @@ public class PatternAnalysisService {
         return patternRepository.findByUsuarioIdAndAtivoTrueOrderByConfiancaDesc(userId);
     }
 
-    // Classe auxiliar para dados da mensagem
     private static class MessageData {
         LocalDateTime data;
 
@@ -298,4 +289,3 @@ public class PatternAnalysisService {
         }
     }
 }
-

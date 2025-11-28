@@ -51,7 +51,7 @@ public class CompanyService {
 
     @Autowired
     public CompanyService(
-            CompanyRepository companyRepository, 
+            CompanyRepository companyRepository,
             CompanyAuthorizationService authorizationService,
             SubscriptionService subscriptionService,
             DepartmentRepository departmentRepository,
@@ -71,12 +71,11 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponseDTO createCompany(CompanyRequestDTO requestDTO) {
-        // Apenas SYSTEM_ADMIN pode criar empresas
+
         if (!TenantContext.isSystemAdmin()) {
             throw new AccessDeniedException("Empresa", null, "Apenas SYSTEM_ADMIN pode criar empresas");
         }
 
-        // Verifica se domain já existe
         if (requestDTO.domain() != null && !requestDTO.domain().isEmpty()) {
             if (companyRepository.existsByDomain(requestDTO.domain())) {
                 throw new IllegalArgumentException("Domínio já está em uso: " + requestDTO.domain());
@@ -94,20 +93,19 @@ public class CompanyService {
         company.setStatus(CompanyStatus.TRIAL);
 
         Company savedCompany = companyRepository.save(company);
-        
-        // Cria assinatura automaticamente com plano FREE
+
         UUID companyId = savedCompany.getId();
         if (companyId != null) {
-            final UUID finalCompanyId = companyId; // Final variable for null safety
+            final UUID finalCompanyId = companyId;
             try {
                 subscriptionService.createSubscription(finalCompanyId, SubscriptionPlan.FREE);
             } catch (Exception e) {
-                // Log mas não falha a criação da empresa
+
                 org.slf4j.LoggerFactory.getLogger(CompanyService.class)
                     .warn("Erro ao criar assinatura para empresa {}: {}", finalCompanyId, e.getMessage());
             }
         }
-        
+
         return CompanyResponseDTO.fromEntity(savedCompany);
     }
 
@@ -115,7 +113,6 @@ public class CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", id));
 
-        // Valida acesso (SYSTEM_ADMIN tem acesso total)
         if (!authorizationService.canAccessCompany(id)) {
             throw new AccessDeniedException("Empresa", id, "Usuário não tem acesso a esta empresa");
         }
@@ -128,13 +125,11 @@ public class CompanyService {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", id));
 
-        // Valida acesso (SYSTEM_ADMIN ou OWNER/ADMIN da empresa)
         if (!TenantContext.isSystemAdmin() && !authorizationService.isOwner(id) && !authorizationService.isAdmin(id)) {
             throw new AccessDeniedException("Empresa", id, "Apenas OWNER ou ADMIN podem atualizar a empresa");
         }
 
-        // Verifica se domain já existe (se mudou)
-        if (requestDTO.domain() != null && !requestDTO.domain().isEmpty() 
+        if (requestDTO.domain() != null && !requestDTO.domain().isEmpty()
             && !requestDTO.domain().equals(company.getDomain())) {
             if (companyRepository.existsByDomain(requestDTO.domain())) {
                 throw new IllegalArgumentException("Domínio já está em uso: " + requestDTO.domain());
@@ -152,7 +147,7 @@ public class CompanyService {
     }
 
     public List<CompanyResponseDTO> getAllCompanies() {
-        // SYSTEM_ADMIN vê todas as empresas, outros usuários só veem a própria
+
         if (TenantContext.isSystemAdmin()) {
             return companyRepository.findAll().stream()
                     .map(CompanyResponseDTO::fromEntity)
@@ -168,25 +163,19 @@ public class CompanyService {
         }
     }
 
-    /**
-     * Registro público de empresa (Self-Service).
-     * Cria empresa, subscription, departamento padrão, usuário OWNER e CompanyAdmin em uma transação atômica.
-     */
     @Transactional
     public CompanyResponseDTO registerCompanyPublic(RegisterCompanyRequestDTO requestDTO) {
-        // Valida unicidade de email
+
         if (userRepository.existsByEmail(requestDTO.ownerEmail())) {
             throw new IllegalArgumentException("Email já está em uso: " + requestDTO.ownerEmail());
         }
 
-        // Valida unicidade de domínio (se fornecido)
         if (requestDTO.companyDomain() != null && !requestDTO.companyDomain().isEmpty()) {
             if (companyRepository.existsByDomain(requestDTO.companyDomain())) {
                 throw new IllegalArgumentException("Domínio já está em uso: " + requestDTO.companyDomain());
             }
         }
 
-        // 1. Criar Company
         Company company = new Company();
         company.setName(requestDTO.companyName());
         company.setDomain(requestDTO.companyDomain());
@@ -194,32 +183,28 @@ public class CompanyService {
         company.setSubscriptionPlan(SubscriptionPlan.FREE);
         company.setMaxEmployees(7);
         company.setStatus(CompanyStatus.TRIAL);
-        
+
         Company savedCompany = companyRepository.save(company);
         UUID companyId = savedCompany.getId();
-        
+
         if (companyId == null) {
             throw new IllegalStateException("Erro ao criar empresa: ID não gerado");
         }
 
-        // 2. Criar Subscription FREE diretamente (sem validação de acesso para registro público)
         CompanySubscription subscription = new CompanySubscription(
             savedCompany,
             SubscriptionPlan.FREE,
             FREE_PLAN_PRICE,
-            0, // Inicialmente 0 usuários
+            0,
             BillingCycle.MONTHLY,
             LocalDateTime.now().plusMonths(1)
         );
         subscription.setStatus(SubscriptionStatus.TRIAL);
         subscriptionRepository.save(subscription);
 
-        // 3. Criar Departamento Padrão "Geral"
         Department defaultDepartment = new Department(savedCompany, "Geral", "Departamento padrão");
         Department savedDepartment = departmentRepository.save(defaultDepartment);
 
-        // 4. Criar Usuário OWNER
-        // Gera username único baseado no email (se já existir, adiciona sufixo)
         String baseUsername = requestDTO.ownerEmail().split("@")[0];
         String username = baseUsername;
         int attempts = 0;
@@ -228,10 +213,10 @@ public class CompanyService {
             attempts++;
         }
         if (userRepository.existsByUsername(username)) {
-            // Fallback: usa timestamp
+
             username = baseUsername + "_" + System.currentTimeMillis();
         }
-        
+
         User owner = new User();
         owner.setName(requestDTO.ownerName());
         owner.setEmail(requestDTO.ownerEmail());
@@ -242,20 +227,18 @@ public class CompanyService {
         owner.setSystemRole(SystemRole.NORMAL);
         owner.setIsActive(true);
         owner.setMustChangePassword(false);
-        
+
         User savedOwner = userRepository.save(owner);
 
-        // 5. Criar CompanyAdmin com role OWNER
         CompanyAdmin companyAdmin = new CompanyAdmin(savedOwner, savedCompany, CompanyAdminRole.OWNER, null);
         CompanyAdmin savedCompanyAdmin = companyAdminRepository.save(companyAdmin);
-        
-        // Garante que o CompanyAdmin foi salvo corretamente
+
         if (savedCompanyAdmin == null || savedCompanyAdmin.getRole() != CompanyAdminRole.OWNER) {
             throw new IllegalStateException("Erro ao criar CompanyAdmin com role OWNER para o primeiro usuário");
         }
-        
+
         org.slf4j.LoggerFactory.getLogger(CompanyService.class)
-            .info("CompanyAdmin criado com sucesso: userId={}, companyId={}, role={}", 
+            .info("CompanyAdmin criado com sucesso: userId={}, companyId={}, role={}",
                 savedOwner.getId(), savedCompany.getId(), savedCompanyAdmin.getRole());
 
         return CompanyResponseDTO.fromEntity(savedCompany);

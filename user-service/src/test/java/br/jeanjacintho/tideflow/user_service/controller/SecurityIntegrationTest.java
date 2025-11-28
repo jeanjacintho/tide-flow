@@ -88,15 +88,15 @@ class SecurityIntegrationTest {
     @DisplayName("POST /auth/login - Deve permitir acesso sem autenticação")
     void testLoginWithoutAuth() throws Exception {
         AuthenticationDTO authDTO = new AuthenticationDTO("test@example.com", "password123");
-        
+
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(testUser.getEmail())
                 .password(testUser.getPassword())
                 .authorities("ROLE_USER")
                 .build();
-        
+
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        
+
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
         when(userRepository.findByUsernameOrEmailWithCompanyAndDepartment("test@example.com"))
@@ -123,4 +123,3 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk());
     }
 }
-

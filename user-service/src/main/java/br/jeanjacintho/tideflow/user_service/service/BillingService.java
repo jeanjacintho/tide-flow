@@ -45,17 +45,10 @@ public class BillingService {
         this.usageTrackingService = usageTrackingService;
     }
 
-    /**
-     * Gera uma fatura para uma empresa em um período específico.
-     * 
-     * @param companyId ID da empresa
-     * @param period Período (formato: YYYY-MM)
-     * @return InvoiceDTO com detalhes da fatura
-     */
     @Transactional(readOnly = true)
     public InvoiceDTO generateInvoice(@NonNull UUID companyId, String period) {
         logger.info("Gerando fatura para empresa {} no período {}", companyId, period);
-        
+
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
 
@@ -88,18 +81,10 @@ public class BillingService {
         );
     }
 
-    /**
-     * Processa um pagamento para uma empresa.
-     * Atualiza a data de próxima cobrança e status da assinatura.
-     * 
-     * @param companyId ID da empresa
-     * @param amount Valor pago
-     * @return true se processado com sucesso
-     */
     @Transactional
     public boolean processPayment(@NonNull UUID companyId, BigDecimal amount) {
         logger.info("Processando pagamento de R$ {} para empresa {}", amount, companyId);
-        
+
         CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assinatura", companyId));
 
@@ -108,14 +93,14 @@ public class BillingService {
         }
 
         BigDecimal expectedAmount = subscriptionService.calculateMonthlyBill(companyId);
-        
+
         if (amount.compareTo(expectedAmount) < 0) {
             logger.warn("Valor pago (R$ {}) menor que o esperado (R$ {})", amount, expectedAmount);
-            // Em produção, isso poderia gerar um alerta ou notificação
+
         }
 
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        
+
         if (subscription.getBillingCycle().name().equals("MONTHLY")) {
             subscription.setNextBillingDate(LocalDateTime.now().plusMonths(1));
         } else {
@@ -123,36 +108,23 @@ public class BillingService {
         }
 
         subscriptionRepository.save(subscription);
-        
+
         logger.info("Pagamento processado com sucesso. Próxima cobrança: {}", subscription.getNextBillingDate());
         return true;
     }
 
-    /**
-     * Processa um pagamento e registra no histórico.
-     * 
-     * @param companyId ID da empresa
-     * @param amount Valor pago
-     * @param stripeInvoiceId ID da fatura do Stripe (opcional)
-     * @return true se processado com sucesso
-     */
     @Transactional
     public boolean processPaymentWithHistory(@NonNull UUID companyId, BigDecimal amount, String stripeInvoiceId) {
         boolean processed = processPayment(companyId, amount);
-        
+
         if (processed) {
-            // Registra no histórico de pagamentos se disponível
-            // Nota: Isso requer injeção do PaymentHistoryService, que pode causar dependência circular
-            // Uma alternativa seria usar eventos ou fazer isso no controller
+
             logger.info("Payment processed, consider recording in payment history");
         }
-        
+
         return processed;
     }
 
-    /**
-     * Classe DTO para representar uma fatura.
-     */
     public static class InvoiceDTO {
         private final UUID companyId;
         private final String companyName;
@@ -166,7 +138,7 @@ public class BillingService {
         private final String billingCycle;
         private final String status;
 
-        public InvoiceDTO(UUID companyId, String companyName, String period, LocalDate startDate, 
+        public InvoiceDTO(UUID companyId, String companyName, String period, LocalDate startDate,
                           LocalDate endDate, String planType, int activeUsers, BigDecimal pricePerUser,
                           BigDecimal totalAmount, String billingCycle, String status) {
             this.companyId = companyId;

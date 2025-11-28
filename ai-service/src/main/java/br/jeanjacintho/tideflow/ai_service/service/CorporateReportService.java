@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class CorporateReportService {
 
     private static final Logger logger = LoggerFactory.getLogger(CorporateReportService.class);
-    
+
     private final CorporateReportRepository reportRepository;
     private final ReportSectionRepository sectionRepository;
     private final LLMClient llmClient;
@@ -64,9 +64,6 @@ public class CorporateReportService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Gera um relatório corporativo de forma assíncrona.
-     */
     @Async
     @Transactional
     public CompletableFuture<CorporateReport> generateReportAsync(ReportGenerationRequest request) {
@@ -80,25 +77,22 @@ public class CorporateReportService {
         });
     }
 
-    /**
-     * Gera um relatório corporativo.
-     */
     @Transactional
     public CorporateReport generateReport(ReportGenerationRequest request) {
         long startTime = System.currentTimeMillis();
-        logger.info("Iniciando geração de relatório tipo {} para empresa {}", 
+        logger.info("Iniciando geração de relatório tipo {} para empresa {}",
             request.getReportType(), request.getCompanyId());
 
         LocalDate reportDate = LocalDate.now();
-        LocalDate periodStart = request.getPeriodStart() != null 
-            ? request.getPeriodStart() 
+        LocalDate periodStart = request.getPeriodStart() != null
+            ? request.getPeriodStart()
             : reportDate.minusDays(30);
-        LocalDate periodEnd = request.getPeriodEnd() != null 
-            ? request.getPeriodEnd() 
+        LocalDate periodEnd = request.getPeriodEnd() != null
+            ? request.getPeriodEnd()
             : reportDate;
 
-        String title = request.getTitle() != null 
-            ? request.getTitle() 
+        String title = request.getTitle() != null
+            ? request.getTitle()
             : generateDefaultTitle(request.getReportType(), periodStart, periodEnd);
 
         CorporateReport report = new CorporateReport(
@@ -118,7 +112,7 @@ public class CorporateReportService {
             Map<String, Object> metrics = collectMetrics(report, request);
             Map<String, Object> insights = generateInsights(report, metrics, request);
             String executiveSummary = generateExecutiveSummary(report, metrics, insights, request);
-            String recommendations = request.getGenerateRecommendations() 
+            String recommendations = request.getGenerateRecommendations()
                 ? generateRecommendations(report, metrics, insights, request)
                 : null;
 
@@ -135,7 +129,7 @@ public class CorporateReportService {
 
             report = reportRepository.save(report);
             logger.info("Relatório {} gerado com sucesso em {}ms", report.getId(), report.getGenerationTimeMs());
-            
+
             return report;
         } catch (Exception e) {
             logger.error("Erro ao gerar relatório {}: {}", report.getId(), e.getMessage(), e);
@@ -145,12 +139,9 @@ public class CorporateReportService {
         }
     }
 
-    /**
-     * Coleta métricas baseadas no tipo de relatório.
-     */
     private Map<String, Object> collectMetrics(CorporateReport report, ReportGenerationRequest request) {
         Map<String, Object> metrics = new HashMap<>();
-        
+
         try {
             switch (report.getReportType()) {
                 case STRESS_TIMELINE:
@@ -182,7 +173,7 @@ public class CorporateReportService {
                         report.getCompanyId(), report.getDepartmentId()));
                     break;
                 case CUSTOM:
-                    // Custom reports can have custom metrics
+
                     break;
                 default:
                     logger.warn("Tipo de relatório não suportado: {}", report.getReportType());
@@ -191,14 +182,11 @@ public class CorporateReportService {
         } catch (Exception e) {
             logger.error("Erro ao coletar métricas: {}", e.getMessage(), e);
         }
-        
+
         return metrics;
     }
 
-    /**
-     * Gera insights usando IA.
-     */
-    private Map<String, Object> generateInsights(CorporateReport report, Map<String, Object> metrics, 
+    private Map<String, Object> generateInsights(CorporateReport report, Map<String, Object> metrics,
                                                  ReportGenerationRequest request) {
         if (!request.getGenerateInsights()) {
             return new HashMap<>();
@@ -207,7 +195,7 @@ public class CorporateReportService {
         try {
             String prompt = buildInsightsPrompt(report, metrics, request);
             String aiResponse = llmClient.generateResponse(prompt).block();
-            
+
             if (aiResponse != null && !aiResponse.isEmpty()) {
                 try {
                     return objectMapper.readValue(aiResponse, new TypeReference<Map<String, Object>>() {});
@@ -221,73 +209,64 @@ public class CorporateReportService {
         } catch (Exception e) {
             logger.error("Erro ao gerar insights com IA: {}", e.getMessage(), e);
         }
-        
+
         return generateBasicInsights(metrics);
     }
 
-    /**
-     * Gera resumo executivo usando IA.
-     */
     private String generateExecutiveSummary(CorporateReport report, Map<String, Object> metrics,
                                            Map<String, Object> insights, ReportGenerationRequest request) {
         try {
             String prompt = buildExecutiveSummaryPrompt(report, metrics, insights, request);
             String aiResponse = llmClient.generateResponse(prompt).block();
-            
+
             if (aiResponse != null && !aiResponse.isEmpty()) {
                 return aiResponse.trim();
             }
         } catch (Exception e) {
             logger.error("Erro ao gerar resumo executivo com IA: {}", e.getMessage(), e);
         }
-        
+
         return generateBasicExecutiveSummary(report, metrics);
     }
 
-    /**
-     * Gera recomendações usando IA.
-     */
     private String generateRecommendations(CorporateReport report, Map<String, Object> metrics,
                                           Map<String, Object> insights, ReportGenerationRequest request) {
         try {
             String prompt = buildRecommendationsPrompt(report, metrics, insights, request);
             String aiResponse = llmClient.generateResponse(prompt).block();
-            
+
             if (aiResponse != null && !aiResponse.isEmpty()) {
                 return aiResponse.trim();
             }
         } catch (Exception e) {
             logger.error("Erro ao gerar recomendações com IA: {}", e.getMessage(), e);
         }
-        
+
         return generateBasicRecommendations(metrics);
     }
 
-    /**
-     * Gera seções do relatório.
-     */
     private List<ReportSection> generateSections(CorporateReport report, Map<String, Object> metrics,
                                                 Map<String, Object> insights, ReportGenerationRequest request) {
         List<ReportSection> sections = new ArrayList<>();
         int order = 1;
 
         if (request.getIncludeSections() == null || request.getIncludeSections().contains("overview")) {
-            sections.add(createSection(report, "overview", order++, "Visão Geral", 
+            sections.add(createSection(report, "overview", order++, "Visão Geral",
                 generateOverviewContent(metrics), metrics));
         }
 
         if (request.getIncludeSections() == null || request.getIncludeSections().contains("metrics")) {
-            sections.add(createSection(report, "metrics", order++, "Métricas Detalhadas", 
+            sections.add(createSection(report, "metrics", order++, "Métricas Detalhadas",
                 generateMetricsContent(metrics), metrics));
         }
 
         if (request.getIncludeSections() == null || request.getIncludeSections().contains("insights")) {
-            sections.add(createSection(report, "insights", order++, "Insights e Análises", 
+            sections.add(createSection(report, "insights", order++, "Insights e Análises",
                 generateInsightsContent(insights), insights));
         }
 
         if (request.getIncludeSections() == null || request.getIncludeSections().contains("trends")) {
-            sections.add(createSection(report, "trends", order++, "Tendências", 
+            sections.add(createSection(report, "trends", order++, "Tendências",
                 generateTrendsContent(metrics), metrics));
         }
 
@@ -303,11 +282,11 @@ public class CorporateReportService {
     }
 
     private String generateDefaultTitle(ReportType reportType, LocalDate start, LocalDate end) {
-        return String.format("Relatório %s - %s a %s", 
+        return String.format("Relatório %s - %s a %s",
             reportType.name(), start, end);
     }
 
-    private String buildInsightsPrompt(CorporateReport report, Map<String, Object> metrics, 
+    private String buildInsightsPrompt(CorporateReport report, Map<String, Object> metrics,
                                       ReportGenerationRequest request) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Você é um analista de RH especializado em bem-estar corporativo. ");
@@ -393,24 +372,18 @@ public class CorporateReportService {
         return "Análise de tendências e padrões identificados.";
     }
 
-    /**
-     * Busca relatório por ID.
-     */
     @Transactional(readOnly = true)
     public Optional<CorporateReportResponseDTO> getReportById(UUID reportId) {
         return reportRepository.findById(reportId)
             .map(this::toResponseDTO);
     }
 
-    /**
-     * Lista relatórios com paginação.
-     */
     @Transactional(readOnly = true)
-    public ReportListResponseDTO listReports(UUID companyId, ReportType reportType, 
+    public ReportListResponseDTO listReports(UUID companyId, ReportType reportType,
                                             ReportStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<CorporateReport> reportPage;
-        
+
         if (reportType != null && status != null) {
             reportPage = reportRepository.findByCompanyIdAndReportTypeAndStatusOrderByCreatedAtDesc(
                 companyId, reportType, status, pageable);
@@ -438,7 +411,7 @@ public class CorporateReportService {
     }
 
     private CorporateReportResponseDTO toResponseDTO(CorporateReport report) {
-        List<CorporateReportResponseDTO.ReportSectionDTO> sectionDTOs = 
+        List<CorporateReportResponseDTO.ReportSectionDTO> sectionDTOs =
             sectionRepository.findByReportIdOrderBySectionOrderAsc(report.getId()).stream()
                 .map(section -> new CorporateReportResponseDTO.ReportSectionDTO(
                     section.getId(),
@@ -493,9 +466,6 @@ public class CorporateReportService {
         );
     }
 
-    /**
-     * Deleta um relatório.
-     */
     @Transactional
     public void deleteReport(UUID reportId) {
         reportRepository.deleteById(reportId);

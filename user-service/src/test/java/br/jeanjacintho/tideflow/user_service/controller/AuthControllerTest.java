@@ -294,4 +294,3 @@ class AuthControllerTest {
                 .build();
     }
 }
-

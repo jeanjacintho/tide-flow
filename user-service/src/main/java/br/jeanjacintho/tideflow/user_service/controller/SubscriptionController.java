@@ -77,18 +77,12 @@ public class SubscriptionController {
         this.companyRepository = companyRepository;
     }
 
-    // ... (methods createSubscription, getSubscription, upgradeSubscription, getMonthlyBill, generateInvoice, processPayment, getUsageInfo, canAddUsers, createCheckoutSession remain unchanged)
-    
-    /**
-     * POST /api/subscriptions/companies/{companyId}
-     * Cria uma assinatura para uma empresa.
-     */
     @PostMapping("/companies/{companyId}")
     public ResponseEntity<SubscriptionResponseDTO> createSubscription(
             @PathVariable @NonNull UUID companyId,
             @RequestParam SubscriptionPlan planType) {
         logger.info("POST /api/subscriptions/companies/{} - planType: {}", companyId, planType);
-        
+
         try {
             CompanySubscription subscription = subscriptionService.createSubscription(companyId, planType);
             BigDecimal monthlyBill = subscriptionService.calculateMonthlyBill(companyId);
@@ -100,28 +94,21 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}
-     * Obtém a assinatura de uma empresa.
-     * Cria automaticamente uma assinatura FREE se não existir.
-     */
     @GetMapping("/companies/{companyId}")
     public ResponseEntity<SubscriptionResponseDTO> getSubscription(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}", companyId);
-        
+
         try {
-            // Busca assinatura existente ou cria uma nova se não existir
+
             CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId)
                     .orElse(null);
-            
+
             if (subscription == null) {
                 logger.info("Assinatura não encontrada para companyId: {}. Criando assinatura FREE...", companyId);
-                
-                // Busca a empresa
+
                 Company company = companyRepository.findById(companyId)
                         .orElseThrow(() -> new ResourceNotFoundException("Empresa", companyId));
-                
-                // Cria assinatura FREE diretamente
+
                 int currentUserCount = usageTrackingService.getActiveUserCount(companyId);
                 subscription = new CompanySubscription(
                     company,
@@ -133,15 +120,14 @@ public class SubscriptionController {
                 );
                 subscription.setStatus(SubscriptionStatus.TRIAL);
                 subscription = subscriptionRepository.save(subscription);
-                
-                // Atualiza a empresa
+
                 company.setSubscriptionPlan(SubscriptionPlan.FREE);
                 company.setMaxEmployees(7);
                 companyRepository.save(company);
-                
+
                 logger.info("Assinatura FREE criada automaticamente para companyId: {}", companyId);
             }
-            
+
             BigDecimal monthlyBill = subscriptionService.calculateMonthlyBill(companyId);
             SubscriptionResponseDTO response = SubscriptionResponseDTO.fromEntity(subscription, monthlyBill);
             return ResponseEntity.ok(response);
@@ -154,16 +140,12 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * PUT /api/subscriptions/companies/{companyId}/upgrade
-     * Faz upgrade da assinatura de uma empresa.
-     */
     @PutMapping("/companies/{companyId}/upgrade")
     public ResponseEntity<SubscriptionResponseDTO> upgradeSubscription(
             @PathVariable @NonNull UUID companyId,
             @Valid @RequestBody UpgradeSubscriptionRequestDTO request) {
         logger.info("PUT /api/subscriptions/companies/{}/upgrade - planType: {}", companyId, request.planType());
-        
+
         try {
             CompanySubscription subscription = subscriptionService.upgradeSubscription(companyId, request.planType());
             BigDecimal monthlyBill = subscriptionService.calculateMonthlyBill(companyId);
@@ -178,14 +160,10 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}/bill
-     * Calcula a fatura mensal de uma empresa.
-     */
     @GetMapping("/companies/{companyId}/bill")
     public ResponseEntity<BigDecimal> getMonthlyBill(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/bill", companyId);
-        
+
         try {
             BigDecimal bill = subscriptionService.calculateMonthlyBill(companyId);
             return ResponseEntity.ok(bill);
@@ -195,16 +173,12 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}/invoice
-     * Gera uma fatura para um período específico.
-     */
     @GetMapping("/companies/{companyId}/invoice")
     public ResponseEntity<InvoiceResponseDTO> generateInvoice(
             @PathVariable @NonNull UUID companyId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String period) {
         logger.info("GET /api/subscriptions/companies/{}/invoice - period: {}", companyId, period);
-        
+
         try {
             BillingService.InvoiceDTO invoice = billingService.generateInvoice(companyId, period);
             InvoiceResponseDTO response = InvoiceResponseDTO.fromInvoiceDTO(invoice);
@@ -215,16 +189,12 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * POST /api/subscriptions/companies/{companyId}/payment
-     * Processa um pagamento.
-     */
     @PostMapping("/companies/{companyId}/payment")
     public ResponseEntity<Void> processPayment(
             @PathVariable @NonNull UUID companyId,
             @RequestParam BigDecimal amount) {
         logger.info("POST /api/subscriptions/companies/{}/payment - amount: {}", companyId, amount);
-        
+
         try {
             boolean success = billingService.processPayment(companyId, amount);
             if (success) {
@@ -238,14 +208,10 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}/usage
-     * Obtém informações de uso da empresa.
-     */
     @GetMapping("/companies/{companyId}/usage")
     public ResponseEntity<UsageInfoResponseDTO> getUsageInfo(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/usage", companyId);
-        
+
         try {
             UsageTrackingService.UsageInfo usageInfo = usageTrackingService.getUsageInfo(companyId);
             UsageInfoResponseDTO response = UsageInfoResponseDTO.fromUsageInfo(usageInfo);
@@ -256,14 +222,10 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}/can-add-users
-     * Verifica se a empresa pode adicionar mais usuários.
-     */
     @GetMapping("/companies/{companyId}/can-add-users")
     public ResponseEntity<Boolean> canAddUsers(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/can-add-users", companyId);
-        
+
         try {
             boolean canAdd = subscriptionService.canAddUsers(companyId);
             return ResponseEntity.ok(canAdd);
@@ -273,10 +235,6 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * POST /api/subscriptions/checkout-session
-     * Cria uma sessão de checkout do Stripe para upgrade de assinatura.
-     */
     @PostMapping("/checkout-session")
     public ResponseEntity<CheckoutSessionResponseDTO> createCheckoutSession(
             @Valid @RequestBody CreateCheckoutSessionRequestDTO request) {
@@ -297,10 +255,6 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * DELETE /api/subscriptions/companies/{companyId}
-     * Cancela a assinatura do Stripe e volta para o plano FREE.
-     */
     @DeleteMapping("/companies/{companyId}")
     public ResponseEntity<Void> cancelCompanySubscription(@PathVariable @NonNull UUID companyId) {
         logger.info("DELETE /api/subscriptions/companies/{} - cancel subscription", companyId);
@@ -316,16 +270,12 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * GET /api/subscriptions/companies/{companyId}/payments
-     * Obtém o histórico de pagamentos de uma empresa.
-     */
     @GetMapping("/companies/{companyId}/payments")
     public ResponseEntity<Page<PaymentHistoryResponseDTO>> getPaymentHistory(
             @PathVariable @NonNull UUID companyId,
             @PageableDefault(size = 20, sort = "paymentDate", direction = Sort.Direction.DESC) Pageable pageable) {
         logger.info("GET /api/subscriptions/companies/{}/payments", companyId);
-        
+
         try {
             Page<PaymentHistoryResponseDTO> payments = paymentHistoryService
                     .getPaymentHistory(companyId, pageable)
@@ -337,18 +287,14 @@ public class SubscriptionController {
             return ResponseEntity.internalServerError().build();
         }
     }
-    
-    /**
-     * GET /api/subscriptions/companies/{companyId}/payments/debug
-     * Endpoint de debug para verificar dados de pagamento
-     */
+
     @GetMapping("/companies/{companyId}/payments/debug")
     public ResponseEntity<Map<String, Object>> debugPaymentHistory(@PathVariable @NonNull UUID companyId) {
         logger.info("GET /api/subscriptions/companies/{}/payments/debug", companyId);
 
         Map<String, Object> debugInfo = new HashMap<>();
         try {
-            // Verifica subscription
+
             CompanySubscription subscription = subscriptionRepository.findByCompanyId(companyId).orElse(null);
             if (subscription != null) {
                 debugInfo.put("subscription", Map.of(
@@ -362,11 +308,9 @@ public class SubscriptionController {
                 debugInfo.put("subscription", "NOT FOUND");
             }
 
-            // Conta pagamentos
             Long paymentCount = paymentHistoryRepository.count();
             debugInfo.put("totalPaymentsInDatabase", paymentCount);
 
-            // Lista pagamentos da empresa
             List<PaymentHistory> companyPayments = paymentHistoryRepository.findByCompanyIdOrderByPaymentDateDesc(companyId);
             debugInfo.put("companyPayments", companyPayments.stream()
                 .map(p -> Map.of(
@@ -386,10 +330,6 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * POST /api/subscriptions/companies/{companyId}/sync-stripe
-     * Força sincronização de uma assinatura com dados do Stripe
-     */
     @PostMapping("/companies/{companyId}/sync-stripe")
     public ResponseEntity<Map<String, Object>> forceStripeSync(@PathVariable @NonNull UUID companyId) {
         logger.info("POST /api/subscriptions/companies/{}/sync-stripe - Force Stripe sync", companyId);
@@ -406,10 +346,6 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * POST /api/subscriptions/test-subscription-lookup
-     * Testa a estratégia robusta de busca de assinaturas (para debugging)
-     */
     @PostMapping("/test-subscription-lookup")
     public ResponseEntity<Map<String, Object>> testSubscriptionLookup(
             @RequestParam String subscriptionId,
@@ -421,10 +357,6 @@ public class SubscriptionController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/subscriptions/stripe-metadata-check
-     * Verifica se os metadados estão sendo definidos corretamente no Stripe
-     */
     @GetMapping("/stripe-metadata-check")
     public ResponseEntity<Map<String, Object>> checkStripeMetadata(@RequestParam String subscriptionId) {
         logger.info("GET /api/subscriptions/stripe-metadata-check - Checking metadata for: {}", subscriptionId);
@@ -437,10 +369,6 @@ public class SubscriptionController {
         }
     }
 
-    /**
-     * POST /api/subscriptions/webhook
-     * Webhook do Stripe para processar eventos de assinatura.
-     */
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,

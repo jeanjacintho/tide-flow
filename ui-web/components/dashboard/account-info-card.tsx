@@ -64,7 +64,7 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
         <CardDescription>Dados pessoais e permissões do usuário</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Profile Section */}
+        {}
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={user.avatarUrl || undefined} />
@@ -91,7 +91,7 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
           </div>
         </div>
 
-        {/* Contact Information */}
+        {}
         <div className="space-y-3">
           <div className="text-sm">
             <p className="text-muted-foreground">Email</p>
@@ -131,7 +131,7 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
           </div>
         </div>
 
-        {/* Privacy Status */}
+        {}
         {user.privacyConsentStatus && (
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between">
@@ -161,4 +161,3 @@ export function AccountInfoCard({ user, loading = false }: AccountInfoCardProps)
     </Card>
   );
 }
-

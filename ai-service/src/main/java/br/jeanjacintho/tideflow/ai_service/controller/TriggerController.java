@@ -56,4 +56,3 @@ public class TriggerController {
         return ResponseEntity.accepted().build();
     }
 }
-

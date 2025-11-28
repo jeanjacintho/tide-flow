@@ -43,7 +43,7 @@ const featureVariants = {
 export default function RegisterPage() {
   return (
     <div className="relative flex min-h-svh w-full flex-col items-center justify-center p-6 md:p-10 bg-background-secondary overflow-hidden">
-      {/* Dot Pattern Background */}
+      {}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
         <DotPattern
           className="h-full w-full [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"
@@ -54,8 +54,8 @@ export default function RegisterPage() {
           cr={1}
         />
       </div>
-      
-      {/* Content */}
+
+      {}
       <motion.div
         className="relative z-10 w-full max-w-5xl space-y-8"
         variants={containerVariants}
@@ -63,7 +63,7 @@ export default function RegisterPage() {
         animate="visible"
         style={{ willChange: 'transform' }}
       >
-        {/* Header */}
+        {}
         <motion.div className="text-center" variants={itemVariants}>
           <h1 className="text-3xl font-bold">
             tideflow
@@ -73,9 +73,9 @@ export default function RegisterPage() {
           </p>
         </motion.div>
 
-        {/* Cards Grid */}
+        {}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Card de Registro de Empresa */}
+          {}
           <motion.div variants={itemVariants}>
             <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 group">
               <CardHeader className="pb-4">
@@ -132,7 +132,7 @@ export default function RegisterPage() {
             </Card>
           </motion.div>
 
-          {/* Card de Registro de Usuário */}
+          {}
           <motion.div variants={itemVariants}>
             <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 group">
               <CardHeader className="pb-4">
@@ -190,7 +190,7 @@ export default function RegisterPage() {
           </motion.div>
         </div>
 
-        {/* Footer Links */}
+        {}
         <motion.div className="text-center" variants={itemVariants}>
           <p className="text-sm text-muted-foreground">
             Já tem uma conta?{' '}

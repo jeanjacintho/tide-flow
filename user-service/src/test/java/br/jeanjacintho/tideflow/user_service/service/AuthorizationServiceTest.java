@@ -70,7 +70,7 @@ class AuthorizationServiceTest {
         String nonExistentEmail = "notfound@example.com";
         when(userRepository.findByUsernameOrEmail(nonExistentEmail)).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, 
+        assertThrows(UsernameNotFoundException.class,
                 () -> authorizationService.loadUserByUsername(nonExistentEmail));
     }
 
@@ -98,4 +98,3 @@ class AuthorizationServiceTest {
         assertTrue(authorities.contains(new SimpleGrantedAuthority("ROLE_USER")));
     }
 }
-

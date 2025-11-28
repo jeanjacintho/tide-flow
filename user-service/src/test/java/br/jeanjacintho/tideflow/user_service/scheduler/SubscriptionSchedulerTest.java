@@ -148,12 +148,12 @@ class SubscriptionSchedulerTest {
     @DisplayName("checkExpiredSubscriptions - Deve processar múltiplas assinaturas expiradas")
     void testCheckExpiredSubscriptionsMultipleExpired() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         UUID anotherCompanyId = UUID.randomUUID();
         Company anotherCompany = new Company();
         anotherCompany.setId(anotherCompanyId);
         anotherCompany.setName("Another Company");
-        
+
         CompanySubscription anotherExpiredTrial = new CompanySubscription();
         anotherExpiredTrial.setId(UUID.randomUUID());
         anotherExpiredTrial.setCompany(anotherCompany);
@@ -181,7 +181,7 @@ class SubscriptionSchedulerTest {
     @DisplayName("checkExpiredSubscriptions - Deve ignorar assinaturas com company null")
     void testCheckExpiredSubscriptionsIgnoresNullCompany() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         CompanySubscription subscriptionWithNullCompany = new CompanySubscription();
         subscriptionWithNullCompany.setId(UUID.randomUUID());
         subscriptionWithNullCompany.setCompany(null);
@@ -202,7 +202,7 @@ class SubscriptionSchedulerTest {
     @DisplayName("checkExpiredSubscriptions - Deve ignorar assinaturas com companyId null")
     void testCheckExpiredSubscriptionsIgnoresNullCompanyId() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         Company companyWithNullId = new Company();
         companyWithNullId.setId(null);
         companyWithNullId.setName("Company Without ID");
@@ -258,7 +258,7 @@ class SubscriptionSchedulerTest {
     @DisplayName("checkExpiredSubscriptions - Deve processar assinaturas expiradas exatamente agora")
     void testCheckExpiredSubscriptionsExpiredExactlyNow() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         CompanySubscription exactlyExpiredTrial = new CompanySubscription();
         exactlyExpiredTrial.setId(UUID.randomUUID());
         exactlyExpiredTrial.setCompany(testCompany);
@@ -279,7 +279,7 @@ class SubscriptionSchedulerTest {
     @DisplayName("checkExpiredSubscriptions - Deve processar múltiplas assinaturas com company null misturadas")
     void testCheckExpiredSubscriptionsMixedNullCompanies() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         CompanySubscription subscriptionWithNullCompany = new CompanySubscription();
         subscriptionWithNullCompany.setId(UUID.randomUUID());
         subscriptionWithNullCompany.setCompany(null);

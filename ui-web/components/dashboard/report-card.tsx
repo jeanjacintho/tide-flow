@@ -84,12 +84,12 @@ export function ReportCard({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Report Summary */}
+        {}
         {report.executiveSummary && (
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{report.executiveSummary}</p>
         )}
 
-        {/* Key Metrics */}
+        {}
         {report.metrics && (
           <div className="grid grid-cols-2 gap-4 mb-4">
             {report.metrics.totalUsers !== undefined && (
@@ -114,7 +114,7 @@ export function ReportCard({
           </div>
         )}
 
-        {/* Status Badge */}
+        {}
         <div className="mb-4">
           <Badge
             variant={
@@ -131,7 +131,7 @@ export function ReportCard({
           </Badge>
         </div>
 
-        {/* Actions */}
+        {}
         <div className="flex gap-2 pt-4 border-t">
           {onView && (
             <Button
@@ -170,4 +170,3 @@ export function ReportCard({
     </Card>
   );
 }
-

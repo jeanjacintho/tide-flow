@@ -13,7 +13,7 @@ public class Conversation {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
+
     @Column(name = "user_id", nullable = false)
     private String userId;
 
@@ -30,7 +30,6 @@ public class Conversation {
     public Conversation(String userId) {
         this.userId = userId;
     }
-
 
     @PrePersist
     protected void onCreate() {

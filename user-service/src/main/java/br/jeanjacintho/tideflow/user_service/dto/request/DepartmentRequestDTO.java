@@ -7,7 +7,7 @@ public record DepartmentRequestDTO(
     @NotBlank(message = "Nome do departamento é obrigatório")
     @Size(max = 255, message = "Nome deve ter no máximo 255 caracteres")
     String name,
-    
+
     String description
 ) {
 }

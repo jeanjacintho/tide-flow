@@ -61,7 +61,7 @@ public class UserResponseDTO {
         } else {
             companyRole = null;
         }
-        
+
         return new UserResponseDTO(
             user.getId(),
             user.getName(),
@@ -107,7 +107,7 @@ public class UserResponseDTO {
     public void setUsername(String username) {
         this.username = username;
     }
-    
+
     public String getEmail() {
         return email;
     }
@@ -115,7 +115,7 @@ public class UserResponseDTO {
     public void setEmail(String email) {
         this.email = email;
     }
-    
+
     public String getPhone() {
         return phone;
     }

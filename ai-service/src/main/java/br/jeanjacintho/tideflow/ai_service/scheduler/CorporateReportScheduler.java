@@ -33,86 +33,75 @@ public class CorporateReportScheduler {
         this.emotionalAnalysisRepository = emotionalAnalysisRepository;
     }
 
-    /**
-     * Gera relatórios semanais automaticamente toda segunda-feira às 6h da manhã.
-     * Gera relatórios abrangentes para todas as empresas ativas.
-     */
-    @Scheduled(cron = "0 0 6 * * MON") // Toda segunda-feira às 6h
+    @Scheduled(cron = "0 0 6 * * MON")
     public void generateWeeklyReports() {
         logger.info("Iniciando geração automática de relatórios semanais");
-        
+
         try {
-            LocalDate endDate = LocalDate.now().minusDays(1); // Até ontem
-            LocalDate startDate = endDate.minusDays(7); // Últimos 7 dias
-            
+            LocalDate endDate = LocalDate.now().minusDays(1);
+            LocalDate startDate = endDate.minusDays(7);
+
             List<UUID> companyIds = emotionalAnalysisRepository.findDistinctCompanyIdsByDateRange(
                 startDate, endDate);
-            
+
             logger.info("Encontradas {} empresas para gerar relatórios semanais", companyIds.size());
-            
+
             for (UUID companyId : companyIds) {
                 try {
                     generateWeeklyReportForCompany(companyId, startDate, endDate);
                 } catch (Exception e) {
-                    logger.error("Erro ao gerar relatório semanal para empresa {}: {}", 
+                    logger.error("Erro ao gerar relatório semanal para empresa {}: {}",
                         companyId, e.getMessage(), e);
                 }
             }
-            
+
             logger.info("Geração automática de relatórios semanais concluída");
         } catch (Exception e) {
             logger.error("Erro na geração automática de relatórios semanais: {}", e.getMessage(), e);
         }
     }
 
-    /**
-     * Gera relatórios mensais automaticamente no primeiro dia do mês às 3h da manhã.
-     */
-    @Scheduled(cron = "0 0 3 1 * ?") // Primeiro dia do mês às 3h
+    @Scheduled(cron = "0 0 3 1 * ?")
     public void generateMonthlyReports() {
         logger.info("Iniciando geração automática de relatórios mensais");
-        
+
         try {
             LocalDate endDate = LocalDate.now().minusDays(1);
             LocalDate startDate = endDate.minusMonths(1).withDayOfMonth(1);
-            
+
             List<UUID> companyIds = emotionalAnalysisRepository.findDistinctCompanyIdsByDateRange(
                 startDate, endDate);
-            
+
             logger.info("Encontradas {} empresas para gerar relatórios mensais", companyIds.size());
-            
+
             for (UUID companyId : companyIds) {
                 try {
                     generateMonthlyReportForCompany(companyId, startDate, endDate);
                 } catch (Exception e) {
-                    logger.error("Erro ao gerar relatório mensal para empresa {}: {}", 
+                    logger.error("Erro ao gerar relatório mensal para empresa {}: {}",
                         companyId, e.getMessage(), e);
                 }
             }
-            
+
             logger.info("Geração automática de relatórios mensais concluída");
         } catch (Exception e) {
             logger.error("Erro na geração automática de relatórios mensais: {}", e.getMessage(), e);
         }
     }
 
-    /**
-     * Limpa relatórios antigos (mais de 1 ano) que estão arquivados.
-     * Executa todo domingo às 4h da manhã.
-     */
-    @Scheduled(cron = "0 0 4 * * SUN") // Todo domingo às 4h
+    @Scheduled(cron = "0 0 4 * * SUN")
     public void archiveOldReports() {
         logger.info("Iniciando arquivamento de relatórios antigos");
-        
+
         try {
             java.time.LocalDateTime oneYearAgo = java.time.LocalDateTime.now().minusYears(1);
-            
-            List<br.jeanjacintho.tideflow.ai_service.model.CorporateReport> oldReports = 
+
+            List<br.jeanjacintho.tideflow.ai_service.model.CorporateReport> oldReports =
                 reportRepository.findByStatusAndGeneratedAtBefore(
                     ReportStatus.COMPLETED, oneYearAgo);
-            
+
             logger.info("Encontrados {} relatórios antigos para arquivar", oldReports.size());
-            
+
             for (br.jeanjacintho.tideflow.ai_service.model.CorporateReport report : oldReports) {
                 try {
                     report.setStatus(ReportStatus.ARCHIVED);
@@ -121,7 +110,7 @@ public class CorporateReportScheduler {
                     logger.error("Erro ao arquivar relatório {}: {}", report.getId(), e.getMessage(), e);
                 }
             }
-            
+
             logger.info("Arquivamento de relatórios antigos concluído");
         } catch (Exception e) {
             logger.error("Erro no arquivamento de relatórios antigos: {}", e.getMessage(), e);
@@ -137,7 +126,7 @@ public class CorporateReportScheduler {
         request.setTitle(String.format("Relatório Semanal - %s a %s", startDate, endDate));
         request.setGenerateInsights(true);
         request.setGenerateRecommendations(true);
-        
+
         reportService.generateReportAsync(request);
         logger.info("Relatório semanal agendado para empresa {}", companyId);
     }
@@ -151,7 +140,7 @@ public class CorporateReportScheduler {
         request.setTitle(String.format("Relatório Mensal - %s a %s", startDate, endDate));
         request.setGenerateInsights(true);
         request.setGenerateRecommendations(true);
-        
+
         reportService.generateReportAsync(request);
         logger.info("Relatório mensal agendado para empresa {}", companyId);
     }
