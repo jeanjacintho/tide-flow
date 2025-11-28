@@ -1,36 +1,27 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# Copiar arquivos de configuração do Maven
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
 
-# Baixar dependências (cache layer)
 RUN mvn dependency:go-offline -B
 
-# Copiar código fonte
 COPY src ./src
 
-# Build da aplicação
 RUN mvn clean package -DskipTests
 
-# Imagem final
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# Instalar curl para healthcheck
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Criar usuário não-root
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN groupadd -r spring && useradd -r -g spring spring
 
-# Copiar JAR do build
 COPY --from=build /app/target/*.jar app.jar
 
-# Mudar ownership
 RUN chown spring:spring app.jar
 
 USER spring:spring
