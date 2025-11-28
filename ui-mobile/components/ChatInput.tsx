@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Text,
 } from 'react-native';
+import { Colors, Radius, Spacing, Typography } from '../constants/colors';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -41,7 +42,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             value={message}
             onChangeText={setMessage}
             placeholder={placeholder}
-            placeholderTextColor="#999"
+            placeholderTextColor={Colors.placeholder}
             multiline
             maxLength={1000}
             editable={!disabled}
@@ -70,52 +71,52 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    borderTopColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingBottom: Platform.OS === 'ios' ? 20 : Spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: Colors.muted,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     minHeight: 48,
     maxHeight: 120,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#000',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    fontSize: Typography.sizes.base,
+    color: Colors.foreground,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
     maxHeight: 104,
     textAlignVertical: 'center',
   },
   sendButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: '#007AFF',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: Spacing.sm,
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: Colors.mutedForeground,
   },
   sendIcon: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendIconText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: Colors.primaryForeground,
+    fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.bold,
   },
 });
 

@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatInput } from '../components/ChatInput';
 import { apiService, Message } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { Colors, Radius, Spacing, Typography } from '../constants/colors';
 
 const CONVERSATION_ID_KEY = 'tideflow_conversation_id';
 
@@ -173,7 +174,7 @@ export const ChatScreen: React.FC = () => {
   // A autenticação já foi verificada no App.tsx antes de renderizar esta tela
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -185,7 +186,7 @@ export const ChatScreen: React.FC = () => {
 
         {isLoadingHistory ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.loadingText}>Carregando conversa...</Text>
           </View>
         ) : (
@@ -221,18 +222,18 @@ export const ChatScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.backgroundSecondary,
   },
   header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    backgroundColor: Colors.background,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: Colors.border,
     ...Platform.select({
       ios: {
         paddingTop: 50,
@@ -240,17 +241,17 @@ const styles = StyleSheet.create({
     }),
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: Typography.sizes.xl,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.foreground,
   },
   messagesList: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
   },
   messageContainer: {
-    marginVertical: 4,
+    marginVertical: Spacing.xs,
     maxWidth: '80%',
   },
   userMessageContainer: {
@@ -262,12 +263,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   messageBubble: {
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 10,
-    borderRadius: 18,
+    borderRadius: Radius.lg,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: Colors.shadow,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -278,28 +279,28 @@ const styles = StyleSheet.create({
     }),
   },
   userMessageBubble: {
-    backgroundColor: '#007AFF',
-    borderBottomRightRadius: 4,
+    backgroundColor: Colors.userMessage,
+    borderBottomRightRadius: Radius.sm,
   },
   assistantMessageBubble: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 4,
+    backgroundColor: Colors.assistantMessage,
+    borderBottomLeftRadius: Radius.sm,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: Typography.sizes.base,
     lineHeight: 20,
   },
   userMessageText: {
-    color: '#fff',
+    color: Colors.userMessageText,
   },
   assistantMessageText: {
-    color: '#000',
+    color: Colors.assistantMessageText,
   },
   timestamp: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 4,
-    paddingHorizontal: 4,
+    fontSize: Typography.sizes.xs,
+    color: Colors.mutedForeground,
+    marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
   },
   emptyContainer: {
     flex: 1,
@@ -308,8 +309,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: Typography.sizes.base,
+    color: Colors.mutedForeground,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -320,9 +321,9 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#999',
+    marginTop: Spacing.md,
+    fontSize: Typography.sizes.base,
+    color: Colors.mutedForeground,
   },
 });
 

@@ -4,6 +4,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { ChatScreen } from './screens/ChatScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { useAuth } from './hooks/useAuth';
+import { Colors } from './constants/colors';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -12,7 +13,7 @@ function AppContent() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -40,6 +41,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
 });

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
+import { Colors, Radius, Spacing, Typography } from '../constants/colors';
 
 export const LoginScreen: React.FC = () => {
   const { login, isLoading } = useAuth();
@@ -126,7 +127,7 @@ export const LoginScreen: React.FC = () => {
                       }
                     }}
                     placeholder="Digite sua senha"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={Colors.placeholder}
                     secureTextEntry={!showPassword}
                     editable={!isLoading}
                     returnKeyType="done"
@@ -154,7 +155,7 @@ export const LoginScreen: React.FC = () => {
                 activeOpacity={0.7}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={Colors.primaryForeground} />
                 ) : (
                   <Text style={styles.loginButtonText}>Entrar</Text>
                 )}
@@ -170,7 +171,7 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   container: {
     flex: 1,
@@ -182,49 +183,49 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xxl,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: Spacing.xxl,
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: Typography.sizes['3xl'],
+    fontWeight: Typography.weights.bold,
+    color: Colors.foreground,
+    marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: Typography.sizes.base,
+    color: Colors.mutedForeground,
     textAlign: 'center',
   },
   form: {
     width: '100%',
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.foreground,
+    marginBottom: Spacing.sm,
   },
   input: {
     width: '100%',
     height: 52,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#000',
+    backgroundColor: Colors.muted,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.md,
+    fontSize: Typography.sizes.base,
+    color: Colors.foreground,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
   },
   inputError: {
-    borderColor: '#ff3b30',
+    borderColor: Colors.destructive,
     borderWidth: 1,
   },
   passwordContainer: {
@@ -238,28 +239,28 @@ const styles = StyleSheet.create({
   eyeButton: {
     position: 'absolute',
     right: 12,
-    padding: 8,
+    padding: Spacing.sm,
   },
   eyeButtonText: {
-    fontSize: 20,
+    fontSize: Typography.sizes.xl,
   },
   errorText: {
-    fontSize: 12,
-    color: '#ff3b30',
-    marginTop: 4,
-    marginLeft: 4,
+    fontSize: Typography.sizes.xs,
+    color: Colors.destructive,
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
   },
   loginButton: {
     width: '100%',
     height: 52,
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.sm,
     ...Platform.select({
       ios: {
-        shadowColor: '#007AFF',
+        shadowColor: Colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
     }),
   },
   loginButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: Colors.mutedForeground,
     ...Platform.select({
       ios: {
         shadowOpacity: 0,
@@ -281,9 +282,9 @@ const styles = StyleSheet.create({
     }),
   },
   loginButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: Typography.sizes.base,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.primaryForeground,
   },
 });
 
