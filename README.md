@@ -28,7 +28,7 @@ O TideFlow é construído seguindo uma arquitetura de microserviços, onde cada 
 
 ### Microserviços
 
-**User Service** (Porta 8081)
+**User Service** (Porta 8080)
 - Gerenciamento de usuários, empresas e autenticação
 - Controle de acesso e autorização baseado em JWT
 - Integração com serviços de pagamento (Stripe)
@@ -166,20 +166,53 @@ docker-compose down -v
 
 ### Configuração de Variáveis de Ambiente
 
-Alguns serviços requerem variáveis de ambiente para funcionamento completo. Crie arquivos `.env` nos diretórios dos microserviços conforme necessário.
+Alguns serviços requerem variáveis de ambiente para funcionamento completo. Crie um arquivo `.env` na raiz do projeto (veja `.env.example` para referência):
 
-**AI Service** (`ai-service/.env`):
-```
-OPENROUTER_API_KEY=sua-chave-aqui
-GEMINI_API_KEY=sua-chave-aqui (opcional)
+```bash
+cp .env.example .env
 ```
 
-**User Service** (`user-service/.env`):
+Edite o arquivo `.env` e configure as variáveis necessárias:
+- `JWT_SECRET`: Chave secreta para JWT (deve ser a mesma em todos os serviços)
+- `OPENROUTER_API_KEY`: Chave da API OpenRouter (opcional)
+- `GEMINI_API_KEY`: Chave da API Gemini (opcional)
+- `RESEND_API_KEY`: Chave da API Resend para envio de emails (opcional)
+- `STRIPE_SECRET_KEY`: Chave secreta do Stripe (opcional)
+- Outras variáveis conforme necessário
+
+### Populando o Banco de Dados com Dados de Exemplo
+
+Para popular o banco de dados com dados de exemplo (usuário root, empresa moredevs, funcionários, conversas e relatórios), execute:
+
+**Opção 1: Script Automatizado (Recomendado)**
+```bash
+./scripts/seed-database.sh
 ```
-JWT_SECRET=sua-chave-secreta-jwt
-STRIPE_SECRET_KEY=sua-chave-stripe (opcional)
-RESEND_API_KEY=sua-chave-resend (opcional)
+
+**Opção 2: Manualmente**
+
+1. **User Service** (cria usuário root, empresa, departamentos e funcionários):
+```bash
+cd user-service
+./mvnw spring-boot:run -Dspring-boot.run.arguments=seed
 ```
+
+2. **AI Service** (cria conversas e relatórios):
+```bash
+cd ai-service
+./mvnw spring-boot:run -Dspring-boot.run.arguments=seed
+```
+
+**O que é criado:**
+- ✅ Usuário root: `root@tideflow.com` / `root123`
+- ✅ Empresa: `moredevs` com 6 departamentos
+- ✅ 15 funcionários (email: `[nome]@moredevs.com` / senha: `senha123`)
+- ✅ ~45-60 conversas simuladas
+- ✅ 5 relatórios corporativos
+
+**Nota:** O script verifica se os dados já existem antes de criar, evitando duplicações.
+
+Para mais detalhes, consulte [README-SEED.md](./README-SEED.md).
 
 ### Executando os Microserviços
 
@@ -190,7 +223,7 @@ cd user-service
 ./mvnw spring-boot:run
 ```
 
-O serviço estará disponível em `http://localhost:8081`
+O serviço estará disponível em `http://localhost:8080`
 
 #### AI Service
 
@@ -208,7 +241,7 @@ cd notification-service
 ./mvnw spring-boot:run
 ```
 
-O serviço estará disponível em `http://localhost:8083`
+O serviço estará disponível em `http://localhost:8081`
 
 ### Executando o Frontend Web
 
@@ -263,9 +296,9 @@ tide-flow/
 
 | Serviço | URL | Porta |
 |---------|-----|-------|
-| User Service | http://localhost:8081 | 8081 |
+| User Service | http://localhost:8080 | 8080 |
 | AI Service | http://localhost:8082 | 8082 |
-| Notification Service | http://localhost:8083 | 8083 |
+| Notification Service | http://localhost:8081 | 8081 |
 | UI Web | http://localhost:3000 | 3000 |
 | PostgreSQL (User) | localhost | 5432 |
 | PostgreSQL (Notification) | localhost | 5433 |
