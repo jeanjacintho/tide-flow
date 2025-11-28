@@ -17,7 +17,6 @@ import com.stripe.param.PriceListParams;
 import com.stripe.param.ProductCreateParams;
 import com.stripe.param.ProductListParams;
 import com.stripe.param.checkout.SessionCreateParams;
-import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,10 +32,19 @@ public class StripeService {
 
     private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
     
+    @Value("${STRIPE_SECRET_KEY:}")
     private String stripeSecretKey;
+    
+    @Value("${STRIPE_PUBLISHABLE_KEY:}")
     private String stripePublishableKey;
+    
+    @Value("${STRIPE_WEBHOOK_SECRET:}")
     private String webhookSecret;
+    
+    @Value("${STRIPE_ENTERPRISE_PRICE_ID:}")
     private String enterprisePriceId;
+    
+    @Value("${FRONTEND_URL:http://localhost:3000}")
     public String frontendUrl;
 
     @Value("${tideflow.subscription.price-brl:19990}")
@@ -50,17 +58,7 @@ public class StripeService {
 
     @PostConstruct
     public void init() {
-        Dotenv dotenv = Dotenv.configure()
-                .ignoreIfMissing()
-                .load();
-        
-        stripeSecretKey = dotenv.get("STRIPE_SECRET_KEY");
-        stripePublishableKey = dotenv.get("STRIPE_PUBLISHABLE_KEY");
-        webhookSecret = dotenv.get("STRIPE_WEBHOOK_SECRET");
-        enterprisePriceId = dotenv.get("STRIPE_ENTERPRISE_PRICE_ID");
-        frontendUrl = dotenv.get("FRONTEND_URL", "http://localhost:3000");
-        
-        if (stripeSecretKey != null) {
+        if (stripeSecretKey != null && !stripeSecretKey.isEmpty()) {
             Stripe.apiKey = stripeSecretKey;
             logger.info("Stripe initialized with API key");
         } else {

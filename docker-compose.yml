@@ -149,8 +149,15 @@ services:
       - DB_HOST=postgres-user-service
       - DB_PORT=5432
       - RABBITMQ_HOST=rabbitmq
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-minimum-256-bits
-      - RESEND_DEVMODE=false
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production-minimum-256-bits}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_DEVMODE=${RESEND_DEVMODE:-false}
+      - EMAIL_DEVMODE=${EMAIL_DEVMODE:-}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_ENTERPRISE_PRICE_ID=${STRIPE_ENTERPRISE_PRICE_ID:-}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
     depends_on:
       postgres-user-service:
         condition: service_healthy
@@ -211,8 +218,8 @@ services:
       - USER_SERVICE_URL=http://user-service:8080
       - WHISPER_SERVICE_URL=http://faster-whisper:8000
       - OLLAMA_BASE_URL=http://ollama:11434
-      - LLM_PROVIDER=ollama
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-minimum-256-bits
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production-minimum-256-bits}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - SPRING_PROFILES_ACTIVE=docker
@@ -244,9 +251,9 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
-      - NEXT_PUBLIC_AI_SERVICE_URL=http://localhost:8082
-      - NEXT_PUBLIC_NOTIFICATION_SERVICE_URL=http://localhost:8081
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_AI_SERVICE_URL=${NEXT_PUBLIC_AI_SERVICE_URL:-http://localhost:8082}
+      - NEXT_PUBLIC_NOTIFICATION_SERVICE_URL=${NEXT_PUBLIC_NOTIFICATION_SERVICE_URL:-http://localhost:8081}
     depends_on:
       - user-service
       - ai-service
