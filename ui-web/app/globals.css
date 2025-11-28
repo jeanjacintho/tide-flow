@@ -44,6 +44,7 @@
   --color-theme-border-quaternary: var(--border);
   --color-theme-text-secondary: var(--muted-foreground);
   --color-theme-bg-quaternary: var(--muted);
+  --color-theme-text-primary: var(--text-primary);
   --animate-shiny-text: shiny-text 8s infinite;
   @keyframes shiny-text {
   0%, 90%, 100% {
@@ -56,7 +57,24 @@
   --animate-gradient: gradient 8s linear infinite;
   @keyframes gradient {
   to {
-    background-position: var(--bg-size, 300%) 0;}}}
+    background-position: var(--bg-size, 300%) 0;}}
+  --animate-aurora: aurora 8s ease-in-out infinite alternate;
+  @keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);}
+  25% {
+    background-position: 50% 100%;
+    transform: rotate(5deg) scale(1.1);}
+  50% {
+    background-position: 100% 50%;
+    transform: rotate(-3deg) scale(0.95);}
+  75% {
+    background-position: 50% 0%;
+    transform: rotate(3deg) scale(1.05);}
+  100% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);}}}
 
     :root {
       --radius: 0.65rem;
@@ -66,7 +84,7 @@
       --card-foreground:  oklch(0.141 0.005 285.823);
       --popover:  oklch(1 0 0);
       --popover-foreground:  oklch(0.141 0.005 285.823);
-      --primary:  oklch(0.648 0.2 131.684);
+      --primary:  oklch(86.06% 0.1766 134.52);
       --primary-foreground:  oklch(0.986 0.031 120.757);
       --secondary:  oklch(0.967 0.001 286.375);
       --secondary-foreground:  oklch(0.21 0.006 285.885);
@@ -90,7 +108,8 @@
       --sidebar-accent:  oklch(0.967 0.001 286.375);
       --sidebar-accent-foreground:  oklch(0.21 0.006 285.885);
       --sidebar-border:  oklch(0.92 0.004 286.32);
-      --sidebar-ring:  oklch(0.841 0.238 128.85);
+      --sidebar-ring:  oklch(86.06% 0.1766 134.52);
+      --text-primary:  oklch(38.84% 0.0452 199.75);
     }
 
 @layer base {

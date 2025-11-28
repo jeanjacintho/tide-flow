@@ -13,17 +13,21 @@ export function AnimatedGradientText({
   children,
   className,
   speed = 1,
-  colorFrom = "#ffaa40",
-  colorTo = "#9c40ff",
+  colorFrom,
+  colorTo,
   ...props
 }: AnimatedGradientTextProps) {
+  // Cores padrão baseadas no primary do projeto (verde)
+  const defaultFrom = colorFrom || "oklch(86.06% 0.1766 134.52)";
+  const defaultTo = colorTo || "oklch(70% 0.2 150)";
+  
   return (
     <span
       style={
         {
           "--bg-size": `${speed * 300}%`,
-          "--color-from": colorFrom,
-          "--color-to": colorTo,
+          "--color-from": defaultFrom,
+          "--color-to": defaultTo,
         } as React.CSSProperties
       }
       className={cn(
