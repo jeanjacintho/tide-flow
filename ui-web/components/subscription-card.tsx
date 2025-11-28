@@ -59,11 +59,17 @@ export function SubscriptionCard() {
   return (
     <Card className="rounded-lg p-4 border-border/50 bg-card">
       <div className="space-y-2">
-        <p className="text-sm font-semibold leading-none">
-          Upgrade to Premium Plan
-        </p>
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <p className="text-sm font-semibold leading-none">
+            Upgrade para Plano Premium
+          </p>
+        </div>
         <p className="text-xs text-muted-foreground">
-          Unlock advanced AI analytics, priority support, and exclusive HR tools.
+          Desbloqueie análises de IA avançadas, mapas de calor emocional em tempo real e predição de turnover. Prevenção proativa para sua equipe.
+        </p>
+        <p className="text-xs font-medium text-primary">
+          Apenas R$ 199,90/mês
         </p>
       </div>
       <Button
@@ -72,7 +78,7 @@ export function SubscriptionCard() {
         className="mt-4 w-full"
       >
         <Link href="/subscription">
-          Upgrade Now
+          Fazer Upgrade
         </Link>
       </Button>
     </Card>

@@ -208,7 +208,7 @@ export default function AppLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background p-2 shrink-0">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-4 shrink-0 h-[52px]">
             <SidebarTrigger />
           </div>
           <main className="flex-1 overflow-y-auto min-h-0">
